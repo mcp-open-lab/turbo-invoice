@@ -1,21 +1,6 @@
 import { z } from "zod";
 import { DEFAULT_REQUIRED_FIELDS } from "./consts";
 
-// Base schema - all fields optional by default
-const BaseEditReceiptSchema = {
-  id: z.string(),
-  merchantName: z.string().optional().nullable(),
-  date: z.string().optional().nullable(),
-  totalAmount: z.string().optional().nullable(),
-  taxAmount: z.string().optional().nullable(),
-  description: z.string().optional().nullable(),
-  paymentMethod: z.string().optional().nullable(),
-  tipAmount: z.string().optional().nullable(),
-  discountAmount: z.string().optional().nullable(),
-  category: z.string().optional().nullable(),
-  status: z.enum(["needs_review", "approved"]),
-};
-
 // Create dynamic schema based on required fields
 export function createEditReceiptSchema(
   requiredFields: Record<string, boolean> = DEFAULT_REQUIRED_FIELDS

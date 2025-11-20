@@ -1,0 +1,24 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "entry": [
+    "app/**/*.{js,ts,tsx}",
+    "components/**/*.{js,ts,tsx}",
+    "lib/**/*.{js,ts,tsx}",
+    "proxy.ts"
+  ],
+  "project": [
+    "app/**/*.{js,ts,tsx}",
+    "components/**/*.{js,ts,tsx}",
+    "lib/**/*.{js,ts,tsx}",
+    "proxy.ts"
+  ],
+  "ignore": ["**/*.d.ts", "**/node_modules/**", ".next/**", "drizzle/**"],
+  "ignoreDependencies": [
+    "eslint-config-next",
+    "eslint",
+    "typescript",
+    "postcss-load-config",
+    "lint-staged",
+    "husky"
+  ]
+}
