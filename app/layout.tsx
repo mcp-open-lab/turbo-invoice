@@ -21,8 +21,8 @@ export default function RootLayout({
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
-      afterSignInUrl="/app"
-      afterSignUpUrl="/app"
+      signInFallbackRedirectUrl="/app"
+      signUpFallbackRedirectUrl="/app"
     >
       <html lang="en">
         <body className={inter.className}>
@@ -33,4 +33,3 @@ export default function RootLayout({
     </ClerkProvider>
   );
 }
-

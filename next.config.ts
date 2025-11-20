@@ -25,6 +25,10 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "4mb",
     },
   },
+  // Clerk custom domain configuration
+  env: {
+    NEXT_PUBLIC_CLERK_DOMAIN: process.env.NEXT_PUBLIC_CLERK_DOMAIN,
+  },
 };
 
 export default nextConfig;
