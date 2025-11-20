@@ -539,15 +539,14 @@ export function EditReceiptDialog({
           }}
         >
           <div
-            className="relative w-full h-full max-w-7xl max-h-[90vh]"
-            onClick={(e) => e.stopPropagation()}
+            className="relative w-full h-full max-w-7xl max-h-[90vh] pointer-events-none"
           >
             <Image
               src={receipt.imageUrl}
               alt={receipt.merchantName ?? "Receipt image"}
               fill
               sizes="100vw"
-              className="object-contain"
+              className="object-contain pointer-events-auto"
               priority
               unoptimized={receipt.imageUrl.includes(".ufs.sh")}
             />
@@ -557,8 +556,9 @@ export function EditReceiptDialog({
               e.stopPropagation();
               setImageExpanded(false);
             }}
-            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors p-2"
+            className="absolute top-4 right-4 z-[101] text-white hover:text-gray-300 active:bg-black/70 transition-colors p-3 min-w-[44px] min-h-[44px] flex items-center justify-center bg-black/50 rounded-full backdrop-blur-sm touch-manipulation pointer-events-auto"
             aria-label="Close expanded image"
+            type="button"
           >
             <X className="h-6 w-6" />
           </button>

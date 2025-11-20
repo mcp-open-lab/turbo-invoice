@@ -89,6 +89,7 @@ export function QuickActions() {
   const [isOpen, setIsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFullscreenSupported, setIsFullscreenSupported] = useState(false);
   const router = useRouter();
   const navItems = [
     {
@@ -136,18 +137,50 @@ export function QuickActions() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  // Check fullscreen state
+  // Check fullscreen support and state
   useEffect(() => {
-    const checkFullscreen = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
+    // Detect iOS/Safari - Fullscreen API is not supported
+    const isIOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
-    document.addEventListener("fullscreenchange", checkFullscreen);
-    checkFullscreen();
+    // Check if Fullscreen API is available
+    const hasFullscreenSupport =
+      !isIOS &&
+      (document.documentElement.requestFullscreen ||
+        (document.documentElement as any).webkitRequestFullscreen ||
+        (document.documentElement as any).mozRequestFullScreen ||
+        (document.documentElement as any).msRequestFullscreen);
 
-    return () => {
-      document.removeEventListener("fullscreenchange", checkFullscreen);
-    };
+    setIsFullscreenSupported(!!hasFullscreenSupport);
+
+    if (hasFullscreenSupport) {
+      const checkFullscreen = () => {
+        setIsFullscreen(
+          !!(
+            document.fullscreenElement ||
+            (document as any).webkitFullscreenElement ||
+            (document as any).mozFullScreenElement ||
+            (document as any).msFullscreenElement
+          )
+        );
+      };
+
+      // Listen for fullscreen changes (with vendor prefixes)
+      document.addEventListener("fullscreenchange", checkFullscreen);
+      document.addEventListener("webkitfullscreenchange", checkFullscreen);
+      document.addEventListener("mozfullscreenchange", checkFullscreen);
+      document.addEventListener("MSFullscreenChange", checkFullscreen);
+
+      checkFullscreen();
+
+      return () => {
+        document.removeEventListener("fullscreenchange", checkFullscreen);
+        document.removeEventListener("webkitfullscreenchange", checkFullscreen);
+        document.removeEventListener("mozfullscreenchange", checkFullscreen);
+        document.removeEventListener("MSFullscreenChange", checkFullscreen);
+      };
+    }
   }, []);
 
   // Close menu when clicking outside
@@ -164,13 +197,46 @@ export function QuickActions() {
   }, [isOpen]);
 
   const toggleFullscreen = async () => {
+    if (!isFullscreenSupported) {
+      toast.info(
+        "Fullscreen not available on iOS. Add to Home Screen for immersive mode."
+      );
+      setIsOpen(false);
+      return;
+    }
+
     try {
-      if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen();
+      const doc = document.documentElement as any;
+      const isCurrentlyFullscreen =
+        document.fullscreenElement ||
+        doc.webkitFullscreenElement ||
+        doc.mozFullScreenElement ||
+        doc.msFullscreenElement;
+
+      if (!isCurrentlyFullscreen) {
+        // Try different vendor-prefixed methods
+        if (doc.requestFullscreen) {
+          await doc.requestFullscreen();
+        } else if (doc.webkitRequestFullscreen) {
+          await doc.webkitRequestFullscreen();
+        } else if (doc.mozRequestFullScreen) {
+          await doc.mozRequestFullScreen();
+        } else if (doc.msRequestFullscreen) {
+          await doc.msRequestFullscreen();
+        }
         setIsFullscreen(true);
         toast.success("Entered fullscreen mode");
       } else {
-        await document.exitFullscreen();
+        // Exit fullscreen
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen();
+        } else if ((document as any).mozCancelFullScreen) {
+          await (document as any).mozCancelFullScreen();
+        } else if ((document as any).msExitFullscreen) {
+          await (document as any).msExitFullscreen();
+        }
         setIsFullscreen(false);
         toast.success("Exited fullscreen mode");
       }
@@ -303,22 +369,26 @@ export function QuickActions() {
               );
             })}
 
-            <div className="h-px bg-border my-2" />
+            {isFullscreenSupported && (
+              <>
+                <div className="h-px bg-border my-2" />
 
-            <Button
-              onClick={toggleFullscreen}
-              className="w-full justify-between gap-2 shadow-md"
-              variant="secondary"
-            >
-              <div className="flex items-center gap-2">
-                {isFullscreen ? (
-                  <Minimize2 className="h-4 w-4" />
-                ) : (
-                  <Maximize2 className="h-4 w-4" />
-                )}
-                {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-              </div>
-            </Button>
+                <Button
+                  onClick={toggleFullscreen}
+                  className="w-full justify-between gap-2 shadow-md"
+                  variant="secondary"
+                >
+                  <div className="flex items-center gap-2">
+                    {isFullscreen ? (
+                      <Minimize2 className="h-4 w-4" />
+                    ) : (
+                      <Maximize2 className="h-4 w-4" />
+                    )}
+                    {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                  </div>
+                </Button>
+              </>
+            )}
 
             <div className="h-px bg-border my-2" />
 
