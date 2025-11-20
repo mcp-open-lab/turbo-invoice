@@ -17,6 +17,8 @@ import {
   Clock,
   Settings,
   Brain,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import { future_genUploader } from "uploadthing/client-future";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
@@ -86,6 +88,7 @@ async function compressImageFile(
 export function QuickActions() {
   const [isOpen, setIsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const router = useRouter();
   const navItems = [
     {
@@ -133,6 +136,20 @@ export function QuickActions() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
+  // Check fullscreen state
+  useEffect(() => {
+    const checkFullscreen = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("fullscreenchange", checkFullscreen);
+    checkFullscreen();
+
+    return () => {
+      document.removeEventListener("fullscreenchange", checkFullscreen);
+    };
+  }, []);
+
   // Close menu when clicking outside
   useEffect(() => {
     if (!isOpen) return;
@@ -145,6 +162,24 @@ export function QuickActions() {
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, [isOpen]);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+        setIsFullscreen(true);
+        toast.success("Entered fullscreen mode");
+      } else {
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+        toast.success("Exited fullscreen mode");
+      }
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Fullscreen error:", error);
+      toast.error("Fullscreen not supported or blocked");
+    }
+  };
 
   const handleFileSelect = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -267,6 +302,23 @@ export function QuickActions() {
                 </Button>
               );
             })}
+
+            <div className="h-px bg-border my-2" />
+
+            <Button
+              onClick={toggleFullscreen}
+              className="w-full justify-between gap-2 shadow-md"
+              variant="secondary"
+            >
+              <div className="flex items-center gap-2">
+                {isFullscreen ? (
+                  <Minimize2 className="h-4 w-4" />
+                ) : (
+                  <Maximize2 className="h-4 w-4" />
+                )}
+                {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+              </div>
+            </Button>
 
             <div className="h-px bg-border my-2" />
 
