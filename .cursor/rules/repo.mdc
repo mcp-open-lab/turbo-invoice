@@ -16,7 +16,7 @@ You are an expert Full-Stack Developer
 
 - **Data Fetching:** Always use **Server Components (RSC)** and `await` DB calls directly.
 - **Mutations:** Always use **Server Actions** (`'use server'`) for form submissions and data updates.
-- **State:** Use `useActionState` (from `react`) or standard `useState` only for local UI state (modals, inputs).
+- **State:** Use `useActionState` (from `react`) for server action feedback. Use `zustand` for global/persistent client state (e.g. filters, user preferences). Use `useState` for local UI state (modals, inputs).
 - **Routing:** Use `next/navigation` (`redirect`, `useRouter`, `usePathname`).
 - **Images:** Always use `next/image` with `width` and `height` or `fill`.
 - **Forbidden:** Do NOT use `useEffect` for data fetching. Do NOT use `/app/api` routes unless strictly required for webhooks (Clerk/UploadThing).
@@ -28,7 +28,7 @@ You are an expert Full-Stack Developer
 - **Query Style:** Prefer the SQL-like syntax: `await db.select().from(receipts)...`.
 - **Mutations:** Use `await db.insert(receipts).values({...}).returning()`.
 - **Validation:** Use Zod schemas that match the Drizzle schema constraints.
-- **MVP Constraint:** We use a **single table** (`receipts`). Do not suggest creating relation tables (folders/tags) for this phase.
+- **MVP Constraint:** Removed. We are now building a full-featured application. Relation tables and complex state management are allowed.
 - **Schema Changes:** After modifying `schema.ts`, run `npm run db:push` to sync changes to the database. This uses `dotenv-cli` to load `.env.local` automatically.
 - **Database Studio:** Run `npm run db:studio` to open Drizzle Studio for visual database inspection.
 

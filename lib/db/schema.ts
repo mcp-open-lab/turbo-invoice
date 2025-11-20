@@ -53,3 +53,14 @@ export const receipts = pgTable("receipts", {
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const userSettings = pgTable("user_settings", {
+  userId: text("user_id").primaryKey(),
+  usageType: text("usage_type").default("personal"), // 'personal' | 'business' | 'mixed'
+  country: text("country"), // 'US' | 'CA'
+  province: text("province"), // State/Province code
+  currency: text("currency").default("USD"), // 'USD' | 'CAD'
+  visibleFields: text("visible_fields"), // JSON string of field visibility preferences
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
