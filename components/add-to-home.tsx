@@ -36,7 +36,10 @@ export function AddToHomeScreenButton() {
     setPlatform(isIos ? "ios" : isAndroid ? "android" : null);
 
     const checkStandalone = () => {
-      setIsStandalone(window.matchMedia("(display-mode: standalone)").matches);
+      const standalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as any).standalone === true;
+      setIsStandalone(standalone);
     };
     checkStandalone();
     window.addEventListener("resize", checkStandalone);
@@ -48,22 +51,44 @@ export function AddToHomeScreenButton() {
 
     window.addEventListener("beforeinstallprompt", handler);
 
+    // Also listen for appinstalled event to hide button after installation
+    const installedHandler = () => {
+      setIsStandalone(true);
+      setDeferredPrompt(null);
+    };
+    window.addEventListener("appinstalled", installedHandler);
+
     return () => {
       window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", installedHandler);
       window.removeEventListener("resize", checkStandalone);
     };
   }, []);
 
-  if (isStandalone || (!deferredPrompt && platform !== "ios")) {
+  // Don't show if already installed
+  if (isStandalone) {
+    return null;
+  }
+
+  // On Android, only show if we have the prompt available
+  // On iOS, always show (manual instructions)
+  if (platform === "android" && !deferredPrompt) {
     return null;
   }
 
   const handleClick = async () => {
     if (platform === "android" && deferredPrompt) {
-      await deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
-      if (choice.outcome === "dismissed") {
-        setDeferredPrompt(null);
+      try {
+        await deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        if (choice.outcome === "accepted") {
+          setDeferredPrompt(null);
+          setIsStandalone(true);
+        } else {
+          // User dismissed, keep the prompt available for later
+        }
+      } catch (error) {
+        console.error("Error showing install prompt:", error);
       }
     } else if (platform === "ios") {
       setShowDialog(true);

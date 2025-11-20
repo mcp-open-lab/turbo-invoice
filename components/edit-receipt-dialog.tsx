@@ -466,7 +466,10 @@ export function EditReceiptDialog({
           if (!value) setImageExpanded(false);
         }}
       >
-        <DialogContent className="max-w-2xl max-h-[90vh] w-[calc(100vw-2rem)] md:w-full overflow-hidden flex flex-col p-0">
+        <DialogContent
+          className="max-w-2xl max-h-[90vh] w-[calc(100vw-2rem)] md:w-full overflow-hidden flex flex-col p-0"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
           <DialogHeader className="px-4 md:px-6 pt-4 md:pt-6 pb-3 flex-shrink-0">
             <DialogTitle>
               {(() => {

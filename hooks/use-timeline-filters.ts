@@ -8,7 +8,7 @@ import { useTimelineStore } from "@/lib/stores/timeline-store";
 type Receipt = typeof receipts.$inferSelect;
 
 export function useTimelineFilters(receipts: Receipt[]) {
-  // Use Zustand store instead of local state
+
   const {
     search,
     categoryFilter,
@@ -18,10 +18,10 @@ export function useTimelineFilters(receipts: Receipt[]) {
     setCategoryFilter,
     setStatusFilter,
     setSortBy,
-    resetFilters, // Add this
+    resetFilters, 
   } = useTimelineStore();
 
-  // Memoize available options to prevent recalc on every render
+
   const availableCategories = useMemo(() => {
     const cats = new Set(
       receipts.map((r) => r.category).filter((c): c is string => Boolean(c))
@@ -84,7 +84,7 @@ export function useTimelineFilters(receipts: Receipt[]) {
     setStatusFilter,
     sortBy,
     setSortBy,
-    resetFilters, // Export this
+    resetFilters,
     filteredGroups,
     availableCategories,
     availableStatuses,

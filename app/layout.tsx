@@ -9,6 +9,13 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Turbo Invoice - Accounting Made Easy",
   description: "AI-powered receipt scanning and management",
+  manifest: "/manifest.json",
+  themeColor: "#000000",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Turbo Invoice",
+  },
 };
 
 export default function RootLayout({
