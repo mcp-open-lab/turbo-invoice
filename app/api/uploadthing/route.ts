@@ -5,3 +5,7 @@ export const { GET, POST } = createRouteHandler({
   router: ourFileRouter,
 });
 
+// Export runtime config to help with ArrayBuffer issues
+export const runtime = 'nodejs';
+export const maxDuration = 30;
+
