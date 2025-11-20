@@ -6,6 +6,8 @@ import { ReceiptUploader } from "@/components/receipt-upload";
 import { UserButton } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 import { ReceiptList } from "@/components/receipt-list";
+import { AddToHomeScreenButton } from "@/components/add-to-home";
+import { MobileCameraButton } from "@/components/mobile-camera-button";
 
 export default async function Dashboard() {
   const { userId } = await auth();
@@ -13,7 +15,9 @@ export default async function Dashboard() {
     redirect("/sign-in");
   }
 
-  const data = await db.select().from(receipts)
+  const data = await db
+    .select()
+    .from(receipts)
     .where(eq(receipts.userId, userId))
     .orderBy(desc(receipts.createdAt));
 
@@ -24,10 +28,14 @@ export default async function Dashboard() {
         <UserButton />
       </div>
 
+      <div className="flex mb-4">
+        <AddToHomeScreenButton />
+      </div>
+
       <ReceiptUploader />
 
       <ReceiptList receipts={data} />
+      <MobileCameraButton />
     </div>
   );
 }
-
