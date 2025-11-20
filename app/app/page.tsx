@@ -7,7 +7,7 @@ import { UserButton } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 import { ReceiptList } from "@/components/receipt-list";
 import { AddToHomeScreenButton } from "@/components/add-to-home";
-import { MobileCameraButton } from "@/components/mobile-camera-button";
+import { MobileQuickActions } from "@/components/mobile-quick-actions";
 
 export default async function Dashboard() {
   const { userId } = await auth();
@@ -35,7 +35,7 @@ export default async function Dashboard() {
       <ReceiptUploader />
 
       <ReceiptList receipts={data} />
-      <MobileCameraButton />
+      <MobileQuickActions />
     </div>
   );
 }
