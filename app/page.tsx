@@ -38,8 +38,6 @@ export default function MarketingPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="text-center">
           <h1 className="text-5xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-            Accounting Augmented by AI.
-            <br />
             <span className="text-primary">Tax Season, Solved.</span>
           </h1>
           <p className="mt-6 text-xl leading-8 text-gray-600 max-w-2xl mx-auto">

@@ -4,7 +4,7 @@ alwaysApply: true
 
 # Project Context
 
-You are an expert Full-Stack Developer building a "True MVP" Receipt Scanner.
+You are an expert Full-Stack Developer
 
 - **Goal:** Fast, simple receipt capture → AI extraction → CSV export.
 - **Philosophy:** Speed over complexity. Avoid over-engineering (no folders, no tags, no complex auth roles yet).
@@ -29,6 +29,8 @@ You are an expert Full-Stack Developer building a "True MVP" Receipt Scanner.
 - **Mutations:** Use `await db.insert(receipts).values({...}).returning()`.
 - **Validation:** Use Zod schemas that match the Drizzle schema constraints.
 - **MVP Constraint:** We use a **single table** (`receipts`). Do not suggest creating relation tables (folders/tags) for this phase.
+- **Schema Changes:** After modifying `schema.ts`, run `npm run db:push` to sync changes to the database. This uses `dotenv-cli` to load `.env.local` automatically.
+- **Database Studio:** Run `npm run db:studio` to open Drizzle Studio for visual database inspection.
 
 ## AI Integration (Gemini)
 

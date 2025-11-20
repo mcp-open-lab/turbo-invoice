@@ -7,7 +7,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Turbo Invoice - Receipt Scanner",
+  title: "Turbo Invoice - Accounting Made Easy",
   description: "AI-powered receipt scanning and management",
 };
 

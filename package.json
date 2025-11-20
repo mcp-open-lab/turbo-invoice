@@ -7,8 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:push": "dotenv -e .env.local -- drizzle-kit push",
+    "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
+    "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
+    "db:check": "dotenv -e .env.local -- drizzle-kit check",
+    "type-check": "tsc --noEmit --skipLibCheck"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.35.2",

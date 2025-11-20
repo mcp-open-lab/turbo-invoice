@@ -4,7 +4,8 @@ import { auth } from "@clerk/nextjs/server";
 const f = createUploadthing();
 
 export const ourFileRouter = {
-  receiptUploader: f({ image: { maxFileSize: "4MB", maxFileCount: 1 } })
+  // Allow up to 16MB to give room for higher-res images, while we still compress on mobile
+  receiptUploader: f({ image: { maxFileSize: "16MB", maxFileCount: 1 } })
     .middleware(async () => {
       const { userId } = await auth();
       if (!userId) throw new Error("Unauthorized");
