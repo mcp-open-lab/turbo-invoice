@@ -91,7 +91,7 @@ export function BatchDetailView({ batch: initialBatch, items: initialItems }: Ba
         toast.success("Item queued for retry");
         router.refresh();
       } else {
-        toast.error(result.error || "Failed to retry item");
+        toast.error("Failed to retry item");
       }
     } catch (error) {
       toast.error("Failed to retry item");
@@ -104,11 +104,11 @@ export function BatchDetailView({ batch: initialBatch, items: initialItems }: Ba
     try {
       setIsRetryingAll(true);
       const result = await retryAllFailedItems({ batchId: batch.batchId });
-      if (result.success) {
+      if (result.success && result.retriedCount !== undefined) {
         toast.success(`Queued ${result.retriedCount} items for retry`);
         router.refresh();
       } else {
-        toast.error(result.error || "Failed to retry items");
+        toast.error("Failed to retry items");
       }
     } catch (error) {
       toast.error("Failed to retry items");
