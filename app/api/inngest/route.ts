@@ -51,10 +51,13 @@ export const processImportJob = inngest.createFunction(
 );
 
 // Export the Inngest serve handler
-// The serve function will automatically detect the URL from the request
-// Make sure INNGEST_SERVE_URL is set in Vercel to https://turboinvoice.ai/api/inngest
+// The serve function automatically reads INNGEST_SIGNING_KEY from env for authentication
+// Make sure INNGEST_SERVE_URL is set in Inngest dashboard to https://turboinvoice.ai/api/inngest
 export const { GET, POST, PUT } = serve({
   client: inngest,
   functions: [processImportJob],
 });
 
+// Runtime configuration for Next.js
+export const runtime = "nodejs";
+export const maxDuration = 300;
