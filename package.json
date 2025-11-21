@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:inngest": "npx inngest-cli@latest dev",
+    "dev:vercel": "vercel dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -62,6 +64,7 @@
     "cmdk": "^1.1.1",
     "drizzle-orm": "^0.36.4",
     "embla-carousel-react": "^8.6.0",
+    "inngest": "^3.46.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.468.0",
     "next": "^16.0.3",

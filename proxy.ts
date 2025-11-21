@@ -10,10 +10,16 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 const isUploadThingRoute = createRouteMatcher(["/api/uploadthing(.*)"]);
+const isInngestRoute = createRouteMatcher(["/api/inngest(.*)"]);
 
 export default clerkMiddleware(async (auth, request) => {
   // Bypass UploadThing routes so the request body isn't consumed
   if (isUploadThingRoute(request)) {
+    return;
+  }
+
+  // Bypass Inngest routes - they're called by Inngest infrastructure
+  if (isInngestRoute(request)) {
     return;
   }
 

@@ -35,7 +35,10 @@ export type NewImportBatchItem = typeof importBatchItems.$inferInsert;
  * Batch status summary with computed fields
  * Extends the base Drizzle type with calculated properties
  */
-export type BatchStatusSummary = Omit<ImportBatch, "errors" | "id" | "userId"> & {
+export type BatchStatusSummary = Omit<
+  ImportBatch,
+  "errors" | "id" | "userId"
+> & {
   batchId: string;
   completionPercentage: number;
   remainingFiles: number;

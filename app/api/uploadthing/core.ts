@@ -24,6 +24,27 @@ export const ourFileRouter = {
       // Return immediately - processing happens via client-triggered action
       return { uploadedBy: metadata.userId, url: file.url };
     }),
+  // Batch uploader for multiple files (images and PDFs)
+  batchUploader: f({
+    image: { maxFileSize: "16MB", maxFileCount: 50 },
+    pdf: { maxFileSize: "16MB", maxFileCount: 50 },
+  })
+    .middleware(async () => {
+      const { userId } = await auth();
+      if (!userId) throw new Error("Unauthorized");
+      return { userId };
+    })
+    .onUploadComplete(({ metadata, file }) => {
+      // Dev logging only - uploads contain PII
+      devLogger.info("Batch upload complete", {
+        userId: metadata.userId,
+        fileName: file.name,
+        fileSize: file.size,
+        fileUrl: file.url,
+        action: "batchUploadComplete",
+      });
+      return { uploadedBy: metadata.userId, url: file.url };
+    }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;

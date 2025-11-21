@@ -10,6 +10,7 @@ import {
   getBatchStatusSummary,
   getBatchProgress,
   getBatchItemsStatus,
+  listBatches,
 } from "@/lib/import/batch-tracker";
 
 const createImportBatchSchema = z.object({
@@ -224,5 +225,39 @@ export const completeBatch = createSafeAction(
   async (input: unknown) => {
     const validated = completeBatchSchema.parse(input);
     return completeBatchHandler(validated);
+  }
+);
+
+const listBatchesSchema = z.object({
+  limit: z.number().int().min(1).max(100).optional().default(20),
+  cursor: z.string().optional(),
+  status: z.enum(["pending", "processing", "completed", "failed", "cancelled"]).optional(),
+});
+
+async function listBatchesHandler(
+  input: z.infer<typeof listBatchesSchema>
+) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const result = await listBatches(userId, {
+    limit: input.limit,
+    cursor: input.cursor,
+    status: input.status,
+  });
+
+  return {
+    success: true,
+    batches: result.batches,
+    nextCursor: result.nextCursor,
+    hasMore: result.hasMore,
+  };
+}
+
+export const listBatchesAction = createSafeAction(
+  "listBatches",
+  async (input: unknown) => {
+    const validated = listBatchesSchema.parse(input);
+    return listBatchesHandler(validated);
   }
 );

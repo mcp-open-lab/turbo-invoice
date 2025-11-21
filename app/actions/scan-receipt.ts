@@ -513,3 +513,7 @@ If you cannot determine a value, use null. Be precise with amounts as numbers.`;
 
 // Wrap with automatic logging
 export const scanReceipt = createSafeAction("scanReceipt", scanReceiptHandler);
+
+// Export handler for direct server-side calls (e.g., from queue processors)
+// This bypasses the Server Action wrapper which requires Next.js request context
+export { scanReceiptHandler };

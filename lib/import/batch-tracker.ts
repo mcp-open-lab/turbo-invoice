@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { importBatches, importBatchItems } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import type {
   BatchStatusSummary,
   BatchItemStatus,
@@ -163,6 +163,64 @@ export async function getBatchProgress(
     remaining: batch.remainingFiles,
     isComplete: isBatchComplete(batch),
     estimatedCompletion,
+  };
+}
+
+/**
+ * List batches for a user with pagination
+ * Uses cursor-based pagination for better performance
+ */
+export async function listBatches(
+  userId: string,
+  options?: {
+    limit?: number;
+    cursor?: string;
+    status?: string;
+  }
+): Promise<{
+  batches: ImportBatch[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}> {
+  const limit = options?.limit ?? 20;
+  const cursor = options?.cursor;
+  const statusFilter = options?.status;
+
+  const conditions = [eq(importBatches.userId, userId)];
+
+  if (statusFilter) {
+    conditions.push(eq(importBatches.status, statusFilter));
+  }
+
+  if (cursor) {
+    const cursorBatch = await db
+      .select({ createdAt: importBatches.createdAt })
+      .from(importBatches)
+      .where(eq(importBatches.id, cursor))
+      .limit(1);
+
+    if (cursorBatch.length > 0) {
+      conditions.push(
+        sql`${importBatches.createdAt} < ${cursorBatch[0].createdAt}`
+      );
+    }
+  }
+
+  const batches = await db
+    .select()
+    .from(importBatches)
+    .where(and(...conditions))
+    .orderBy(desc(importBatches.createdAt))
+    .limit(limit + 1);
+
+  const hasMore = batches.length > limit;
+  const results = hasMore ? batches.slice(0, limit) : batches;
+  const nextCursor = hasMore && results.length > 0 ? results[results.length - 1].id : null;
+
+  return {
+    batches: results,
+    nextCursor,
+    hasMore,
   };
 }
 
