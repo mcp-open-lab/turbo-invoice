@@ -27,26 +27,45 @@ export const processImportJob = inngest.createFunction(
       batchItemId: payload.batchItemId,
       fileName: payload.fileName,
       batchId: payload.batchId,
+      userId: payload.userId,
     });
 
-    return await step.run("process-batch-item", async () => {
-      const result = await processBatchItem(payload);
+    try {
+      return await step.run("process-batch-item", async () => {
+        const result = await processBatchItem(payload);
 
-      if (!result.success) {
-        devLogger.error("Import job failed", {
+        if (!result.success) {
+          devLogger.error("Import job failed", {
+            batchItemId: payload.batchItemId,
+            error: result.error,
+            errorCode: result.errorCode,
+          });
+          throw new Error(result.error || "Processing failed");
+        }
+
+        devLogger.info("Import job completed successfully", {
           batchItemId: payload.batchItemId,
-          error: result.error,
+          documentId: result.documentId,
         });
-        throw new Error(result.error || "Processing failed");
-      }
 
-      devLogger.info("Import job completed successfully", {
+        return result;
+      });
+    } catch (error) {
+      // Log any unexpected errors that occur outside processBatchItem
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
+      devLogger.error("Unexpected error in Inngest function", {
         batchItemId: payload.batchItemId,
-        documentId: result.documentId,
+        eventId: event.id,
+        error: errorMessage,
+        stack: errorStack,
       });
 
-      return result;
-    });
+      // Re-throw to let Inngest handle retries
+      throw error;
+    }
   }
 );
 

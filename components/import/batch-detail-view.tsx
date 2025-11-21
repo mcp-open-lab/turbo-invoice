@@ -37,6 +37,7 @@ import { formatDistanceToNow } from "date-fns";
 import { retryBatchItem, retryAllFailedItems } from "@/app/actions/import-batch-items";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useBatchPolling } from "@/hooks/use-batch-polling";
 
 interface BatchDetailViewProps {
   batch: BatchStatusSummary;
@@ -44,8 +45,11 @@ interface BatchDetailViewProps {
 }
 
 export function BatchDetailView({ batch: initialBatch, items: initialItems }: BatchDetailViewProps) {
-  const [batch, setBatch] = useState(initialBatch);
-  const [items, setItems] = useState(initialItems);
+  const { batch, items, refresh } = useBatchPolling({
+    initialBatch,
+    initialItems,
+  });
+  
   const [isRetrying, setIsRetrying] = useState<string | null>(null);
   const [isRetryingAll, setIsRetryingAll] = useState(false);
   const router = useRouter();
