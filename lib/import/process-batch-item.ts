@@ -4,7 +4,7 @@
  */
 
 import { db } from "@/lib/db";
-import { importBatchItems, documents } from "@/lib/db/schema";
+import { importBatchItems, documents, receipts } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 // Import the handler directly to avoid Server Action wrapper issues in queue context
 // We'll need to call the internal logic directly
@@ -15,6 +15,10 @@ import type {
 } from "@/lib/import/queue-types";
 import { devLogger } from "@/lib/dev-logger";
 import { updateBatchStats } from "@/lib/import/batch-tracker";
+import {
+  checkBatchItemDuplicate,
+  markBatchItemAsDuplicate,
+} from "@/lib/import/duplicate-detector";
 
 /**
  * Process a single batch item based on import type
@@ -90,7 +94,43 @@ export async function processBatchItem(
       }
     }
 
-    // 4. Update batch item to completed
+    // 4. Check for duplicates after extraction
+    if (documentId && importType === "receipts") {
+      const duplicateMatch = await checkBatchItemDuplicate(
+        batchItemId,
+        userId,
+        documentId
+      );
+
+      if (duplicateMatch) {
+        // Mark as duplicate instead of completed
+        await markBatchItemAsDuplicate(
+          batchItemId,
+          duplicateMatch.documentId,
+          duplicateMatch.matchType
+        );
+
+        devLogger.info("Duplicate detected", {
+          batchItemId,
+          duplicateOfDocumentId: duplicateMatch.documentId,
+          matchType: duplicateMatch.matchType,
+          confidence: duplicateMatch.confidence,
+        });
+
+        // Update batch stats and return early
+        await updateBatchStats(batchId);
+
+        return {
+          success: true,
+          batchItemId,
+          documentId,
+          isDuplicate: true,
+          duplicateOfDocumentId: duplicateMatch.documentId,
+        };
+      }
+    }
+
+    // 5. Update batch item to completed (not a duplicate)
     await db
       .update(importBatchItems)
       .set({
@@ -99,7 +139,7 @@ export async function processBatchItem(
       })
       .where(eq(importBatchItems.id, batchItemId));
 
-    // 5. Update batch counts (will handle completion check)
+    // 6. Update batch counts (will handle completion check)
     await updateBatchStats(batchId);
 
     return {

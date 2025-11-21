@@ -39,5 +39,7 @@ export interface JobProcessingResult {
   documentId?: string;
   error?: string;
   errorCode?: string;
+  isDuplicate?: boolean;
+  duplicateOfDocumentId?: string;
 }
 
