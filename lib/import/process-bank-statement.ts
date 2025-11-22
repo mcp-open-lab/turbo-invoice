@@ -115,11 +115,24 @@ export async function processBankStatement(
         amount = Math.abs(tx.credit);
       }
 
+      // Ensure dates are Date objects or null (not strings)
+      const transactionDate = tx.transactionDate instanceof Date 
+        ? tx.transactionDate 
+        : tx.transactionDate 
+          ? new Date(tx.transactionDate) 
+          : null;
+
+      const postedDate = tx.postedDate instanceof Date 
+        ? tx.postedDate 
+        : tx.postedDate 
+          ? new Date(tx.postedDate) 
+          : null;
+
       return {
         id: createId(),
         bankStatementId,
-        transactionDate: tx.transactionDate,
-        postedDate: tx.postedDate,
+        transactionDate: transactionDate,
+        postedDate: postedDate,
         description: tx.description || "",
         merchantName: tx.merchantName,
         referenceNumber: tx.referenceNumber,
