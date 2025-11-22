@@ -391,24 +391,6 @@ export function SettingsFormV2({ initialSettings }: SettingsFormProps) {
               </AccordionContent>
             </AccordionItem>
 
-            {/* Bank Statement Settings */}
-            <AccordionItem value="bank-statements">
-              <AccordionTrigger className="text-lg font-semibold">
-                Bank Statement Settings
-              </AccordionTrigger>
-              <AccordionContent className="space-y-4 pt-4">
-                <p className="text-sm text-muted-foreground">
-                  Bank statement transactions are automatically categorized
-                  using AI and rules
-                </p>
-                <div className="rounded-lg border p-4 bg-muted/50">
-                  <p className="text-sm">
-                    Advanced categorization settings and rules can be managed in
-                    the Categories page
-                  </p>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
           </Accordion>
         </Card>
 
@@ -416,9 +398,9 @@ export function SettingsFormV2({ initialSettings }: SettingsFormProps) {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold">Categories & Rules</h3>
+              <h3 className="text-lg font-semibold">Financial Categories & Auto-Categorization</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Manage expense categories and auto-categorization rules
+                Manage income and expense categories, create custom categories, and set up rules to automatically categorize receipts and bank transactions
               </p>
             </div>
             <Link href="/app/settings/financial-categories">
