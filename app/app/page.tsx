@@ -53,7 +53,7 @@ export default async function Dashboard() {
     id: tx.id,
     userId,
     documentId: tx.bankStatementId, // Use bankStatementId as documentId
-    imageUrl: "", // Bank transactions don't have images
+    imageUrl: null, // Bank transactions don't have images
     fileName: null,
     merchantName: tx.merchantName,
     merchantAddress: null,

@@ -488,30 +488,32 @@ export function EditReceiptDialog({
           </DialogHeader>
           {receipt && (
             <div className="flex-1 overflow-y-auto px-4 md:px-6 pb-4 md:pb-6">
-              <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+              <div className={`grid ${receipt.imageUrl ? 'md:grid-cols-2' : 'grid-cols-1'} gap-4 md:gap-6`}>
                 {/* Image Section */}
-                <div className="order-2 md:order-1">
-                  <div
-                    className="relative w-full h-48 md:h-80 rounded-lg overflow-hidden border bg-muted cursor-pointer hover:opacity-90 transition-opacity"
-                    onClick={() => setImageExpanded(true)}
-                  >
-                    <Image
-                      src={receipt.imageUrl}
-                      alt={receipt.merchantName ?? "Receipt image"}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                      className="object-contain"
-                      priority
-                      unoptimized={receipt.imageUrl.includes(".ufs.sh")}
-                    />
+                {receipt.imageUrl && (
+                  <div className="order-2 md:order-1">
+                    <div
+                      className="relative w-full h-48 md:h-80 rounded-lg overflow-hidden border bg-muted cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => setImageExpanded(true)}
+                    >
+                      <Image
+                        src={receipt.imageUrl}
+                        alt={receipt.merchantName ?? "Receipt image"}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                        className="object-contain"
+                        priority
+                        unoptimized={receipt.imageUrl.includes(".ufs.sh")}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2 break-all">
+                      {receipt.fileName || "Uploaded image"}
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2 break-all">
-                    {receipt.fileName || "Uploaded image"}
-                  </p>
-                </div>
+                )}
 
                 {/* Form Section */}
-                <div className="order-1 md:order-2">
+                <div className={receipt.imageUrl ? "order-1 md:order-2" : ""}>
                   {receipt && (
                     <ReceiptForm
                       key={formKey}
@@ -531,7 +533,7 @@ export function EditReceiptDialog({
       </Dialog>
 
       {/* Expanded Image Overlay */}
-      {imageExpanded && receipt && (
+      {imageExpanded && receipt && receipt.imageUrl && (
         <div
           className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4"
           onClick={(e) => {
