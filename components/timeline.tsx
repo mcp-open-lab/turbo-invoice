@@ -57,11 +57,14 @@ export function Timeline({ receipts, userSettings }: TimelineProps) {
     setCategoryFilter,
     statusFilter,
     setStatusFilter,
+    documentTypeFilter,
+    setDocumentTypeFilter,
     sortBy,
     setSortBy,
     filteredGroups,
     availableCategories,
     availableStatuses,
+    availableDocumentTypes,
     totalFilteredCount,
     activeFilterCount,
     resetFilters,
@@ -148,6 +151,23 @@ export function Timeline({ receipts, userSettings }: TimelineProps) {
               </div>
               <div>
                 <label className="text-sm font-medium mb-2 block">
+                  Document Type
+                </label>
+                <select
+                  className="w-full border rounded-md px-3 py-2 text-sm bg-background"
+                  value={documentTypeFilter}
+                  onChange={(e) => setDocumentTypeFilter(e.target.value)}
+                >
+                  <option value="all">All types</option>
+                  {availableDocumentTypes.map((type: string) => (
+                    <option key={type} value={type}>
+                      {type === "receipt" ? "Receipts" : type === "transaction" ? "Bank Statements" : type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">
                   Category
                 </label>
                 <select
@@ -207,6 +227,17 @@ export function Timeline({ receipts, userSettings }: TimelineProps) {
       {/* Active Filter Badges */}
       {hasActiveFilters && (
         <div className="mb-4 flex flex-wrap gap-2">
+          {documentTypeFilter !== "all" && (
+            <div className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
+              {documentTypeFilter === "receipt" ? "Receipts" : documentTypeFilter === "transaction" ? "Bank Statements" : documentTypeFilter}
+              <button
+                onClick={() => setDocumentTypeFilter("all")}
+                className="ml-1 hover:bg-primary/20 rounded-full p-0.5"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
           {categoryFilter !== "all" && (
             <div className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
               {categoryFilter}

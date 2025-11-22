@@ -8,19 +8,19 @@ import { useTimelineStore } from "@/lib/stores/timeline-store";
 type Receipt = typeof receipts.$inferSelect;
 
 export function useTimelineFilters(receipts: Receipt[]) {
-
   const {
     search,
     categoryFilter,
     statusFilter,
+    documentTypeFilter,
     sortBy,
     setSearch,
     setCategoryFilter,
     setStatusFilter,
+    setDocumentTypeFilter,
     setSortBy,
-    resetFilters, 
+    resetFilters,
   } = useTimelineStore();
-
 
   const availableCategories = useMemo(() => {
     const cats = new Set(
@@ -34,6 +34,13 @@ export function useTimelineFilters(receipts: Receipt[]) {
       receipts.map((r) => r.status).filter((s): s is string => Boolean(s))
     );
     return Array.from(stats);
+  }, [receipts]);
+
+  const availableDocumentTypes = useMemo(() => {
+    const types = new Set(
+      receipts.map((r) => r.type).filter((t): t is string => Boolean(t))
+    );
+    return Array.from(types);
   }, [receipts]);
 
   // Group and sort logic
@@ -61,11 +68,25 @@ export function useTimelineFilters(receipts: Receipt[]) {
           const matchesStatus =
             statusFilter === "all" || item.status === statusFilter;
 
-          return matchesSearch && matchesCategory && matchesStatus;
+          const matchesDocumentType =
+            documentTypeFilter === "all" || item.type === documentTypeFilter;
+
+          return (
+            matchesSearch &&
+            matchesCategory &&
+            matchesStatus &&
+            matchesDocumentType
+          );
         }),
       }))
       .filter((group) => group.items.length > 0);
-  }, [timelineGroups, search, categoryFilter, statusFilter]);
+  }, [
+    timelineGroups,
+    search,
+    categoryFilter,
+    statusFilter,
+    documentTypeFilter,
+  ]);
 
   const totalFilteredCount = filteredGroups.reduce(
     (sum, group) => sum + group.items.length,
@@ -73,7 +94,9 @@ export function useTimelineFilters(receipts: Receipt[]) {
   );
 
   const activeFilterCount =
-    (categoryFilter !== "all" ? 1 : 0) + (statusFilter !== "all" ? 1 : 0);
+    (categoryFilter !== "all" ? 1 : 0) +
+    (statusFilter !== "all" ? 1 : 0) +
+    (documentTypeFilter !== "all" ? 1 : 0);
 
   return {
     search,
@@ -82,12 +105,15 @@ export function useTimelineFilters(receipts: Receipt[]) {
     setCategoryFilter,
     statusFilter,
     setStatusFilter,
+    documentTypeFilter,
+    setDocumentTypeFilter,
     sortBy,
     setSortBy,
     resetFilters,
     filteredGroups,
     availableCategories,
     availableStatuses,
+    availableDocumentTypes,
     totalFilteredCount,
     activeFilterCount,
   };
