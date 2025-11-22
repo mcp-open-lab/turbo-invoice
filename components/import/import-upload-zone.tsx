@@ -28,6 +28,43 @@ import { CheckCircle2 } from "lucide-react";
 type ImportType = "receipts" | "bank_statements" | "invoices" | "mixed";
 type SourceFormat = "pdf" | "csv" | "xlsx" | "images";
 
+function validateFilesForImportType(
+  files: FileWithPreview[],
+  importType: ImportType
+): string | null {
+  const getFileExtension = (file: File): string => {
+    return file.name.split(".").pop()?.toLowerCase() || "";
+  };
+
+  const spreadsheetExtensions = ["csv", "xlsx", "xls"];
+  const imageExtensions = ["jpg", "jpeg", "png", "webp", "gif"];
+  const pdfExtension = "pdf";
+
+  for (const file of files) {
+    const ext = getFileExtension(file);
+
+    if (importType === "receipts") {
+      // Receipts: only images and PDFs
+      if (!imageExtensions.includes(ext) && ext !== pdfExtension) {
+        return `File "${file.name}" is not supported for Receipts. Please use images (JPG, PNG, etc.) or PDF files. For spreadsheets, select "Bank Statements" import type.`;
+      }
+    } else if (importType === "bank_statements") {
+      // Bank statements: only spreadsheets (CSV, XLSX, XLS)
+      if (!spreadsheetExtensions.includes(ext)) {
+        return `File "${file.name}" is not supported for Bank Statements. Please use CSV or Excel (XLSX/XLS) files.`;
+      }
+    } else if (importType === "invoices") {
+      // Invoices: PDFs and images
+      if (!imageExtensions.includes(ext) && ext !== pdfExtension) {
+        return `File "${file.name}" is not supported for Invoices. Please use images or PDF files.`;
+      }
+    }
+    // Mixed: allow all types
+  }
+
+  return null;
+}
+
 export function ImportUploadZone() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -48,6 +85,13 @@ export function ImportUploadZone() {
   const handleStartImport = async () => {
     if (files.length === 0) {
       toast.error("Please select files to import");
+      return;
+    }
+
+    // Validate file types match import type
+    const validationError = validateFilesForImportType(files, importType);
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
 
