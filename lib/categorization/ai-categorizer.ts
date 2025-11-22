@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { aiClient } from "@/lib/ai/client";
+import { generateObject } from "@/lib/ai/client";
 import { devLogger } from "@/lib/dev-logger";
 import type { TransactionToCategorize, CategorizationResult } from "./types";
 
@@ -63,7 +63,7 @@ Return your response as JSON matching this schema:
 }`;
 
   try {
-    const result = await aiClient.generateObject(prompt, CategorizationSchema, {
+    const result = await generateObject(prompt, CategorizationSchema, {
       temperature: 0.1,
     });
 
