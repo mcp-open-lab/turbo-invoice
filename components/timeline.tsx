@@ -13,13 +13,13 @@ import {
   SheetDescription,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal, X, ChevronRight } from "lucide-react";
 import type { TimelineGroup, SortBy } from "@/lib/utils/timeline";
 import { useTimelineFilters } from "@/lib/hooks/use-timeline-filters";
-import { EditReceiptDialog } from "@/components/receipts/edit-dialog";
 import { useHydrated } from "@/lib/hooks/use-hydrated";
 import { useTimelineStore } from "@/lib/stores/timeline-store";
 import { RECEIPT_CATEGORIES, RECEIPT_STATUSES } from "@/lib/consts";
+import Link from "next/link";
 
 type Receipt = typeof receipts.$inferSelect;
 
@@ -46,8 +46,6 @@ const statuses = RECEIPT_STATUSES;
 
 export function Timeline({ receipts, userSettings }: TimelineProps) {
   const hydrated = useHydrated();
-  const [selected, setSelected] = useState<Receipt | null>(null);
-  const [open, setOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
 
   // Manually rehydrate the store after component mounts
@@ -286,17 +284,17 @@ export function Timeline({ receipts, userSettings }: TimelineProps) {
               {group.monthLabel}
             </h3>
             <div className="space-y-3 pl-4 border-l-2 border-muted ml-2">
-              {group.items.map((item) => (
-                <Card
-                  key={item.id}
-                  className="p-4 flex justify-between items-center cursor-pointer hover:bg-accent/50 transition-colors border-none shadow-sm relative -ml-[21px]"
-                  onClick={() => {
-                    setSelected(item);
-                    setOpen(true);
-                  }}
-                >
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-primary border-2 border-background"></div>
-                  <div className="flex-1 ml-4">
+              {group.items.map((item) => {
+                const href =
+                  item.documentType === "bank_statement"
+                    ? `/app/transactions/${item.id}`
+                    : `/app/receipts/${item.id}`;
+
+                return (
+                  <Link key={item.id} href={href}>
+                    <Card className="p-4 flex justify-between items-center cursor-pointer hover:bg-accent/50 transition-colors border-none shadow-sm relative -ml-[21px] group">
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-primary border-2 border-background"></div>
+                      <div className="flex-1 ml-4">
                     <p className="font-semibold text-sm md:text-base">
                       {item.merchantName || "Unknown Vendor"}
                     </p>
@@ -337,13 +335,6 @@ export function Timeline({ receipts, userSettings }: TimelineProps) {
           </div>
         ))}
       </div>
-
-      <EditReceiptDialog
-        open={open}
-        onOpenChange={setOpen}
-        receipt={selected}
-        userSettings={userSettings}
-      />
     </>
   );
 }

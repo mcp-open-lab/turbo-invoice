@@ -390,7 +390,6 @@ export function SettingsFormV2({ initialSettings }: SettingsFormProps) {
                 </div>
               </AccordionContent>
             </AccordionItem>
-
           </Accordion>
         </Card>
 
@@ -398,9 +397,13 @@ export function SettingsFormV2({ initialSettings }: SettingsFormProps) {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold">Financial Categories & Auto-Categorization</h3>
+              <h3 className="text-lg font-semibold">
+                Financial Categories & Auto-Categorization
+              </h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Manage income and expense categories, create custom categories, and set up rules to automatically categorize receipts and bank transactions
+                Manage income and expense categories, create custom categories,
+                and set up rules to automatically categorize receipts and bank
+                transactions
               </p>
             </div>
             <Link href="/app/settings/financial-categories">

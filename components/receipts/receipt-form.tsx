@@ -31,7 +31,8 @@ type ReceiptFormProps = {
   schema: ReturnType<typeof createEditReceiptSchema>;
   requiredFields: Record<string, boolean>;
   visibleFields: Record<string, boolean>;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange?: (open: boolean) => void;
+  isPage?: boolean;
 };
 
 const categories = RECEIPT_CATEGORIES;
@@ -43,6 +44,7 @@ export function ReceiptForm({
   requiredFields,
   visibleFields,
   onOpenChange,
+  isPage = false,
 }: ReceiptFormProps) {
   const [isPending, startTransition] = useTransition();
 
@@ -56,7 +58,9 @@ export function ReceiptForm({
       try {
         await updateReceipt(data);
         toast.success("Item updated");
-        onOpenChange(false);
+        if (onOpenChange) {
+          onOpenChange(false);
+        }
       } catch (error) {
         console.error("Update failed", error);
         toast.error("Failed to update item");
@@ -326,14 +330,16 @@ export function ReceiptForm({
         />
 
         <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="w-full sm:w-auto"
-          >
-            Cancel
-          </Button>
+          {!isPage && onOpenChange && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+          )}
           <Button
             type="submit"
             disabled={isPending}
@@ -346,4 +352,3 @@ export function ReceiptForm({
     </Form>
   );
 }
-
