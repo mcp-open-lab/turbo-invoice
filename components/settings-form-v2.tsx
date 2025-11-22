@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { saveUserSettings } from "@/app/actions/user-settings";
 import { useForm } from "react-hook-form";
@@ -268,9 +267,10 @@ export function SettingsFormV2({ initialSettings }: SettingsFormProps) {
               </AccordionTrigger>
               <AccordionContent className="space-y-4 pt-4">
                 <p className="text-sm text-muted-foreground">
-                  Configure which fields to show and require when processing receipts
+                  Configure which fields to show and require when processing
+                  receipts
                 </p>
-                
+
                 <div className="space-y-3">
                   <h3 className="text-sm font-medium">Visible Fields</h3>
                   {[
@@ -367,24 +367,26 @@ export function SettingsFormV2({ initialSettings }: SettingsFormProps) {
                   {[
                     { name: "category", label: "Category" },
                     { name: "paymentMethod", label: "Payment Method" },
-                  ].filter((item) => visibleFields[item.name]).map((item) => (
-                    <FormField
-                      key={item.name}
-                      control={form.control}
-                      name={`requiredFields.${item.name}`}
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-lg p-3 shadow-sm border">
-                          <FormLabel>{item.label}</FormLabel>
-                          <FormControl>
-                            <Switch
-                              checked={Boolean(field.value)}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  ))}
+                  ]
+                    .filter((item) => visibleFields[item.name])
+                    .map((item) => (
+                      <FormField
+                        key={item.name}
+                        control={form.control}
+                        name={`requiredFields.${item.name}`}
+                        render={({ field }) => (
+                          <FormItem className="flex items-center justify-between rounded-lg p-3 shadow-sm border">
+                            <FormLabel>{item.label}</FormLabel>
+                            <FormControl>
+                              <Switch
+                                checked={Boolean(field.value)}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    ))}
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -396,11 +398,13 @@ export function SettingsFormV2({ initialSettings }: SettingsFormProps) {
               </AccordionTrigger>
               <AccordionContent className="space-y-4 pt-4">
                 <p className="text-sm text-muted-foreground">
-                  Bank statement transactions are automatically categorized using AI and rules
+                  Bank statement transactions are automatically categorized
+                  using AI and rules
                 </p>
                 <div className="rounded-lg border p-4 bg-muted/50">
                   <p className="text-sm">
-                    Advanced categorization settings and rules can be managed in the Categories page
+                    Advanced categorization settings and rules can be managed in
+                    the Categories page
                   </p>
                 </div>
               </AccordionContent>
@@ -435,4 +439,3 @@ export function SettingsFormV2({ initialSettings }: SettingsFormProps) {
     </Form>
   );
 }
-

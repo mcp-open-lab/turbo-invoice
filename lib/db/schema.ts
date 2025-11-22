@@ -351,7 +351,19 @@ export const categories = pgTable("categories", {
   name: text("name").notNull(),
   type: text("type").notNull(), // 'system' | 'user'
   userId: text("user_id"), // null for system categories, populated for user categories
+  
+  // Financial classification (with defaults for existing data)
+  transactionType: text("transaction_type").notNull().default("expense"), // 'income' | 'expense'
+  usageScope: text("usage_scope").notNull().default("both"), // 'personal' | 'business' | 'both'
+  
+  // Hierarchy
   parentId: text("parent_id"), // For future hierarchical categories
+  
+  // Display
+  description: text("description"), // Optional description for user categories
+  icon: text("icon"), // Optional icon identifier
+  color: text("color"), // Optional hex color for UI
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
