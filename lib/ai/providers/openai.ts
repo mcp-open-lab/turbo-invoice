@@ -18,7 +18,7 @@ export class OpenAIProvider implements LLMProviderInterface {
     options?: CompletionOptions
   ): Promise<LLMResponse<T>> {
     try {
-      const completion = await this.client.beta.chat.completions.parse({
+      const completion = await this.client.chat.completions.create({
         model: this.model,
         messages: [
           {
@@ -26,12 +26,13 @@ export class OpenAIProvider implements LLMProviderInterface {
             content: prompt,
           },
         ],
-        response_format: zodResponseFormat(schema, "response"),
+        response_format: { type: "json_object" },
         temperature: options?.temperature ?? 0.1,
         max_tokens: options?.maxTokens ?? 2048,
       });
 
-      const parsed = completion.choices[0]?.message?.parsed;
+      const content = completion.choices[0]?.message?.content;
+      const parsed = content ? JSON.parse(content) : null;
 
       if (!parsed) {
         return {

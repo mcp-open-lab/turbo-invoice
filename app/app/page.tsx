@@ -53,8 +53,8 @@ export default async function Dashboard() {
     id: tx.id,
     userId,
     documentId: tx.bankStatementId, // Use bankStatementId as documentId
-    imageUrl: null, // Bank transactions don't have images
-    fileName: null,
+    imageUrl: "", // Bank transactions don't have images (empty string for schema compatibility)
+    fileName: "",
     merchantName: tx.merchantName,
     merchantAddress: null,
     receiptNumber: null,
@@ -73,6 +73,7 @@ export default async function Dashboard() {
     currency: tx.currency,
     date: tx.transactionDate,
     category: tx.category,
+    categoryId: null, // Bank transactions don't have categoryId yet
     description: tx.description,
     businessPurpose: null,
     isBusinessExpense: "true",

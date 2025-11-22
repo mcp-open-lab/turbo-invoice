@@ -286,7 +286,7 @@ export function Timeline({ receipts, userSettings }: TimelineProps) {
             <div className="space-y-3 pl-4 border-l-2 border-muted ml-2">
               {group.items.map((item) => {
                 const href =
-                  item.documentType === "bank_statement"
+                  item.type === "transaction"
                     ? `/app/transactions/${item.id}`
                     : `/app/receipts/${item.id}`;
 
@@ -329,8 +329,11 @@ export function Timeline({ receipts, userSettings }: TimelineProps) {
                       {item.status === "needs_review" ? "Review" : "Done"}
                     </span>
                   </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </Card>
-              ))}
+              </Link>
+                );
+              })}
             </div>
           </div>
         ))}
