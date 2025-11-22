@@ -19,9 +19,21 @@ import {
   Brain,
   Maximize2,
   Minimize2,
+  Receipt,
+  CreditCard,
 } from "lucide-react";
 import { future_genUploader } from "uploadthing/client-future";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 // Get API URL from window location (works in browser)
 const getApiUrl = () => {
@@ -90,6 +102,9 @@ export function QuickActions() {
   const [isUploading, setIsUploading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isFullscreenSupported, setIsFullscreenSupported] = useState(false);
+  const [showDocTypeSelector, setShowDocTypeSelector] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<FileList | null>(null);
+  const [selectedDocType, setSelectedDocType] = useState<"receipt" | "bank_statement">("receipt");
   const router = useRouter();
   const navItems = [
     {
@@ -247,14 +262,24 @@ export function QuickActions() {
     }
   };
 
-  const handleFileSelect = async (files: FileList | null) => {
+  const handleFileSelect = async (files: FileList | null, docType?: "receipt" | "bank_statement") => {
     if (!files || files.length === 0) return;
+
+    // If doc type not provided, show selector
+    if (!docType) {
+      setPendingFiles(files);
+      setShowDocTypeSelector(true);
+      return;
+    }
 
     setIsUploading(true);
     setIsOpen(false);
+    setShowDocTypeSelector(false);
+    setPendingFiles(null);
 
     try {
-      toast.info("Uploading receipt...");
+      const docTypeLabel = docType === "bank_statement" ? "bank statement" : "receipt";
+      toast.info(`Uploading ${docTypeLabel}...`);
 
       const compressedFiles = await Promise.all(
         Array.from(files).map((file) => compressImageFile(file))
@@ -281,9 +306,9 @@ export function QuickActions() {
         uploadedFiles[0] &&
         uploadedFiles[0].status === "uploaded"
       ) {
-        toast.info("Processing receipt with AI...");
+        toast.info(`Processing ${docTypeLabel} with AI...`);
         await scanReceipt(uploadedFiles[0].url);
-        toast.success("Receipt processed!");
+        toast.success(`${docTypeLabel.charAt(0).toUpperCase() + docTypeLabel.slice(1)} processed!`);
         router.refresh();
       }
     } catch (error) {
@@ -295,6 +320,12 @@ export function QuickActions() {
       );
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleDocTypeConfirm = () => {
+    if (pendingFiles) {
+      handleFileSelect(pendingFiles, selectedDocType);
     }
   };
 
@@ -324,6 +355,63 @@ export function QuickActions() {
 
   return (
     <>
+      {/* Document Type Selector Dialog */}
+      <Dialog open={showDocTypeSelector} onOpenChange={setShowDocTypeSelector}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Select Document Type</DialogTitle>
+            <DialogDescription>
+              What type of document are you uploading?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <RadioGroup
+              value={selectedDocType}
+              onValueChange={(value) =>
+                setSelectedDocType(value as "receipt" | "bank_statement")
+              }
+            >
+              <div className="flex items-center space-x-3 rounded-lg border p-4 cursor-pointer hover:bg-accent transition-colors">
+                <RadioGroupItem value="receipt" id="receipt" />
+                <Label htmlFor="receipt" className="flex items-center gap-3 cursor-pointer flex-1">
+                  <Receipt className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium">Receipt</p>
+                    <p className="text-sm text-muted-foreground">
+                      Expense receipts with images
+                    </p>
+                  </div>
+                </Label>
+              </div>
+              <div className="flex items-center space-x-3 rounded-lg border p-4 cursor-pointer hover:bg-accent transition-colors">
+                <RadioGroupItem value="bank_statement" id="bank_statement" />
+                <Label htmlFor="bank_statement" className="flex items-center gap-3 cursor-pointer flex-1">
+                  <CreditCard className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium">Bank Statement</p>
+                    <p className="text-sm text-muted-foreground">
+                      CSV or spreadsheet files
+                    </p>
+                  </div>
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDocTypeSelector(false);
+                setPendingFiles(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleDocTypeConfirm}>Continue</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Hidden file inputs */}
       <input
         ref={cameraInputRef}
@@ -337,7 +425,7 @@ export function QuickActions() {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,.csv,.xlsx,.xls"
         className="hidden"
         onChange={handleFileChange}
         disabled={isUploading}
