@@ -24,10 +24,12 @@ export const ourFileRouter = {
       // Return immediately - processing happens via client-triggered action
       return { uploadedBy: metadata.userId, url: file.url };
     }),
-  // Batch uploader for multiple files (images and PDFs)
+  // Batch uploader for multiple files (images, PDFs, and spreadsheets)
   batchUploader: f({
     image: { maxFileSize: "16MB", maxFileCount: 50 },
     pdf: { maxFileSize: "16MB", maxFileCount: 50 },
+    text: { maxFileSize: "16MB", maxFileCount: 50 }, // CSV files
+    blob: { maxFileSize: "16MB", maxFileCount: 50 }, // XLSX/XLS files
   })
     .middleware(async () => {
       const { userId } = await auth();
