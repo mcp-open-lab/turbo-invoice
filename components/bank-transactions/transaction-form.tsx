@@ -29,6 +29,7 @@ const bankTransactionSchema = z.object({
   id: z.string(),
   merchantName: z.string().optional(),
   category: z.string().optional(),
+  paymentMethod: z.enum(["cash", "card", "check", "other"]).optional(),
   notes: z.string().optional(),
 });
 
@@ -38,6 +39,7 @@ type BankTransaction = {
   id: string;
   merchantName: string | null;
   category: string | null;
+  paymentMethod: string | null;
 };
 
 type BankTransactionFormProps = {
@@ -90,6 +92,7 @@ export function BankTransactionForm({
       id: transaction.id,
       merchantName: transaction.merchantName ?? "",
       category: transaction.category ?? "",
+      paymentMethod: (transaction.paymentMethod as "cash" | "card" | "check" | "other") || undefined,
       notes: "",
     },
   });
@@ -145,6 +148,33 @@ export function BankTransactionForm({
                       {cat}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="paymentMethod"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Payment Method</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                value={field.value ?? ""}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="check">Check</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />

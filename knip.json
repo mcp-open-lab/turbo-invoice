@@ -4,21 +4,31 @@
     "app/**/*.{js,ts,tsx}",
     "components/**/*.{js,ts,tsx}",
     "lib/**/*.{js,ts,tsx}",
-    "proxy.ts"
+    "scripts/**/*.{js,ts}"
   ],
   "project": [
     "app/**/*.{js,ts,tsx}",
     "components/**/*.{js,ts,tsx}",
     "lib/**/*.{js,ts,tsx}",
-    "proxy.ts"
+    "scripts/**/*.{js,ts}",
+    "hooks/**/*.{js,ts,tsx}",
+    "e2e/**/*.{js,ts,tsx}",
+    "tests/**/*.{js,ts,tsx}"
   ],
-  "ignore": ["**/*.d.ts", "**/node_modules/**", ".next/**", "drizzle/**"],
+  "ignore": [
+    "**/*.d.ts",
+    "**/node_modules/**",
+    ".next/**",
+    "drizzle/**",
+    "**/*.example.ts",
+    "**/*.example.tsx"
+  ],
   "ignoreDependencies": [
     "eslint-config-next",
     "eslint",
-    "typescript",
     "postcss-load-config",
-    "lint-staged",
-    "husky"
-  ]
+    "lint-staged"
+  ],
+  "ignoreBinaries": ["vercel"],
+  "ignoreExportsUsedInFile": true
 }

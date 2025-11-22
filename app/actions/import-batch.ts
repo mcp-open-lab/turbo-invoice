@@ -14,7 +14,7 @@ import {
 } from "@/lib/import/batch-tracker";
 
 const createImportBatchSchema = z.object({
-  importType: z.enum(["receipts", "bank_statements", "invoices", "mixed"]),
+  importType: z.enum(["receipts", "bank_statements", "mixed"]),
   sourceFormat: z.enum(["pdf", "csv", "xlsx", "images"]).optional(),
   totalFiles: z.number().int().positive(),
 });

@@ -67,15 +67,18 @@ export type FieldMapping = z.infer<typeof FieldMappingSchema>;
 export type ConversionInstruction = z.infer<typeof ConversionInstructionSchema>;
 
 /**
- * Detect column mapping using AI analysis
+ * Detect column mapping using AI analysis with full dataset statistics
  */
 export async function detectColumnMapping(
-  previewRows: any[][],
-  userId?: string
+  spreadsheetData: import("./spreadsheet-parser").SpreadsheetStats,
+  userId?: string,
+  statementType?: "bank_account" | "credit_card"
 ): Promise<MappingConfig | null> {
-  if (!previewRows || previewRows.length === 0) {
+  if (!spreadsheetData || spreadsheetData.previewRows.length === 0) {
     return null;
   }
+
+  const { previewRows, totalRows, amountStats } = spreadsheetData;
 
   // Format preview rows for the prompt
   const formattedPreview = previewRows
@@ -108,55 +111,79 @@ Use these categories when mapping the "category" field if present in the data.`;
     }
   }
 
-  const prompt = `You are analyzing a spreadsheet file that contains financial transaction data (likely a bank statement or transaction export).${categoryContext}
+  // Construct specific instructions based on statement type
+  let signConventionInstructions = "";
 
-Preview of the first rows:
+  if (statementType === "credit_card") {
+    signConventionInstructions = `
+CRITICAL INSTRUCTION: USER SELECTED "CREDIT CARD"
+- In Credit Card statements, a single "Amount" column usually shows PURCHASES (expenses) as POSITIVE numbers.
+- REQUIRED ACTION: Set "reverseSign": true for the Amount column (unless separate Debit/Credit columns exist).
+- If separate "Debit" (purchase) and "Credit" (payment) columns exist, map them directly and do NOT set reverseSign.
+`;
+  } else if (statementType === "bank_account") {
+    signConventionInstructions = `
+CRITICAL INSTRUCTION: USER SELECTED "BANK ACCOUNT"
+- In Bank statements, a single "Amount" column usually shows WITHDRAWALS (expenses) as NEGATIVE numbers.
+- REQUIRED ACTION: Set "reverseSign": false for the Amount column (standard accounting).
+- If separate "Debit" and "Credit" columns exist, map them directly.
+`;
+  } else {
+    // Fallback to statistical analysis if no type selected
+    const positivePercent = amountStats?.positivePercent ?? 0;
+    signConventionInstructions = `
+CRITICAL INSTRUCTION: NO STATEMENT TYPE SELECTED - ANALYZE PATTERNS
+- Statistical Analysis of ${totalRows} rows: ${positivePercent}% of amounts are positive.
+- Decision Logic:
+  * If >80% positive → Likely Credit Card or Positive-Expense Bank Statement → Set "reverseSign": true
+  * If <20% positive → Likely Standard Bank Statement → Set "reverseSign": false
+  * If Mixed → Standard accounting → Set "reverseSign": false
+`;
+  }
+
+  const prompt = `You are a financial data extraction expert. Map the spreadsheet columns to standard fields.
+
+${categoryContext}
+
+${signConventionInstructions}
+
+Preview of the first 20 rows:
 ${formattedPreview}
 
-Analyze this data and return a JSON object with the EXACT structure shown below. Use these exact field names:
+IMPORTANT: Follow the CRITICAL INSTRUCTIONS above to determine sign convention.
 
+Return a JSON object with this EXACT structure:
 {
-  "headerRowIndex": <number - 0-based index of the header row>,
+  "headerRowIndex": <number>,
   "fieldMappings": {
     "transactionDate": { "columnIndex": <number>, "columnName": "<header name>" },
     "postedDate": { "columnIndex": <number>, "columnName": "<header name>" },
     "description": { "columnIndex": <number>, "columnName": "<header name>" },
     "amount": { "columnIndex": <number>, "columnName": "<header name>" },
+    "debit": { "columnIndex": <number>, "columnName": "<header name>" },
+    "credit": { "columnIndex": <number>, "columnName": "<header name>" },
+    "balance": { "columnIndex": <number>, "columnName": "<header name>" },
     "merchantName": { "columnIndex": <number>, "columnName": "<header name>" },
     "referenceNumber": { "columnIndex": <number>, "columnName": "<header name>" }
   },
   "conversions": [
-    {
-      "field": "transactionDate",
-      "type": "date",
-      "format": "DD MMM. YYYY"
-    },
-    {
-      "field": "amount",
-      "type": "amount",
-      "removeSymbols": true,
-      "handleParentheses": false
-    }
+    { "field": "amount", "type": "amount", "reverseSign": <boolean>, "removeSymbols": true },
+    { "field": "debit", "type": "amount", "removeSymbols": true },
+    { "field": "credit", "type": "amount", "removeSymbols": true }
   ],
   "currency": "CAD",
   "confidence": 0.95
 }
 
-Field mapping rules:
-- transactionDate: The date the transaction occurred
-- postedDate: The date the transaction was posted (if different)
-- description: Transaction description or memo
-- amount: Single amount column (positive for credits, negative for debits)
-- merchantName: Merchant or payee name
-- referenceNumber: Transaction reference or ID
-- Only include fields that exist in the data (omit missing fields)
-
-Conversion rules:
-- For dates: specify "format" like "DD/MM/YYYY", "DD MMM. YYYY", etc.
-- For amounts: set "removeSymbols": true to strip $, set "handleParentheses": true if (100.00) means -100
-- confidence: float 0-1 indicating how confident you are in the mapping
-
-Return ONLY the JSON object, no explanations.`;
+Rules:
+1. PRIORITY: If separate "Debit" and "Credit" columns exist, map BOTH to "debit" and "credit" fields. Do NOT map "amount" in this case.
+2. CRITICAL: If debit/credit columns are mapped, you MUST include conversion instructions for both: { "field": "debit", "type": "amount" } and { "field": "credit", "type": "amount" }
+3. If only a single "Amount" column exists, map it to "amount" and follow CRITICAL INSTRUCTIONS for "reverseSign".
+4. "transactionDate": Primary date column.
+5. "description": Main transaction text column.
+6. "balance": Account balance column (if present).
+7. Only include fields and conversions that exist in the spreadsheet.
+8. Return JSON only.`;
 
   const result = await generateObject(prompt, MappingConfigSchema, {
     temperature: 0.1,

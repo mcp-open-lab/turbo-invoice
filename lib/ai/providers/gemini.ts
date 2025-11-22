@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import type { LLMProviderInterface, LLMResponse, CompletionOptions } from "../types";
 
 export class GeminiProvider implements LLMProviderInterface {
@@ -17,30 +18,57 @@ export class GeminiProvider implements LLMProviderInterface {
     options?: CompletionOptions
   ): Promise<LLMResponse<T>> {
     try {
+      // Convert Zod schema to JSON Schema for Gemini structured output
+      const jsonSchema = zodToJsonSchema(schema, "ExtractedData");
+
+      // Build parts array - support both text and image
+      // Proper TypeScript types for Gemini parts
+      type Part =
+        | { text: string }
+        | { inlineData: { data: string; mimeType: string } };
+
+      const parts: Part[] = [{ text: prompt }];
+
+      if (options?.image) {
+        // Gemini expects base64 image data with mime type
+        parts.push({
+          inlineData: {
+            data: options.image.data,
+            mimeType: options.image.mimeType,
+          },
+        });
+      }
+
+      // Use Gemini's structured output with responseMimeType and responseJsonSchema
+      // This is the recommended approach for structured outputs (not function calling)
       const model = this.client.getGenerativeModel({
         model: this.model,
       });
 
-      const fullPrompt = `${prompt}\n\nIMPORTANT: Return ONLY valid JSON. Do not wrap the response in markdown code blocks or any other formatting.`;
-
       const result = await model.generateContent({
-        contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
+        contents: [{ role: "user", parts }],
         generationConfig: {
           temperature: options?.temperature ?? 0.1,
           maxOutputTokens: options?.maxTokens ?? 2048,
+          responseMimeType: "application/json",
+          responseSchema: jsonSchema as any,
         },
       });
 
       const response = result.response;
       const text = response.text();
 
-      // Clean up potential markdown wrapping
-      const cleanedText = text
-        .replace(/```json\n?/g, "")
-        .replace(/```\n?/g, "")
-        .trim();
+      if (!text) {
+        return {
+          success: false,
+          error: "Gemini returned no content",
+          provider: "gemini",
+        };
+      }
 
-      const parsed = JSON.parse(cleanedText);
+      // Parse and validate with Zod schema
+      // Gemini guarantees JSON matching the schema, but we validate anyway
+      const parsed = JSON.parse(text);
       const validated = schema.parse(parsed);
 
       return {

@@ -6,6 +6,10 @@ export interface CompletionOptions {
   temperature?: number;
   maxTokens?: number;
   responseFormat?: "json" | "text";
+  image?: {
+    data: string; // base64 encoded
+    mimeType: string;
+  };
 }
 
 export interface LLMResponse<T = any> {

@@ -19,6 +19,7 @@ type BankTransaction = {
   currency: string | null;
   category: string | null;
   categoryId: string | null;
+  paymentMethod: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -97,6 +98,15 @@ export function BankTransactionDetailView({
             <div>
               <p className="text-sm text-muted-foreground">Description</p>
               <p className="text-base mt-1">{transaction.description}</p>
+            </div>
+          )}
+
+          {transaction.paymentMethod && (
+            <div>
+              <p className="text-sm text-muted-foreground">Payment Method</p>
+              <Badge variant="outline" className="mt-1 capitalize">
+                {transaction.paymentMethod}
+              </Badge>
             </div>
           )}
         </div>

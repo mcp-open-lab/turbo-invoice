@@ -10,8 +10,9 @@ import { getUserSettings } from "@/app/actions/user-settings";
 export default async function ReceiptDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const { userId } = await auth();
   if (!userId) {
     redirect("/sign-in");
@@ -21,7 +22,7 @@ export default async function ReceiptDetailPage({
   const receipt = await db
     .select()
     .from(receipts)
-    .where(and(eq(receipts.id, params.id), eq(receipts.userId, userId)))
+    .where(and(eq(receipts.id, id), eq(receipts.userId, userId)))
     .limit(1);
 
   if (!receipt || receipt.length === 0) {
@@ -31,10 +32,9 @@ export default async function ReceiptDetailPage({
   const userSettings = await getUserSettings();
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 max-w-4xl mx-auto w-full p-6 space-y-8">
       <PageHeader title="Receipt Details" backHref="/app" />
       <ReceiptDetailView receipt={receipt[0]} userSettings={userSettings} />
     </div>
   );
 }
-

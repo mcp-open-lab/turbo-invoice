@@ -27,17 +27,20 @@ export interface ImportResult {
 export async function importSpreadsheet(
   fileBuffer: ArrayBuffer | Buffer,
   fileName: string,
-  userId?: string
+  userId?: string,
+  statementType?: "bank_account" | "credit_card"
 ): Promise<ImportResult> {
   try {
     devLogger.info("Starting spreadsheet import orchestration", {
-      context: { fileName },
+      context: { fileName, statementType },
     });
 
-    // Step 1: Get preview rows for AI analysis
-    const previewRows = getSpreadsheetPreview(fileBuffer, 20);
+    // Step 1: Get preview rows for AI
+    // We don't strictly need the full stats anymore if we have explicit statement type,
+    // but keeping it doesn't hurt and might be useful for fallback or verification
+    const spreadsheetData = getSpreadsheetPreview(fileBuffer, 20);
     
-    if (!previewRows || previewRows.length === 0) {
+    if (!spreadsheetData || spreadsheetData.previewRows.length === 0) {
       return {
         success: false,
         transactions: [],
@@ -46,11 +49,14 @@ export async function importSpreadsheet(
     }
 
     devLogger.info("Preview extracted", {
-      context: { rowCount: previewRows.length },
+      context: { 
+        rowCount: spreadsheetData.previewRows.length,
+        totalRows: spreadsheetData.totalRows,
+      },
     });
 
-    // Step 2: Use AI to detect column mapping (pass userId for category context)
-    const mappingConfig = await detectColumnMapping(previewRows, userId);
+    // Step 2: Use AI to detect column mapping
+    const mappingConfig = await detectColumnMapping(spreadsheetData, userId, statementType);
     
     if (!mappingConfig) {
       return {

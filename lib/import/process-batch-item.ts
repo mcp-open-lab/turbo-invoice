@@ -72,7 +72,9 @@ export async function processBatchItem(
         fileUrl,
         payload.fileName,
         batchId,
-        userId
+        userId,
+        payload.currency,
+        payload.statementType
       );
 
       documentId = result.documentId;
@@ -82,9 +84,6 @@ export async function processBatchItem(
         documentId,
         transactionCount: result.transactionCount,
       });
-    } else if (importType === "invoices") {
-      // TODO: Implement invoice processing
-      throw new Error("Invoice processing not yet implemented");
     } else {
       // Mixed - try to detect type from file
       // For now, treat as receipt

@@ -14,8 +14,9 @@ import { getUserSettings } from "@/app/actions/user-settings";
 export default async function BankTransactionDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const { userId } = await auth();
   if (!userId) {
     redirect("/sign-in");
@@ -35,6 +36,7 @@ export default async function BankTransactionDetailPage({
       currency: bankStatementTransactions.currency,
       category: bankStatementTransactions.category,
       categoryId: bankStatementTransactions.categoryId,
+      paymentMethod: bankStatementTransactions.paymentMethod,
       createdAt: bankStatementTransactions.createdAt,
       updatedAt: bankStatementTransactions.updatedAt,
     })
@@ -45,10 +47,7 @@ export default async function BankTransactionDetailPage({
     )
     .innerJoin(documents, eq(bankStatements.documentId, documents.id))
     .where(
-      and(
-        eq(bankStatementTransactions.id, params.id),
-        eq(documents.userId, userId)
-      )
+      and(eq(bankStatementTransactions.id, id), eq(documents.userId, userId))
     )
     .limit(1);
 
@@ -59,7 +58,7 @@ export default async function BankTransactionDetailPage({
   const userSettings = await getUserSettings();
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 max-w-4xl mx-auto w-full p-6 space-y-8">
       <PageHeader title="Transaction Details" backHref="/app" />
       <BankTransactionDetailView
         transaction={transaction[0]}

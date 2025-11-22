@@ -10,8 +10,10 @@ import type { ImportJobPayload } from "@/lib/import/queue-types";
 import { devLogger } from "@/lib/dev-logger";
 
 const batchImportSchema = z.object({
-  importType: z.enum(["receipts", "bank_statements", "invoices", "mixed"]),
+  importType: z.enum(["receipts", "bank_statements", "mixed"]),
   sourceFormat: z.enum(["pdf", "csv", "xlsx", "images"]).optional(),
+  statementType: z.enum(["bank_account", "credit_card"]).optional(),
+  currency: z.string().optional(),
   files: z.array(
     z.object({
       fileName: z.string(),
@@ -104,6 +106,8 @@ async function batchImportHandler(
     userId,
     importType: input.importType,
     sourceFormat: input.sourceFormat,
+    statementType: input.statementType,
+    currency: input.currency,
     order: item.order,
   }));
 

@@ -4,6 +4,7 @@ import {
   timestamp,
   decimal,
   integer,
+  index,
 } from "drizzle-orm/pg-core";
 import { createId } from "@paralleldrive/cuid2";
 
@@ -11,107 +12,137 @@ import { createId } from "@paralleldrive/cuid2";
 // BASE DOCUMENT SYSTEM
 // ============================================
 
-export const documents = pgTable("documents", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => createId()),
-  userId: text("user_id").notNull(),
+export const documents = pgTable(
+  "documents",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    userId: text("user_id").notNull(),
 
-  // Document identification
-  documentType: text("document_type").notNull(), // 'receipt' | 'bank_statement' | 'invoice' | 'expense_report' | 'other'
-  fileFormat: text("file_format").notNull(), // 'pdf' | 'csv' | 'xlsx' | 'xls' | 'jpg' | 'png' | 'webp' | 'gif'
-  fileName: text("file_name"),
-  fileUrl: text("file_url").notNull(), // UploadThing URL
-  fileSizeBytes: integer("file_size_bytes"),
-  mimeType: text("mime_type"),
+    // Document identification
+    documentType: text("document_type").notNull(), // 'receipt' | 'bank_statement' | 'invoice' | 'expense_report' | 'other'
+    fileFormat: text("file_format").notNull(), // 'pdf' | 'csv' | 'xlsx' | 'xls' | 'jpg' | 'png' | 'webp' | 'gif'
+    fileName: text("file_name"),
+    fileUrl: text("file_url").notNull(), // UploadThing URL
+    fileSizeBytes: integer("file_size_bytes"),
+    mimeType: text("mime_type"),
+    fileHash: text("file_hash"), // SHA-256 hash for duplicate detection
 
-  // Processing status
-  status: text("status").notNull().default("pending"), // 'pending' | 'processing' | 'extracted' | 'needs_review' | 'completed' | 'failed'
-  importBatchId: text("import_batch_id"), // FK to import_batches
+    // Processing status
+    status: text("status").notNull().default("pending"), // 'pending' | 'processing' | 'extracted' | 'needs_review' | 'completed' | 'failed'
+    importBatchId: text("import_batch_id"), // FK to import_batches
 
-  // Extraction metadata
-  extractionMethod: text("extraction_method"), // 'ai_gemini' | 'ocr' | 'csv_parser' | 'excel_parser' | 'manual'
-  extractionConfidence: decimal("extraction_confidence", {
-    precision: 3,
-    scale: 2,
-  }), // 0.00 to 1.00
-  extractedAt: timestamp("extracted_at"),
-  extractionErrors: text("extraction_errors"), // JSON array of errors
+    // Extraction metadata
+    extractionMethod: text("extraction_method"), // 'ai_gemini' | 'ocr' | 'csv_parser' | 'excel_parser' | 'manual'
+    extractionConfidence: decimal("extraction_confidence", {
+      precision: 3,
+      scale: 2,
+    }), // 0.00 to 1.00
+    extractedAt: timestamp("extracted_at"),
+    extractionErrors: text("extraction_errors"), // JSON array of errors
 
-  // Audit trail
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  processedAt: timestamp("processed_at"),
-});
+    // Audit trail
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    processedAt: timestamp("processed_at"),
+  },
+  (table) => ({
+    userIdIdx: index("documents_user_id_idx").on(table.userId),
+    createdAtIdx: index("documents_created_at_idx").on(table.createdAt),
+    statusIdx: index("documents_status_idx").on(table.status),
+    fileHashIdx: index("documents_file_hash_idx").on(table.fileHash),
+    importBatchIdIdx: index("documents_import_batch_id_idx").on(
+      table.importBatchId
+    ),
+  })
+);
 
 // ============================================
 // IMPORT BATCH SYSTEM
 // ============================================
 
-export const importBatches = pgTable("import_batches", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => createId()),
-  userId: text("user_id").notNull(),
+export const importBatches = pgTable(
+  "import_batches",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    userId: text("user_id").notNull(),
 
-  // Batch metadata
-  importType: text("import_type").notNull(), // 'receipts' | 'bank_statements' | 'invoices' | 'mixed'
-  sourceFormat: text("source_format"), // 'pdf' | 'csv' | 'xlsx' | 'images'
+    // Batch metadata
+    importType: text("import_type").notNull(), // 'receipts' | 'bank_statements' | 'invoices' | 'mixed'
+    sourceFormat: text("source_format"), // 'pdf' | 'csv' | 'xlsx' | 'images'
 
-  // Status tracking
-  status: text("status").notNull().default("pending"), // 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled'
+    // Status tracking
+    status: text("status").notNull().default("pending"), // 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled'
 
-  // Counts
-  totalFiles: integer("total_files").notNull(),
-  processedFiles: integer("processed_files").notNull().default(0),
-  successfulFiles: integer("successful_files").notNull().default(0),
-  failedFiles: integer("failed_files").notNull().default(0),
-  duplicateFiles: integer("duplicate_files").notNull().default(0),
+    // Counts
+    totalFiles: integer("total_files").notNull(),
+    processedFiles: integer("processed_files").notNull().default(0),
+    successfulFiles: integer("successful_files").notNull().default(0),
+    failedFiles: integer("failed_files").notNull().default(0),
+    duplicateFiles: integer("duplicate_files").notNull().default(0),
 
-  // Timing
-  startedAt: timestamp("started_at"),
-  completedAt: timestamp("completed_at"),
-  estimatedCompletionAt: timestamp("estimated_completion_at"),
+    // Timing
+    startedAt: timestamp("started_at"),
+    completedAt: timestamp("completed_at"),
+    estimatedCompletionAt: timestamp("estimated_completion_at"),
 
-  // Error tracking
-  errors: text("errors"), // JSON array of batch-level errors
+    // Error tracking
+    errors: text("errors"), // JSON array of batch-level errors
 
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdCreatedAtIdx: index("import_batches_user_id_created_at_idx").on(
+      table.userId,
+      table.createdAt
+    ),
+    statusIdx: index("import_batches_status_idx").on(table.status),
+  })
+);
 
-export const importBatchItems = pgTable("import_batch_items", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => createId()),
-  batchId: text("batch_id").notNull(), // FK to import_batches
-  documentId: text("document_id"), // FK to documents (null if failed)
+export const importBatchItems = pgTable(
+  "import_batch_items",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    batchId: text("batch_id").notNull(), // FK to import_batches
+    documentId: text("document_id"), // FK to documents (null if failed)
 
-  // File information
-  fileName: text("file_name").notNull(),
-  fileUrl: text("file_url"),
-  fileSizeBytes: integer("file_size_bytes"),
+    // File information
+    fileName: text("file_name").notNull(),
+    fileUrl: text("file_url"),
+    fileSizeBytes: integer("file_size_bytes"),
 
-  // Status
-  status: text("status").notNull().default("pending"), // 'pending' | 'processing' | 'completed' | 'failed' | 'duplicate' | 'skipped'
-  order: integer("order").notNull(), // Processing order
+    // Status
+    status: text("status").notNull().default("pending"), // 'pending' | 'processing' | 'completed' | 'failed' | 'duplicate' | 'skipped'
+    order: integer("order").notNull(), // Processing order
 
-  // Error tracking
-  errorMessage: text("error_message"),
-  errorCode: text("error_code"),
-  retryCount: integer("retry_count").notNull().default(0),
+    // Error tracking
+    errorMessage: text("error_message"),
+    errorCode: text("error_code"),
+    retryCount: integer("retry_count").notNull().default(0),
 
-  // Duplicate detection
-  duplicateOfDocumentId: text("duplicate_of_document_id"), // FK to documents
-  duplicateMatchType: text("duplicate_match_type"), // 'exact_image' | 'merchant_date_amount' | 'manual'
+    // Duplicate detection
+    duplicateOfDocumentId: text("duplicate_of_document_id"), // FK to documents
+    duplicateMatchType: text("duplicate_match_type"), // 'exact_image' | 'merchant_date_amount' | 'manual'
 
-  // Processing metadata
-  processedAt: timestamp("processed_at"),
-  processingDurationMs: integer("processing_duration_ms"),
+    // Processing metadata
+    processedAt: timestamp("processed_at"),
+    processingDurationMs: integer("processing_duration_ms"),
 
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    batchIdIdx: index("import_batch_items_batch_id_idx").on(table.batchId),
+    statusIdx: index("import_batch_items_status_idx").on(table.status),
+  })
+);
 
 // ============================================
 // EXTRACTION & METADATA
@@ -165,61 +196,71 @@ export const documentMetadata = pgTable("document_metadata", {
 // RECEIPTS (Specialized Table)
 // ============================================
 
-export const receipts = pgTable("receipts", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => createId()),
-  documentId: text("document_id").notNull(), // FK to documents
-  userId: text("user_id").notNull(),
+export const receipts = pgTable(
+  "receipts",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    documentId: text("document_id").notNull(), // FK to documents
+    userId: text("user_id").notNull(),
 
-  imageUrl: text("image_url").notNull(),
-  fileName: text("file_name"),
+    imageUrl: text("image_url").notNull(),
+    fileName: text("file_name"),
 
-  merchantName: text("merchant_name"),
-  merchantAddress: text("merchant_address"),
-  receiptNumber: text("receipt_number"), // Invoice/receipt number from vendor
-  taxId: text("tax_id"), // GST/HST registration number (Canada) or EIN (US)
+    merchantName: text("merchant_name"),
+    merchantAddress: text("merchant_address"),
+    receiptNumber: text("receipt_number"), // Invoice/receipt number from vendor
+    taxId: text("tax_id"), // GST/HST registration number (Canada) or EIN (US)
 
-  // Amounts
-  subtotal: decimal("subtotal", { precision: 10, scale: 2 }), // Amount before tax
-  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }),
+    // Amounts
+    subtotal: decimal("subtotal", { precision: 10, scale: 2 }), // Amount before tax
+    totalAmount: decimal("total_amount", { precision: 10, scale: 2 }),
 
-  // Tax breakdown (Canada)
-  gstAmount: decimal("gst_amount", { precision: 10, scale: 2 }), // GST amount
-  hstAmount: decimal("hst_amount", { precision: 10, scale: 2 }), // HST amount (includes GST+PST)
-  pstAmount: decimal("pst_amount", { precision: 10, scale: 2 }), // PST amount (provincial)
+    // Tax breakdown (Canada)
+    gstAmount: decimal("gst_amount", { precision: 10, scale: 2 }), // GST amount
+    hstAmount: decimal("hst_amount", { precision: 10, scale: 2 }), // HST amount (includes GST+PST)
+    pstAmount: decimal("pst_amount", { precision: 10, scale: 2 }), // PST amount (provincial)
 
-  // Tax breakdown (US)
-  salesTaxAmount: decimal("sales_tax_amount", { precision: 10, scale: 2 }), // State sales tax
+    // Tax breakdown (US)
+    salesTaxAmount: decimal("sales_tax_amount", { precision: 10, scale: 2 }), // State sales tax
 
-  // Legacy field for backward compatibility
-  taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }), // Total tax (sum of all taxes)
+    // Legacy field for backward compatibility
+    taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }), // Total tax (sum of all taxes)
 
-  // Other amounts
-  tipAmount: decimal("tip_amount", { precision: 10, scale: 2 }),
-  discountAmount: decimal("discount_amount", { precision: 10, scale: 2 }),
+    // Other amounts
+    tipAmount: decimal("tip_amount", { precision: 10, scale: 2 }),
+    discountAmount: decimal("discount_amount", { precision: 10, scale: 2 }),
 
-  // Location & Currency
-  country: text("country"), // 'US' | 'CA'
-  province: text("province"), // Province/state code
-  currency: text("currency").default("USD"), // 'USD' | 'CAD'
+    // Location & Currency
+    country: text("country"), // 'US' | 'CA'
+    province: text("province"), // Province/state code
+    currency: text("currency").default("USD"), // 'USD' | 'CAD'
 
-  // Classification
-  date: timestamp("date"),
-  category: text("category"), // Denormalized for display/fallback
-  categoryId: text("category_id"), // FK to categories
-  description: text("description"),
-  businessPurpose: text("business_purpose"), // Why this expense (for tax deductions)
-  isBusinessExpense: text("is_business_expense").default("true"), // 'true' | 'false'
-  paymentMethod: text("payment_method"), // 'cash' | 'card' | 'check' | 'other'
+    // Classification
+    date: timestamp("date"),
+    category: text("category"), // Denormalized for display/fallback
+    categoryId: text("category_id"), // FK to categories
+    description: text("description"),
+    businessPurpose: text("business_purpose"), // Why this expense (for tax deductions)
+    isBusinessExpense: text("is_business_expense").default("true"), // 'true' | 'false'
+    paymentMethod: text("payment_method"), // 'cash' | 'card' | 'check' | 'other'
 
-  status: text("status").default("needs_review"),
-  type: text("type").default("receipt"), // 'receipt' | 'invoice'
-  direction: text("direction").default("out"), // 'in' | 'out'
+    status: text("status").default("needs_review"),
+    type: text("type").default("receipt"), // 'receipt' | 'invoice'
+    direction: text("direction").default("out"), // 'in' | 'out'
 
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdDateIdx: index("receipts_user_id_date_idx").on(
+      table.userId,
+      table.date
+    ),
+    createdAtIdx: index("receipts_created_at_idx").on(table.createdAt),
+  })
+);
 
 // ============================================
 // BANK STATEMENTS
@@ -279,6 +320,7 @@ export const bankStatementTransactions = pgTable(
     categoryId: text("category_id"), // FK to categories
     isBusinessExpense: text("is_business_expense"), // 'true' | 'false'
     businessPurpose: text("business_purpose"),
+    paymentMethod: text("payment_method"), // 'cash' | 'card' | 'check' | 'other' | null
 
     // Matching
     matchedReceiptId: text("matched_receipt_id"), // FK to receipts
@@ -293,7 +335,15 @@ export const bankStatementTransactions = pgTable(
 
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  }
+  },
+  (table) => ({
+    bankStatementIdIdx: index(
+      "bank_statement_transactions_bank_statement_id_idx"
+    ).on(table.bankStatementId),
+    transactionDateIdx: index(
+      "bank_statement_transactions_transaction_date_idx"
+    ).on(table.transactionDate),
+  })
 );
 
 // ============================================

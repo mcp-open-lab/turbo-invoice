@@ -21,7 +21,7 @@ export function PageHeader({ title, backHref }: PageHeaderProps) {
             </Link>
           </Button>
         )}
-        <h1 className="text-2xl font-bold">{title}</h1>
+      <h1 className="text-2xl font-bold">{title}</h1>
       </div>
       <UserButton />
     </div>

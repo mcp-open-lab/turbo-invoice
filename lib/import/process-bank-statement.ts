@@ -1,6 +1,6 @@
 /**
  * Process bank statement spreadsheets (CSV, XLSX, XLS)
- * Uses AI-driven orchestrator to parse and import transactions
+ * Uses class-based processors for clean separation of bank vs credit card logic
  */
 
 import { db } from "@/lib/db";
@@ -9,11 +9,13 @@ import {
   bankStatements,
   bankStatementTransactions,
 } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { importSpreadsheet, isSpreadsheetFile } from "./import-orchestrator";
 import { devLogger } from "@/lib/dev-logger";
 import { createId } from "@paralleldrive/cuid2";
-import { CategoryEngine } from "@/lib/categorization/engine";
+import { BankAccountProcessor } from "./processors/bank-account-processor";
+import { CreditCardProcessor } from "./processors/credit-card-processor";
+import type { BaseStatementProcessor } from "./processors/base-statement-processor";
 
 /**
  * Download file buffer from URL
@@ -47,7 +49,9 @@ export async function processBankStatement(
   fileUrl: string,
   fileName: string,
   batchId: string,
-  userId: string
+  userId: string,
+  defaultCurrency?: string,
+  statementType?: "bank_account" | "credit_card"
 ): Promise<{ documentId: string; transactionCount: number }> {
   devLogger.info("Processing bank statement", {
     fileName,
@@ -67,6 +71,25 @@ export async function processBankStatement(
   const fileBuffer = await downloadFile(fileUrl);
   const fileFormat = getFileFormat(fileUrl);
 
+  // Calculate file hash for duplicate detection
+  const { calculateFileHash } = await import("@/lib/utils/file-hash");
+  const fileHash = await calculateFileHash(fileUrl);
+
+  // Check for duplicate file (same hash + same user)
+  const existingDocument = await db
+    .select()
+    .from(documents)
+    .where(and(eq(documents.userId, userId), eq(documents.fileHash, fileHash)))
+    .limit(1);
+
+  if (existingDocument.length > 0) {
+    throw new Error(
+      `Duplicate file detected. This file has already been uploaded (${
+        existingDocument[0].fileName || "previous upload"
+      })`
+    );
+  }
+
   // Create document record
   const documentId = createId();
   await db.insert(documents).values({
@@ -76,6 +99,7 @@ export async function processBankStatement(
     fileFormat,
     fileName,
     fileUrl,
+    fileHash,
     fileSizeBytes: fileBuffer.length,
     status: "processing",
     importBatchId: batchId,
@@ -84,7 +108,12 @@ export async function processBankStatement(
 
   try {
     // Import using AI orchestrator (pass userId for category context)
-    const importResult = await importSpreadsheet(fileBuffer, fileName, userId);
+    const importResult = await importSpreadsheet(
+      fileBuffer, 
+      fileName, 
+      userId, 
+      statementType
+    );
 
     if (!importResult.success || importResult.transactions.length === 0) {
       throw new Error(
@@ -101,92 +130,49 @@ export async function processBankStatement(
 
     // Create bank statement record
     const bankStatementId = createId();
+    const currency =
+      importResult.mappingConfig?.currency || defaultCurrency || "USD";
     await db.insert(bankStatements).values({
       id: bankStatementId,
       documentId,
-      currency: importResult.mappingConfig?.currency || "USD",
+      currency,
       transactionCount: importResult.transactions.length,
       processedTransactionCount: 0,
     });
 
-    // Categorize and insert transactions
-    const transactionRecords = await Promise.all(
-      importResult.transactions.map(async (tx, index) => {
-        // Calculate amount (handle debit/credit split)
-        let amount = tx.amount ?? 0;
-        if (tx.debit !== null && tx.debit !== undefined) {
-          amount = -Math.abs(tx.debit);
-        }
-        if (tx.credit !== null && tx.credit !== undefined) {
-          amount = Math.abs(tx.credit);
-        }
+    // Select appropriate processor based on statement type
+    const processor: BaseStatementProcessor = 
+      statementType === "credit_card"
+        ? new CreditCardProcessor(userId, defaultCurrency || "USD")
+        : new BankAccountProcessor(userId, defaultCurrency || "USD");
 
-        // Ensure dates are Date objects or null (not strings)
-        const transactionDate =
-          tx.transactionDate instanceof Date
-            ? tx.transactionDate
-            : tx.transactionDate
-            ? new Date(tx.transactionDate)
-            : null;
+    devLogger.info("Using processor", {
+      type: processor.getStatementType(),
+      description: processor.getDescription(),
+    });
 
-        const postedDate =
-          tx.postedDate instanceof Date
-            ? tx.postedDate
-            : tx.postedDate
-            ? new Date(tx.postedDate)
-            : null;
-
-        // Auto-categorize the transaction
-        let categoryId: string | null = null;
-        let categoryName: string | null = tx.category || null;
-
-        if (tx.merchantName || tx.description) {
-          const categorizationResult = await CategoryEngine.categorizeWithAI(
-            {
-              merchantName: tx.merchantName,
-              description: tx.description,
-              amount: amount.toString(),
-            },
-            {
-              userId,
-              includeAI: true,
-              minConfidence: 0.7,
-            }
-          );
-
-          if (categorizationResult.categoryId) {
-            categoryId = categorizationResult.categoryId;
-            categoryName = categorizationResult.categoryName;
-          } else if (categorizationResult.suggestedCategory) {
-            // New category suggested by AI, store as text for now
-            categoryName = categorizationResult.suggestedCategory;
-          }
-
-          devLogger.debug("Transaction categorized", {
-            merchantName: tx.merchantName,
-            categoryName,
-            categoryId,
-            method: categorizationResult.method,
-            confidence: categorizationResult.confidence,
-          });
-        }
-
-        return {
-          id: createId(),
-          bankStatementId,
-          transactionDate: transactionDate,
-          postedDate: postedDate,
-          description: tx.description || "",
-          merchantName: tx.merchantName,
-          referenceNumber: tx.referenceNumber,
-          amount: amount.toString(),
-          currency: importResult.mappingConfig?.currency || "USD",
-          category: categoryName,
-          categoryId: categoryId,
-          order: index,
-        };
-      })
+    // Process transactions using the appropriate processor
+    const processedTransactions = await processor.processTransactions(
+      importResult.transactions,
+      importResult.mappingConfig?.currency || defaultCurrency || "USD"
     );
+
+    // Convert to database records
+    const transactionRecords = processedTransactions.map((tx) => ({
+      id: createId(),
+      bankStatementId,
+      transactionDate: tx.transactionDate,
+      postedDate: tx.postedDate,
+      description: tx.description,
+      merchantName: tx.merchantName,
+      referenceNumber: tx.referenceNumber,
+      amount: tx.amount,
+      currency: tx.currency,
+      category: tx.category,
+      categoryId: tx.categoryId,
+      paymentMethod: tx.paymentMethod,
+      order: tx.order,
+    }));
 
     await db.insert(bankStatementTransactions).values(transactionRecords);
 

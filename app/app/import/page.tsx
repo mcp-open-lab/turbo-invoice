@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
 import { ImportTabs } from "@/components/import/import-tabs";
 import { listBatches } from "@/lib/import/batch-tracker";
+import { getUserSettings } from "@/app/actions/user-settings";
 
 export default async function ImportPage(props: {
   searchParams: Promise<{ tab?: string }>;
@@ -17,6 +18,8 @@ export default async function ImportPage(props: {
   const initialTab = searchParams.tab || "import";
 
   const initialBatchesResult = await listBatches(userId, { limit: 20 });
+  const userSettings = await getUserSettings();
+  const defaultCurrency = userSettings?.currency || "USD";
 
   return (
     <div className="flex-1 max-w-6xl mx-auto w-full p-6 space-y-6">
@@ -31,6 +34,7 @@ export default async function ImportPage(props: {
         initialCursor={initialBatchesResult.nextCursor}
         initialHasMore={initialBatchesResult.hasMore}
         initialTab={initialTab}
+        defaultCurrency={defaultCurrency}
       />
     </div>
   );

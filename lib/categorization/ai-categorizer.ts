@@ -48,6 +48,12 @@ ${
       : ""
   }
 
+Important Context:
+- "FINANCIAL", "FINANCE", "LOAN", "CREDIT", "PAYMENT PLAN", "INSTALLMENT" in merchant/description typically indicate loan/debt payments, not software subscriptions
+- "DELL FINANCIAL", "APPLE FINANCIAL", etc. are financing/loan services, not product purchases
+- "BILL PYMT", "PAYMENT", "AUTO PAY" often indicate bill payments or debt servicing
+- Look for financial service keywords: "FINANCIAL", "CREDIT", "LOAN", "FINANCING", "PAYMENT PLAN"
+
 Instructions:
 1. Select the BEST matching category from the available list.
 2. If none of the categories fit well, suggest a new category name and set isNewCategory to true.

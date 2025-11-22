@@ -1,13 +1,17 @@
 import OpenAI from "openai";
 import { z } from "zod";
 import { zodResponseFormat } from "openai/helpers/zod";
-import type { LLMProviderInterface, LLMResponse, CompletionOptions } from "../types";
+import type {
+  LLMProviderInterface,
+  LLMResponse,
+  CompletionOptions,
+} from "../types";
 
 export class OpenAIProvider implements LLMProviderInterface {
   private client: OpenAI;
   private model: string;
 
-  constructor(apiKey: string, model = "gpt-4o-mini") {
+  constructor(apiKey: string, model = "gpt-4o") {
     this.client = new OpenAI({ apiKey });
     this.model = model;
   }
@@ -18,38 +22,67 @@ export class OpenAIProvider implements LLMProviderInterface {
     options?: CompletionOptions
   ): Promise<LLMResponse<T>> {
     try {
+      // Use OpenAI's structured outputs with strict JSON Schema mode
+      // This prevents hallucinations by enforcing strict schema compliance
+      const responseFormat = zodResponseFormat(schema, "strict");
+
+      // Build message content with optional image
+      // Proper TypeScript types for OpenAI message content
+      type MessageContent =
+        | string
+        | Array<
+            | { type: "text"; text: string }
+            | { type: "image_url"; image_url: { url: string } }
+          >;
+
+      const messageContent: MessageContent = options?.image
+        ? [
+            { type: "text" as const, text: prompt },
+            {
+              type: "image_url" as const,
+              image_url: {
+                url: `data:${options.image.mimeType};base64,${options.image.data}`,
+              },
+            },
+          ]
+        : prompt;
+
       const completion = await this.client.chat.completions.create({
         model: this.model,
         messages: [
           {
-            role: "user",
-            content: prompt,
+            role: "user" as const,
+            content: messageContent,
           },
         ],
-        response_format: { type: "json_object" },
+        response_format: responseFormat,
         temperature: options?.temperature ?? 0.1,
         max_tokens: options?.maxTokens ?? 2048,
       });
 
       const content = completion.choices[0]?.message?.content;
-      const parsed = content ? JSON.parse(content) : null;
 
-      if (!parsed) {
+      if (!content) {
         return {
           success: false,
-          error: "OpenAI returned no parsed response",
+          error: "OpenAI returned no content",
           provider: "openai",
         };
       }
 
+      // Parse and validate with Zod schema
+      const parsed = JSON.parse(content);
+      const validated = schema.parse(parsed);
+
       return {
         success: true,
-        data: parsed as T,
+        data: validated,
         provider: "openai",
         tokensUsed: completion.usage?.total_tokens,
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       return {
         success: false,
         error: `OpenAI error: ${errorMessage}`,
@@ -92,7 +125,8 @@ export class OpenAIProvider implements LLMProviderInterface {
         tokensUsed: completion.usage?.total_tokens,
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       return {
         success: false,
         error: `OpenAI error: ${errorMessage}`,
@@ -101,4 +135,3 @@ export class OpenAIProvider implements LLMProviderInterface {
     }
   }
 }
-
