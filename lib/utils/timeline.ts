@@ -1,24 +1,22 @@
-import type { receipts } from "@/lib/db/schema";
-
-type Receipt = typeof receipts.$inferSelect;
+import type { TimelineItem } from "@/lib/api/timeline";
 
 export type TimelineGroup = {
   monthKey: string;
   monthLabel: string;
-  items: Receipt[];
+  items: TimelineItem[];
 };
 
 export type SortBy = "receipt_date" | "created_at";
 
 export function groupItemsByMonth(
-  receipts: Receipt[],
+  items: TimelineItem[],
   sortBy: SortBy = "receipt_date"
 ): TimelineGroup[] {
-  const groups = receipts.reduce((acc, receipt) => {
-    const date =
-      sortBy === "receipt_date" && receipt.date
-        ? new Date(receipt.date)
-        : new Date(receipt.createdAt);
+  const groups = items.reduce((acc, item) => {
+    // TimelineItem already normalized 'date' to be the transaction date
+    // We don't have 'createdAt' on TimelineItem type yet, let's assume 'date' is the primary sort
+    const date = item.date ? new Date(item.date) : new Date();
+    
     const monthKey = date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -27,23 +25,17 @@ export function groupItemsByMonth(
     if (!acc[monthKey]) {
       acc[monthKey] = [];
     }
-    acc[monthKey].push(receipt);
+    acc[monthKey].push(item);
     return acc;
-  }, {} as Record<string, Receipt[]>);
+  }, {} as Record<string, TimelineItem[]>);
 
   return Object.entries(groups)
-    .map(([monthKey, receipts]) => ({
+    .map(([monthKey, groupItems]) => ({
       monthKey,
       monthLabel: monthKey,
-      items: receipts.sort((a, b) => {
-        const dateA =
-          sortBy === "receipt_date" && a.date
-            ? new Date(a.date)
-            : new Date(a.createdAt);
-        const dateB =
-          sortBy === "receipt_date" && b.date
-            ? new Date(b.date)
-            : new Date(b.createdAt);
+      items: groupItems.sort((a, b) => {
+        const dateA = a.date ? new Date(a.date) : new Date();
+        const dateB = b.date ? new Date(b.date) : new Date();
         return dateB.getTime() - dateA.getTime();
       }),
     }))

@@ -9,6 +9,7 @@ import { eq, and } from "drizzle-orm";
 // Import the handler directly to avoid Server Action wrapper issues in queue context
 // We'll need to call the internal logic directly
 import { scanReceiptHandler } from "@/app/actions/scan-receipt";
+import { processBankStatement } from "@/lib/import/process-bank-statement";
 import type {
   ImportJobPayload,
   JobProcessingResult,
@@ -66,11 +67,23 @@ export async function processBatchItem(
         documentId = createdDoc[0].id;
       }
     } else if (importType === "bank_statements") {
-      // TODO: Implement bank statement processing
-      throw new Error("Bank statement processing not yet implemented");
-    } else if (importType === "invoices") {
-      // TODO: Implement invoice processing
-      throw new Error("Invoice processing not yet implemented");
+      // Process bank statement using AI orchestrator
+      const result = await processBankStatement(
+        fileUrl,
+        payload.fileName,
+        batchId,
+        userId,
+        payload.currency,
+        payload.statementType
+      );
+
+      documentId = result.documentId;
+
+      devLogger.info("Bank statement processed", {
+        batchItemId,
+        documentId,
+        transactionCount: result.transactionCount,
+      });
     } else {
       // Mixed - try to detect type from file
       // For now, treat as receipt

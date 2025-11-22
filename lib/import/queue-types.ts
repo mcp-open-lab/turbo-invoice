@@ -3,7 +3,7 @@
  * Type-safe job payload structures for Vercel Queues
  */
 
-export type ImportType = "receipts" | "bank_statements" | "invoices" | "mixed";
+export type ImportType = "receipts" | "bank_statements" | "mixed";
 export type FileFormat = "pdf" | "csv" | "xlsx" | "xls" | "jpg" | "png" | "webp" | "gif";
 
 /**
@@ -18,6 +18,8 @@ export interface ImportJobPayload {
   userId: string;
   importType: ImportType;
   sourceFormat?: "pdf" | "csv" | "xlsx" | "images";
+  statementType?: "bank_account" | "credit_card";
+  currency?: string;
   order: number;
 }
 

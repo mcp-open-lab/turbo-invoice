@@ -18,24 +18,64 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { future_genUploader } from "uploadthing/client-future";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
 import { batchImport } from "@/app/actions/batch-import";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
+import { CurrencySelect } from "@/components/ui/currency-select";
 
-type ImportType = "receipts" | "bank_statements" | "invoices" | "mixed";
+type ImportType = "receipts" | "bank_statements" | "mixed";
 type SourceFormat = "pdf" | "csv" | "xlsx" | "images";
 
-export function ImportUploadZone() {
+function validateFilesForImportType(
+  files: FileWithPreview[],
+  importType: ImportType
+): string | null {
+  const getFileExtension = (file: File): string => {
+    return file.name.split(".").pop()?.toLowerCase() || "";
+  };
+
+  const spreadsheetExtensions = ["csv", "xlsx", "xls"];
+  const imageExtensions = ["jpg", "jpeg", "png", "webp", "gif"];
+  const pdfExtension = "pdf";
+
+  for (const file of files) {
+    const ext = getFileExtension(file);
+
+    if (importType === "receipts") {
+      // Receipts: only images and PDFs
+      if (!imageExtensions.includes(ext) && ext !== pdfExtension) {
+        return `File "${file.name}" is not supported for Receipts. Please use images (JPG, PNG, etc.) or PDF files. For spreadsheets, select "Bank Statements" import type.`;
+      }
+    } else if (importType === "bank_statements") {
+      // Bank statements: only spreadsheets (CSV, XLSX, XLS)
+      if (!spreadsheetExtensions.includes(ext)) {
+        return `File "${file.name}" is not supported for Bank Statements. Please use CSV or Excel (XLSX/XLS) files.`;
+      }
+    }
+    // Mixed: allow all types
+  }
+
+  return null;
+}
+
+export function ImportUploadZone({
+  defaultCurrency = "USD",
+}: {
+  defaultCurrency?: string;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [importType, setImportType] = useState<ImportType>("receipts");
+  const [statementType, setStatementType] = useState<"bank_account" | "credit_card">("bank_account");
   const [sourceFormat, setSourceFormat] = useState<SourceFormat | undefined>(
     undefined
   );
+  const [currency, setCurrency] = useState<string>(defaultCurrency || "USD");
   const [isUploading, setIsUploading] = useState(false);
   const [batchCreated, setBatchCreated] = useState(false);
   const [itemsCount, setItemsCount] = useState(0);
@@ -48,6 +88,13 @@ export function ImportUploadZone() {
   const handleStartImport = async () => {
     if (files.length === 0) {
       toast.error("Please select files to import");
+      return;
+    }
+
+    // Validate file types match import type
+    const validationError = validateFilesForImportType(files, importType);
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
 
@@ -81,6 +128,8 @@ export function ImportUploadZone() {
       const result = await batchImport({
         importType,
         sourceFormat,
+        statementType: importType === "bank_statements" ? statementType : undefined,
+        currency,
         files: successfulUploads.map((file) => ({
           fileName: file.name,
           fileUrl: file.url,
@@ -152,11 +201,42 @@ export function ImportUploadZone() {
               <SelectContent>
                 <SelectItem value="receipts">Receipts</SelectItem>
                 <SelectItem value="bank_statements">Bank Statements</SelectItem>
-                <SelectItem value="invoices">Invoices</SelectItem>
                 <SelectItem value="mixed">Mixed Documents</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
+          {importType === "bank_statements" && (
+            <div className="space-y-3 border p-4 rounded-md bg-muted/30">
+              <Label className="text-base">Statement Type</Label>
+              <RadioGroup
+                value={statementType}
+                onValueChange={(v) =>
+                  setStatementType(v as "bank_account" | "credit_card")
+                }
+                className="flex flex-col space-y-1"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="bank_account" id="bank_account" />
+                  <Label htmlFor="bank_account" className="font-normal cursor-pointer">
+                    Bank Account (Checking/Savings)
+                    <span className="block text-xs text-muted-foreground">
+                      Expenses are negative (withdrawals), Income is positive (deposits)
+                    </span>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="credit_card" id="credit_card" />
+                  <Label htmlFor="credit_card" className="font-normal cursor-pointer">
+                    Credit Card
+                    <span className="block text-xs text-muted-foreground">
+                      Expenses are positive (purchases), Payments are negative
+                    </span>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="source-format">Source Format (Optional)</Label>
@@ -179,6 +259,18 @@ export function ImportUploadZone() {
                 <SelectItem value="xlsx">Excel (XLSX)</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="currency">Currency</Label>
+            <CurrencySelect
+              value={currency}
+              onValueChange={setCurrency}
+              defaultValue={defaultCurrency}
+            />
+            <p className="text-xs text-muted-foreground">
+              Defaults to your profile currency setting
+            </p>
           </div>
         </CardContent>
       </Card>

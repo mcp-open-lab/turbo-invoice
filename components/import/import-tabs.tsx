@@ -20,7 +20,8 @@ export function ImportTabs({
   initialCursor,
   initialHasMore,
   initialTab = "import",
-}: ImportTabsProps) {
+  defaultCurrency = "USD",
+}: ImportTabsProps & { defaultCurrency?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   // Use initialTab for first render to match server, then sync with URL
@@ -50,7 +51,7 @@ export function ImportTabs({
         <TabsTrigger value="jobs">View Jobs</TabsTrigger>
       </TabsList>
       <TabsContent value="import" className="mt-6 space-y-8">
-        <ImportUploadZone />
+        <ImportUploadZone defaultCurrency={defaultCurrency} />
         
         {initialBatches.length > 0 && (
           <RecentBatches 

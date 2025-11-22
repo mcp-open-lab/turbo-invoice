@@ -1,14 +1,10 @@
-import { db } from "@/lib/db";
-import { receipts } from "@/lib/db/schema";
-import { desc, eq } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { Timeline } from "@/components/timeline";
 import { AddToHomeScreenButton } from "@/components/add-to-home";
-import { QuickActions } from "@/components/quick-actions";
 import { getUserSettings } from "@/app/actions/user-settings";
-import { groupItemsByMonth } from "@/lib/utils/timeline";
 import { PageHeader } from "@/components/page-header";
+import { getTimelineItems } from "@/lib/api/timeline";
 
 export default async function Dashboard() {
   const { userId } = await auth();
@@ -22,13 +18,12 @@ export default async function Dashboard() {
     redirect("/app/onboarding");
   }
 
-  const data = await db
-    .select()
-    .from(receipts)
-    .where(eq(receipts.userId, userId))
-    .orderBy(desc(receipts.createdAt));
-
-  const timelineGroups = groupItemsByMonth(data);
+  // Fetch initial timeline items (limit 20)
+  const initialItems = await getTimelineItems({
+    userId,
+    limit: 20,
+    offset: 0
+  });
 
   return (
     <div className="flex-1 max-w-4xl mx-auto w-full p-6 space-y-8">
@@ -39,8 +34,7 @@ export default async function Dashboard() {
       </div>
 
       <Timeline
-        receipts={data}
-        timelineGroups={timelineGroups}
+        initialItems={initialItems}
         userSettings={
           settings
             ? {
