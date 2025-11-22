@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import { createId } from "@paralleldrive/cuid2";
 import { z } from "zod";
 import { createSafeAction } from "@/lib/safe-action";
+import { devLogger } from "@/lib/dev-logger";
 
 // Get all categories for a user (system + user-defined)
 export async function getUserCategories() {
@@ -30,33 +31,57 @@ const CreateCategorySchema = z.object({
 export const createUserCategory = createSafeAction(
   CreateCategorySchema,
   async (data) => {
-    const { userId } = await auth();
-    if (!userId) throw new Error("Unauthorized");
+    try {
+      const { userId } = await auth();
+      if (!userId) throw new Error("Unauthorized");
 
-    // Check for duplicate name
-    const existing = await db
-      .select()
-      .from(categories)
-      .where(
-        and(eq(categories.name, data.name), eq(categories.userId, userId))
+      devLogger.info("Creating user category", {
+        context: { categoryName: data.name, userId },
+      });
+
+      // Check if a category with this name already exists (system or user's own)
+      const existingCategories = await db
+        .select()
+        .from(categories)
+        .where(eq(categories.name, data.name));
+
+      // Check if any matching category is a system category or belongs to this user
+      const isDuplicate = existingCategories.some(
+        (cat) => cat.type === "system" || cat.userId === userId
       );
 
-    if (existing.length > 0) {
-      throw new Error("A category with this name already exists");
+      if (isDuplicate) {
+        devLogger.warn("Category creation failed - duplicate name", {
+          context: { categoryName: data.name, existingCount: existingCategories.length },
+        });
+        throw new Error("A category with this name already exists");
+      }
+
+      const newCategory = await db
+        .insert(categories)
+        .values({
+          id: createId(),
+          name: data.name,
+          type: "user",
+          userId,
+        })
+        .returning();
+
+      devLogger.info("Category created successfully", {
+        context: { categoryId: newCategory[0].id, categoryName: newCategory[0].name },
+      });
+
+      revalidatePath("/app/settings/categories");
+      return newCategory[0];
+    } catch (error) {
+      devLogger.error("Error creating category", {
+        context: {
+          error: error instanceof Error ? error.message : String(error),
+          categoryName: data.name,
+        },
+      });
+      throw error;
     }
-
-    const newCategory = await db
-      .insert(categories)
-      .values({
-        id: createId(),
-        name: data.name,
-        type: "user",
-        userId,
-      })
-      .returning();
-
-    revalidatePath("/app/settings/categories");
-    return newCategory[0];
   }
 );
 
