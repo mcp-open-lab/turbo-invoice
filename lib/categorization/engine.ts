@@ -9,6 +9,7 @@ import {
 import { eq, and, or, desc, isNotNull } from "drizzle-orm";
 import { devLogger } from "@/lib/dev-logger";
 import { aiCategorizeTransaction } from "./ai-categorizer";
+import { CategoryFilterService } from "./category-filter";
 import type {
   TransactionToCategorize,
   CategorizationResult,
@@ -243,17 +244,16 @@ export class CategoryEngine {
   }
 
   /**
-   * Get all available categories for a user (system + user-defined)
+   * Get all available categories for a user (respects user preferences: personal/business/both)
+   * @deprecated Use CategoryFilterService.getAvailableCategories() for more control
    */
   static async getAvailableCategories(
     userId: string
   ): Promise<{ id: string; name: string; type: string }[]> {
-    const userCategories = await db
-      .select()
-      .from(categories)
-      .where(or(eq(categories.type, "system"), eq(categories.userId, userId)));
+    const availableCategories =
+      await CategoryFilterService.getAvailableCategories(userId);
 
-    return userCategories.map((cat) => ({
+    return availableCategories.map((cat: typeof categories.$inferSelect) => ({
       id: cat.id,
       name: cat.name,
       type: cat.type,

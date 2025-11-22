@@ -83,8 +83,8 @@ export async function processBankStatement(
   });
 
   try {
-    // Import using AI orchestrator
-    const importResult = await importSpreadsheet(fileBuffer, fileName);
+    // Import using AI orchestrator (pass userId for category context)
+    const importResult = await importSpreadsheet(fileBuffer, fileName, userId);
 
     if (!importResult.success || importResult.transactions.length === 0) {
       throw new Error(

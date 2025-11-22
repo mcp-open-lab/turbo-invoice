@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { generateObject } from "@/lib/ai/client";
 import type { ConversionConfig } from "./field-converters";
+import { CategoryFilterService } from "@/lib/categorization/category-filter";
 
 /**
  * Schema for column field mapping
@@ -69,7 +70,8 @@ export type ConversionInstruction = z.infer<typeof ConversionInstructionSchema>;
  * Detect column mapping using AI analysis
  */
 export async function detectColumnMapping(
-  previewRows: any[][]
+  previewRows: any[][],
+  userId?: string
 ): Promise<MappingConfig | null> {
   if (!previewRows || previewRows.length === 0) {
     return null;
@@ -86,7 +88,27 @@ export async function detectColumnMapping(
     })
     .join("\n");
 
-  const prompt = `You are analyzing a spreadsheet file that contains financial transaction data (likely a bank statement or transaction export).
+  // Get user's category preferences if userId is provided
+  let categoryContext = "";
+  if (userId) {
+    try {
+      const { incomeCategories, expenseCategories, userPreference } =
+        await CategoryFilterService.getCategorizedListsForAI(userId);
+
+      categoryContext = `
+
+User's Financial Context:
+- User Type: ${userPreference === "both" ? "Business & Personal" : userPreference.charAt(0).toUpperCase() + userPreference.slice(1)}
+- Income Categories: ${incomeCategories.join(", ")}
+- Expense Categories: ${expenseCategories.join(", ")}
+
+Use these categories when mapping the "category" field if present in the data.`;
+    } catch (error) {
+      // Silently fail if we can't get categories - not critical for mapping
+    }
+  }
+
+  const prompt = `You are analyzing a spreadsheet file that contains financial transaction data (likely a bank statement or transaction export).${categoryContext}
 
 Preview of the first rows:
 ${formattedPreview}

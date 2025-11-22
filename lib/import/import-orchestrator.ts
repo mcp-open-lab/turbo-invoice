@@ -20,13 +20,14 @@ export interface ImportResult {
  * Steps:
  * 1. Load file buffer
  * 2. Extract preview rows
- * 3. Use AI to detect column mapping
+ * 3. Use AI to detect column mapping (with user's category preferences)
  * 4. Parse full file with detected mapping
  * 5. Return normalized transactions
  */
 export async function importSpreadsheet(
   fileBuffer: ArrayBuffer | Buffer,
-  fileName: string
+  fileName: string,
+  userId?: string
 ): Promise<ImportResult> {
   try {
     devLogger.info("Starting spreadsheet import orchestration", {
@@ -48,8 +49,8 @@ export async function importSpreadsheet(
       context: { rowCount: previewRows.length },
     });
 
-    // Step 2: Use AI to detect column mapping
-    const mappingConfig = await detectColumnMapping(previewRows);
+    // Step 2: Use AI to detect column mapping (pass userId for category context)
+    const mappingConfig = await detectColumnMapping(previewRows, userId);
     
     if (!mappingConfig) {
       return {
