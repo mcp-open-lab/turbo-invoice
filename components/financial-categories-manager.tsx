@@ -1,8 +1,8 @@
 "use client";
 
-import { useCategoriesManager } from "@/lib/hooks/use-categories-manager";
-import { CategoriesSection } from "@/components/categories/categories-section";
-import { RulesSection } from "@/components/categories/rules-section";
+import { useFinancialCategories } from "@/lib/hooks/use-financial-categories";
+import { CategoriesSection } from "@/components/financial-categories/categories-section";
+import { RulesSection } from "@/components/financial-categories/rules-section";
 import type { categories, categoryRules } from "@/lib/db/schema";
 
 type Category = typeof categories.$inferSelect;
@@ -13,11 +13,11 @@ type CategoriesManagerProps = {
   rules: Array<{ rule: CategoryRule; category: Category }>;
 };
 
-export function CategoriesManager({
+export function FinancialCategoriesManager({
   categories,
   rules,
 }: CategoriesManagerProps) {
-  const hook = useCategoriesManager({ categories, rules });
+  const hook = useFinancialCategories({ categories, rules });
 
   return (
     <div className="space-y-6">

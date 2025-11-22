@@ -417,7 +417,7 @@ export function SettingsFormV2({ initialSettings }: SettingsFormProps) {
                 Manage expense categories and auto-categorization rules
               </p>
             </div>
-            <Link href="/app/settings/categories">
+            <Link href="/app/settings/financial-categories">
               <Button variant="outline" type="button">
                 Manage
                 <ArrowRight className="ml-2 h-4 w-4" />

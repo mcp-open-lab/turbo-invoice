@@ -5,7 +5,7 @@ import {
   deleteUserCategory,
   createCategoryRule,
   deleteCategoryRule,
-} from "@/app/actions/categories";
+} from "@/app/actions/financial-categories";
 import type { categories, categoryRules } from "@/lib/db/schema";
 
 type Category = typeof categories.$inferSelect;
@@ -16,7 +16,7 @@ type UseCategoriesManagerProps = {
   rules: Array<{ rule: CategoryRule; category: Category }>;
 };
 
-export function useCategoriesManager({
+export function useFinancialCategories({
   categories,
   rules,
 }: UseCategoriesManagerProps) {
