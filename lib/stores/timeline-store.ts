@@ -39,6 +39,7 @@ export const useTimelineStore = create<TimelineState>()(
     }),
     {
       name: "timeline-storage",
+      skipHydration: true, // Prevent hydration mismatch
       partialize: (state) => ({
         // Persist filters and sort preferences
         categoryFilter: state.categoryFilter,

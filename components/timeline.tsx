@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { receipts } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ import type { TimelineGroup, SortBy } from "@/lib/utils/timeline";
 import { useTimelineFilters } from "@/lib/hooks/use-timeline-filters";
 import { EditReceiptDialog } from "@/components/edit-receipt-dialog";
 import { useHydrated } from "@/lib/hooks/use-hydrated";
+import { useTimelineStore } from "@/lib/stores/timeline-store";
 import { RECEIPT_CATEGORIES, RECEIPT_STATUSES } from "@/lib/consts";
 
 type Receipt = typeof receipts.$inferSelect;
@@ -48,6 +49,11 @@ export function Timeline({ receipts, userSettings }: TimelineProps) {
   const [selected, setSelected] = useState<Receipt | null>(null);
   const [open, setOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
+
+  // Manually rehydrate the store after component mounts
+  useEffect(() => {
+    useTimelineStore.persist.rehydrate();
+  }, []);
 
   // Use the new hook for filter logic
   const {
