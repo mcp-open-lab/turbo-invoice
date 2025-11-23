@@ -6,9 +6,9 @@ import {
   getMerchantStatistics,
 } from "@/app/actions/financial-categories";
 import { PageHeader } from "@/components/page-header";
-import { FinancialCategoriesManager } from "@/components/financial-categories-manager";
+import { RulesManager } from "./_components/rules-manager";
 
-export default async function CategoriesPage() {
+export default async function RulesPage() {
   const { userId } = await auth();
   if (!userId) {
     redirect("/sign-in");
@@ -22,8 +22,12 @@ export default async function CategoriesPage() {
 
   return (
     <div className="flex-1 max-w-4xl mx-auto w-full p-6 space-y-8">
-      <PageHeader title="Financial Categories & Rules" backHref="/app/settings" />
-      <FinancialCategoriesManager
+      <PageHeader title="Auto-Categorization Rules" backHref="/app/settings" />
+      <p className="text-sm text-muted-foreground">
+        Create rules to automatically categorize transactions based on merchant
+        names or descriptions.
+      </p>
+      <RulesManager
         categories={categories}
         rules={rules}
         merchantStats={merchantStats}

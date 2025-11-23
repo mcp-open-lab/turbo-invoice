@@ -1,41 +1,30 @@
-import { useState, useTransition, useMemo } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
-  createUserCategory,
-  deleteUserCategory,
   createCategoryRule,
   updateCategoryRule,
   deleteCategoryRule,
   createMerchantRule,
   updateMerchantRule,
 } from "@/app/actions/financial-categories";
-import type { MerchantStats } from "@/lib/categorization/repositories/transaction-repository";
-import type { categoryRules } from "@/lib/db/schema";
 import type { categories, categoryRules } from "@/lib/db/schema";
 import type { MerchantStats } from "@/lib/categorization/repositories/transaction-repository";
 
 type Category = typeof categories.$inferSelect;
 type CategoryRule = typeof categoryRules.$inferSelect;
 
-type UseCategoriesManagerProps = {
+type UseRulesProps = {
   categories: Category[];
   rules: Array<{ rule: CategoryRule; category: Category }>;
   merchantStats?: MerchantStats[];
 };
 
-export function useFinancialCategories({
+export function useRules({
   categories,
   rules,
   merchantStats = [],
-}: UseCategoriesManagerProps) {
+}: UseRulesProps) {
   const [isPending, startTransition] = useTransition();
-
-  // Category state
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [newCategoryTransactionType, setNewCategoryTransactionType] = useState<"income" | "expense">("expense");
-  const [newCategoryUsageScope, setNewCategoryUsageScope] = useState<"personal" | "business" | "both">("both");
-  const [newCategoryDescription, setNewCategoryDescription] = useState("");
-  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
 
   // Rule state
   const [newRuleCategoryId, setNewRuleCategoryId] = useState("");
@@ -58,66 +47,9 @@ export function useFinancialCategories({
   const [newMerchantDisplayName, setNewMerchantDisplayName] = useState("");
   const [merchantDialogOpen, setMerchantDialogOpen] = useState(false);
   const [editMerchantDialogOpen, setEditMerchantDialogOpen] = useState(false);
-  const [editingMerchant, setEditingMerchant] = useState<MerchantStats | null>(null);
-
-  // Computed values
-  const systemCategories = useMemo(
-    () => categories.filter((c) => c.type === "system"),
-    [categories]
+  const [editingMerchant, setEditingMerchant] = useState<MerchantStats | null>(
+    null
   );
-
-  const userCategories = useMemo(
-    () => categories.filter((c) => c.type === "user"),
-    [categories]
-  );
-
-  // Category handlers
-  const handleCreateCategory = () => {
-    if (!newCategoryName.trim()) {
-      toast.error("Please enter a category name");
-      return;
-    }
-
-    startTransition(async () => {
-      try {
-        await createUserCategory({
-          name: newCategoryName.trim(),
-          transactionType: newCategoryTransactionType,
-          usageScope: newCategoryUsageScope,
-          description: newCategoryDescription.trim() || undefined,
-        });
-        toast.success("Category created!");
-        setNewCategoryName("");
-        setNewCategoryTransactionType("expense");
-        setNewCategoryUsageScope("both");
-        setNewCategoryDescription("");
-        setCategoryDialogOpen(false);
-        window.location.reload();
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to create category"
-        );
-      }
-    });
-  };
-
-  const handleDeleteCategory = (categoryId: string, categoryName: string) => {
-    if (!confirm(`Delete "${categoryName}"? This cannot be undone.`)) {
-      return;
-    }
-
-    startTransition(async () => {
-      try {
-        await deleteUserCategory({ categoryId });
-        toast.success("Category deleted");
-        window.location.reload();
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to delete category"
-        );
-      }
-    });
-  };
 
   // Rule handlers
   const handleCreateRule = () => {
@@ -231,7 +163,9 @@ export function useFinancialCategories({
         window.location.reload();
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : "Failed to create merchant rule"
+          error instanceof Error
+            ? error.message
+            : "Failed to create merchant rule"
         );
       }
     });
@@ -248,7 +182,9 @@ export function useFinancialCategories({
         window.location.reload();
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : "Failed to create merchant rule"
+          error instanceof Error
+            ? error.message
+            : "Failed to create merchant rule"
         );
       }
     });
@@ -282,7 +218,9 @@ export function useFinancialCategories({
         window.location.reload();
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : "Failed to update merchant rule"
+          error instanceof Error
+            ? error.message
+            : "Failed to update merchant rule"
         );
       }
     });
@@ -300,7 +238,9 @@ export function useFinancialCategories({
         window.location.reload();
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : "Failed to delete merchant rule"
+          error instanceof Error
+            ? error.message
+            : "Failed to delete merchant rule"
         );
       }
     });
@@ -323,23 +263,9 @@ export function useFinancialCategories({
   return {
     // State
     isPending,
-    systemCategories,
-    userCategories,
-    rules,
     categories,
+    rules,
     merchantStats,
-
-    // Category state
-    newCategoryName,
-    setNewCategoryName,
-    newCategoryTransactionType,
-    setNewCategoryTransactionType,
-    newCategoryUsageScope,
-    setNewCategoryUsageScope,
-    newCategoryDescription,
-    setNewCategoryDescription,
-    categoryDialogOpen,
-    setCategoryDialogOpen,
 
     // Rule state
     newRuleCategoryId,
@@ -352,6 +278,10 @@ export function useFinancialCategories({
     setNewRuleValue,
     ruleDialogOpen,
     setRuleDialogOpen,
+    editRuleDialogOpen,
+    setEditRuleDialogOpen,
+    editingRule,
+    setEditingRule,
 
     // Merchant rule state
     newMerchantName,
@@ -368,9 +298,9 @@ export function useFinancialCategories({
     setEditingMerchant,
 
     // Handlers
-    handleCreateCategory,
-    handleDeleteCategory,
     handleCreateRule,
+    handleEditRule,
+    handleUpdateRule,
     handleDeleteRule,
     handleCreateMerchantRule,
     handleQuickCreateRule,

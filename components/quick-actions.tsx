@@ -104,7 +104,9 @@ export function QuickActions() {
   const [isFullscreenSupported, setIsFullscreenSupported] = useState(false);
   const [showDocTypeSelector, setShowDocTypeSelector] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<FileList | null>(null);
-  const [selectedDocType, setSelectedDocType] = useState<"receipt" | "bank_statement">("receipt");
+  const [selectedDocType, setSelectedDocType] = useState<
+    "receipt" | "bank_statement"
+  >("receipt");
   const router = useRouter();
   const navItems = [
     {
@@ -112,6 +114,19 @@ export function QuickActions() {
       href: "/app",
       icon: Clock,
       showAiIcon: false,
+    },
+
+    {
+      label: "Budgets",
+      href: "/app/budgets",
+      icon: Wallet,
+      showAiIcon: true,
+    },
+    {
+      label: "Invoices",
+      href: "/app/invoices",
+      icon: FileText,
+      showAiIcon: true,
     },
     {
       label: "Import",
@@ -124,18 +139,6 @@ export function QuickActions() {
       href: "/app/export",
       icon: ArrowUpToLine,
       showAiIcon: false,
-    },
-    {
-      label: "Budgets",
-      href: "/app/budgets",
-      icon: Wallet,
-      showAiIcon: true,
-    },
-    {
-      label: "Invoices",
-      href: "/app/invoices",
-      icon: FileText,
-      showAiIcon: true,
     },
     {
       label: "Settings",
@@ -262,7 +265,10 @@ export function QuickActions() {
     }
   };
 
-  const handleFileSelect = async (files: FileList | null, docType?: "receipt" | "bank_statement") => {
+  const handleFileSelect = async (
+    files: FileList | null,
+    docType?: "receipt" | "bank_statement"
+  ) => {
     if (!files || files.length === 0) return;
 
     // If doc type not provided, show selector
@@ -278,7 +284,8 @@ export function QuickActions() {
     setPendingFiles(null);
 
     try {
-      const docTypeLabel = docType === "bank_statement" ? "bank statement" : "receipt";
+      const docTypeLabel =
+        docType === "bank_statement" ? "bank statement" : "receipt";
       toast.info(`Uploading ${docTypeLabel}...`);
 
       const compressedFiles = await Promise.all(
@@ -308,7 +315,11 @@ export function QuickActions() {
       ) {
         toast.info(`Processing ${docTypeLabel} with AI...`);
         await scanReceipt(uploadedFiles[0].url);
-        toast.success(`${docTypeLabel.charAt(0).toUpperCase() + docTypeLabel.slice(1)} processed!`);
+        toast.success(
+          `${
+            docTypeLabel.charAt(0).toUpperCase() + docTypeLabel.slice(1)
+          } processed!`
+        );
         router.refresh();
       }
     } catch (error) {
@@ -373,7 +384,10 @@ export function QuickActions() {
             >
               <div className="flex items-center space-x-3 rounded-lg border p-4 cursor-pointer hover:bg-accent transition-colors">
                 <RadioGroupItem value="receipt" id="receipt" />
-                <Label htmlFor="receipt" className="flex items-center gap-3 cursor-pointer flex-1">
+                <Label
+                  htmlFor="receipt"
+                  className="flex items-center gap-3 cursor-pointer flex-1"
+                >
                   <Receipt className="h-5 w-5 text-primary" />
                   <div>
                     <p className="font-medium">Receipt</p>
@@ -385,7 +399,10 @@ export function QuickActions() {
               </div>
               <div className="flex items-center space-x-3 rounded-lg border p-4 cursor-pointer hover:bg-accent transition-colors">
                 <RadioGroupItem value="bank_statement" id="bank_statement" />
-                <Label htmlFor="bank_statement" className="flex items-center gap-3 cursor-pointer flex-1">
+                <Label
+                  htmlFor="bank_statement"
+                  className="flex items-center gap-3 cursor-pointer flex-1"
+                >
                   <CreditCard className="h-5 w-5 text-primary" />
                   <div>
                     <p className="font-medium">Bank Statement</p>

@@ -23,18 +23,6 @@ const navItems = [
     showAiIcon: false,
   },
   {
-    label: "Import",
-    href: "/app/import",
-    icon: ArrowDownToLine,
-    showAiIcon: false,
-  },
-  {
-    label: "Export",
-    href: "/app/export",
-    icon: ArrowUpToLine,
-    showAiIcon: false,
-  },
-  {
     label: "Budgets",
     href: "/app/budgets",
     icon: Wallet,
@@ -45,6 +33,18 @@ const navItems = [
     href: "/app/invoices",
     icon: FileText,
     showAiIcon: true,
+  },
+  {
+    label: "Import",
+    href: "/app/import",
+    icon: ArrowDownToLine,
+    showAiIcon: false,
+  },
+  {
+    label: "Export",
+    href: "/app/export",
+    icon: ArrowUpToLine,
+    showAiIcon: false,
   },
   {
     label: "Settings",
@@ -111,4 +111,3 @@ export function DesktopNav() {
     </nav>
   );
 }
-
