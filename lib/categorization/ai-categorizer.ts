@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { generateObject } from "@/lib/ai/client";
+import { generateObjectForCategorization } from "@/lib/ai/client";
 import { devLogger } from "@/lib/dev-logger";
 import type { TransactionToCategorize, CategorizationResult } from "./types";
 import { CategorizationPrompt } from "@/lib/ai/prompts";
@@ -39,7 +39,7 @@ export async function aiCategorizeTransaction(
   });
 
   try {
-    const result = await generateObject(prompt, CategorizationSchema, {
+    const result = await generateObjectForCategorization(prompt, CategorizationSchema, {
       temperature: AI_TEMPERATURES.STRUCTURED_OUTPUT,
       loggingContext: options.userId
         ? {

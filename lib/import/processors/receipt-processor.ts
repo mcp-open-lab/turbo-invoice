@@ -14,7 +14,7 @@ import {
   type ProcessedDocument,
   type DocumentProcessorConfig,
 } from "./base-document-processor";
-import { generateObject } from "@/lib/ai/client";
+import { generateObjectForExtraction } from "@/lib/ai/client";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { devLogger } from "@/lib/dev-logger";
@@ -224,7 +224,8 @@ export class ReceiptProcessor extends BaseDocumentProcessor {
     const imageMimeType = this.getMimeType(imageUrl);
 
     // Call AI with structured output (Zod schema enforces structure)
-    const result = await generateObject(prompt, receiptSchema, {
+    // Using GPT-4o-mini for cost optimization (93% cheaper than GPT-4o)
+    const result = await generateObjectForExtraction(prompt, receiptSchema, {
       image: { data: base64Image, mimeType: imageMimeType },
       temperature: AI_TEMPERATURES.STRUCTURED_OUTPUT,
       loggingContext: {
