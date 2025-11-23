@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { getBatchActivityLogs, type BatchActivityLog } from "@/app/actions/batch-activity";
+import {
+  getBatchActivityLogs,
+  type BatchActivityLog,
+} from "@/app/actions/batch-activity";
 import { formatDistanceToNow } from "date-fns";
 import { Activity, Loader2 } from "lucide-react";
 
@@ -12,7 +15,10 @@ interface BatchActivityLogProps {
   initialLogs?: BatchActivityLog[];
 }
 
-export function BatchActivityLog({ batchId, initialLogs = [] }: BatchActivityLogProps) {
+export function BatchActivityLog({
+  batchId,
+  initialLogs = [],
+}: BatchActivityLogProps) {
   const [logs, setLogs] = useState<BatchActivityLog[]>(initialLogs);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -82,11 +88,11 @@ export function BatchActivityLog({ batchId, initialLogs = [] }: BatchActivityLog
             <Activity className="h-5 w-5" />
             <CardTitle>Activity Log</CardTitle>
           </div>
-          {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+          {isLoading && (
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          )}
         </div>
-        <p className="text-sm text-muted-foreground">
-          Real-time AI processing and system activity
-        </p>
+        <p className="text-sm text-muted-foreground">Real-time AI processing</p>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[400px] pr-4">
@@ -115,7 +121,9 @@ export function BatchActivityLog({ batchId, initialLogs = [] }: BatchActivityLog
                     </p>
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                       <span>
-                        {formatDistanceToNow(new Date(log.createdAt), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(log.createdAt), {
+                          addSuffix: true,
+                        })}
                       </span>
                       {log.duration && (
                         <>
@@ -134,4 +142,3 @@ export function BatchActivityLog({ batchId, initialLogs = [] }: BatchActivityLog
     </Card>
   );
 }
-
