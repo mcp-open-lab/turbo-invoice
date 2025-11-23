@@ -31,35 +31,35 @@ export async function generateObject<T>(
   options?: CompletionOptions
 ): Promise<LLMResponse<T>> {
   const openai = getOpenAIProvider();
-  
+
   if (openai) {
     devLogger.info("Attempting LLM request with OpenAI", {
       context: { provider: "openai" },
     });
-    
+
     const result = await openai.generateObject(prompt, schema, options);
-    
+
     if (result.success) {
       devLogger.info("OpenAI request successful", {
         context: { tokensUsed: result.tokensUsed },
       });
       return result;
     }
-    
+
     devLogger.warn("OpenAI request failed, attempting fallback to Gemini", {
       context: { error: result.error },
     });
   }
 
   const gemini = getGeminiProvider();
-  
+
   if (gemini) {
     devLogger.info("Attempting LLM request with Gemini", {
       context: { provider: "gemini" },
     });
-    
+
     const result = await gemini.generateObject(prompt, schema, options);
-    
+
     if (result.success) {
       devLogger.info("Gemini request successful", {
         context: { tokensUsed: result.tokensUsed },
@@ -69,54 +69,59 @@ export async function generateObject<T>(
         context: { error: result.error },
       });
     }
-    
+
     return result;
   }
 
   return {
     success: false,
-    error: "No LLM providers available. Please configure GOOGLE_AI_API_KEY or OPENAI_API_KEY.",
+    error:
+      "No LLM providers available. Please configure GOOGLE_AI_API_KEY or OPENAI_API_KEY.",
     provider: "openai",
   };
 }
 
 /**
  * Generate text output from LLM with Gemini primary and OpenAI fallback
+ * Note: For structured outputs, use generateObject (OpenAI primary)
  */
 export async function generateText(
   prompt: string,
   options?: CompletionOptions
 ): Promise<LLMResponse<string>> {
   const gemini = getGeminiProvider();
-  
+
   if (gemini) {
     devLogger.info("Attempting LLM text generation with Gemini", {
       context: { provider: "gemini" },
     });
-    
+
     const result = await gemini.generateText(prompt, options);
-    
+
     if (result.success) {
       devLogger.info("Gemini text generation successful", {
         context: { tokensUsed: result.tokensUsed },
       });
       return result;
     }
-    
-    devLogger.warn("Gemini text generation failed, attempting fallback to OpenAI", {
-      context: { error: result.error },
-    });
+
+    devLogger.warn(
+      "Gemini text generation failed, attempting fallback to OpenAI",
+      {
+        context: { error: result.error },
+      }
+    );
   }
 
   const openai = getOpenAIProvider();
-  
+
   if (openai) {
     devLogger.info("Attempting LLM text generation with OpenAI", {
       context: { provider: "openai" },
     });
-    
+
     const result = await openai.generateText(prompt, options);
-    
+
     if (result.success) {
       devLogger.info("OpenAI text generation successful", {
         context: { tokensUsed: result.tokensUsed },
@@ -126,14 +131,14 @@ export async function generateText(
         context: { error: result.error },
       });
     }
-    
+
     return result;
   }
 
   return {
     success: false,
-    error: "No LLM providers available. Please configure GOOGLE_AI_API_KEY or OPENAI_API_KEY.",
+    error:
+      "No LLM providers available. Please configure GOOGLE_AI_API_KEY or OPENAI_API_KEY.",
     provider: "gemini",
   };
 }
-

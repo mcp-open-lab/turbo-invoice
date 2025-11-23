@@ -18,6 +18,8 @@ import { generateObject } from "@/lib/ai/client";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { devLogger } from "@/lib/dev-logger";
+import { ReceiptExtractionPrompt } from "@/lib/ai/prompts";
+import { AI_TEMPERATURES, CONFIDENCE_DEFAULTS } from "@/lib/ai/constants";
 
 export class ReceiptProcessor extends BaseDocumentProcessor {
   constructor(config: DocumentProcessorConfig) {
@@ -80,8 +82,8 @@ export class ReceiptProcessor extends BaseDocumentProcessor {
     const imageBuffer = await imageResp.arrayBuffer();
     const base64Image = Buffer.from(imageBuffer).toString("base64");
 
-    // Call Gemini API for OCR
-    const extractedData = await this.extractWithGemini(
+    // Call AI API for OCR (uses OpenAI primary, Gemini fallback)
+    const extractedData = await this.extractWithAI(
       base64Image,
       fileUrl,
       fieldsToExtract
@@ -139,7 +141,7 @@ export class ReceiptProcessor extends BaseDocumentProcessor {
       currency: this.currency,
       country: this.country,
       province: extractedData.province || null,
-      extractionConfidence: 0.9, // TODO: Calculate based on field coverage
+      extractionConfidence: CONFIDENCE_DEFAULTS.EXTRACTION,
     };
   }
 
@@ -173,7 +175,7 @@ export class ReceiptProcessor extends BaseDocumentProcessor {
     return fields;
   }
 
-  private async extractWithGemini(
+  private async extractWithAI(
     base64Image: string,
     imageUrl: string,
     fieldsToExtract: Set<string>
@@ -196,77 +198,15 @@ export class ReceiptProcessor extends BaseDocumentProcessor {
       (f) => !["merchantName", "date", "totalAmount"].includes(f)
     );
 
-    // Build simple, direct prompt based on what works
-    const fieldDescriptions: string[] = [];
-
-    if (requiredFields.includes("date")) {
-      fieldDescriptions.push("date: Transaction date (ISO format: YYYY-MM-DD)");
-    }
-    if (requiredFields.includes("totalAmount")) {
-      fieldDescriptions.push("totalAmount: Final total amount (number)");
-    }
-    if (preferredFields.includes("merchantName")) {
-      fieldDescriptions.push(
-        "merchantName: Business/merchant name (extract the actual name shown on receipt)"
-      );
-    }
-    optionalFields.forEach((f) => {
-      if (f === "subtotal")
-        fieldDescriptions.push("subtotal: Subtotal before tax (number)");
-      else if (f === "taxAmount")
-        fieldDescriptions.push("taxAmount: Tax amount (number)");
-      else if (
-        f.startsWith("gst") ||
-        f.startsWith("hst") ||
-        f.startsWith("pst") ||
-        f.startsWith("salesTax")
-      ) {
-        fieldDescriptions.push(`${f}: Tax breakdown (number)`);
-      } else if (f === "tipAmount")
-        fieldDescriptions.push("tipAmount: Tip amount (number)");
-      else if (f === "paymentMethod")
-        fieldDescriptions.push("paymentMethod: Payment method (string)");
-      else if (f === "description")
-        fieldDescriptions.push("description: Description/notes (string)");
-      else fieldDescriptions.push(`${f}: ${f}`);
+    // Build prompt using centralized prompt builder
+    const prompt = ReceiptExtractionPrompt.build({
+      requiredFields,
+      preferredFields,
+      optionalFields,
+      country: this.country,
+      currency: this.currency,
+      jsonSchema,
     });
-
-    // Ultra-simple prompt - just ask for the data directly
-    const prompt = `Extract information from this receipt image.
-
-CRITICAL: Read the ACTUAL merchant/business name printed on the receipt. Do NOT guess common names like "Starbucks", "Chipotle", "Target" unless that exact name appears on the receipt.
-
-Required fields:
-${requiredFields
-  .map((f) => {
-    if (f === "date") return "- date: Transaction date (format: YYYY-MM-DD)";
-    if (f === "totalAmount")
-      return "- totalAmount: Final total amount (number)";
-    return `- ${f}`;
-  })
-  .join("\n")}
-
-${
-  preferredFields.length > 0
-    ? `\nPreferred fields:\n${preferredFields
-        .map((f) => {
-          if (f === "merchantName")
-            return "- merchantName: Business/merchant name shown on receipt";
-          return `- ${f}`;
-        })
-        .join("\n")}\n`
-    : ""
-}
-${
-  optionalFields.length > 0
-    ? `\nOptional fields:\n${optionalFields.map((f) => `- ${f}`).join("\n")}\n`
-    : ""
-}
-
-Return as JSON. Use null if a field is not found. Dates: YYYY-MM-DD format. Amounts: numbers.
-
-JSON schema:
-${JSON.stringify(jsonSchema, null, 2)}`;
 
     devLogger.debug(
       "Calling AI for receipt extraction with structured output",
@@ -284,7 +224,7 @@ ${JSON.stringify(jsonSchema, null, 2)}`;
     // Call AI with structured output (Zod schema enforces structure)
     const result = await generateObject(prompt, receiptSchema, {
       image: { data: base64Image, mimeType: imageMimeType },
-      temperature: 0.1,
+      temperature: AI_TEMPERATURES.STRUCTURED_OUTPUT,
     });
 
     if (!result.success || !result.data) {
@@ -293,7 +233,7 @@ ${JSON.stringify(jsonSchema, null, 2)}`;
 
     devLogger.info("Receipt extraction completed", {
       hasMerchantName: !!result.data.merchantName,
-      merchantName: result.data.merchantName || null, // Log actual value to debug hallucinations
+      merchantName: result.data.merchantName || null,
       hasDate: !!result.data.date,
       date: result.data.date || null,
       hasTotalAmount: !!result.data.totalAmount,

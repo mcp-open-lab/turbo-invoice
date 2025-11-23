@@ -10,6 +10,7 @@ import { eq, and, or, desc, isNotNull } from "drizzle-orm";
 import { devLogger } from "@/lib/dev-logger";
 import { aiCategorizeTransaction } from "./ai-categorizer";
 import { CategoryFilterService } from "./category-filter";
+import { CONFIDENCE_DEFAULTS } from "@/lib/ai/constants";
 import type {
   TransactionToCategorize,
   CategorizationResult,
@@ -160,7 +161,7 @@ export class CategoryEngine {
           return {
             categoryId: pastReceipts[0].categoryId,
             categoryName: categoryData[0].name,
-            confidence: 0.85,
+            confidence: CONFIDENCE_DEFAULTS.CATEGORIZATION_RULE,
             method: "history",
           };
         }
@@ -197,7 +198,7 @@ export class CategoryEngine {
           return {
             categoryId: pastTransactions[0].categoryId,
             categoryName: categoryData[0].name,
-            confidence: 0.85,
+            confidence: CONFIDENCE_DEFAULTS.CATEGORIZATION_RULE,
             method: "history",
           };
         }

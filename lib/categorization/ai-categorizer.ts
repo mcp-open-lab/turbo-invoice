@@ -2,6 +2,8 @@ import { z } from "zod";
 import { generateObject } from "@/lib/ai/client";
 import { devLogger } from "@/lib/dev-logger";
 import type { TransactionToCategorize, CategorizationResult } from "./types";
+import { CategorizationPrompt } from "@/lib/ai/prompts";
+import { AI_TEMPERATURES } from "@/lib/ai/constants";
 
 const CategorizationSchema = z.object({
   categoryName: z.string(),
@@ -27,50 +29,17 @@ export async function aiCategorizeTransaction(
 ): Promise<CategorizationResult> {
   const { availableCategories, userPreferences } = options;
 
-  const categoryList = availableCategories.map((c) => c.name).join(", ");
-
-  const prompt = `You are a financial categorization assistant. Categorize the following transaction into one of the available categories.
-
-Transaction Details:
-- Merchant: ${transaction.merchantName || "Unknown"}
-- Description: ${transaction.description || "N/A"}
-- Amount: ${transaction.amount || "N/A"}
-
-Available Categories: ${categoryList}
-
-${
-  userPreferences?.country
-    ? `User Location: ${userPreferences.country}\n`
-    : ""
-}${
-    userPreferences?.usageType
-      ? `Usage Type: ${userPreferences.usageType}\n`
-      : ""
-  }
-
-Important Context:
-- "FINANCIAL", "FINANCE", "LOAN", "CREDIT", "PAYMENT PLAN", "INSTALLMENT" in merchant/description typically indicate loan/debt payments, not software subscriptions
-- "DELL FINANCIAL", "APPLE FINANCIAL", etc. are financing/loan services, not product purchases
-- "BILL PYMT", "PAYMENT", "AUTO PAY" often indicate bill payments or debt servicing
-- Look for financial service keywords: "FINANCIAL", "CREDIT", "LOAN", "FINANCING", "PAYMENT PLAN"
-
-Instructions:
-1. Select the BEST matching category from the available list.
-2. If none of the categories fit well, suggest a new category name and set isNewCategory to true.
-3. Provide a confidence score (0.0 to 1.0).
-4. Briefly explain your reasoning.
-
-Return your response as JSON matching this schema:
-{
-  "categoryName": "string",
-  "confidence": number,
-  "isNewCategory": boolean,
-  "reasoning": "string (optional)"
-}`;
+  const prompt = CategorizationPrompt.build({
+    merchantName: transaction.merchantName ?? null,
+    description: transaction.description ?? null,
+    amount: transaction.amount ?? null,
+    availableCategories,
+    userPreferences,
+  });
 
   try {
     const result = await generateObject(prompt, CategorizationSchema, {
-      temperature: 0.1,
+      temperature: AI_TEMPERATURES.STRUCTURED_OUTPUT,
     });
 
     if (!result.success || !result.data) {
