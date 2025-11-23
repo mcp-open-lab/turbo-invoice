@@ -36,8 +36,9 @@ export class ReceiptProcessor extends BaseDocumentProcessor {
 
   getRequiredFields(): Set<string> {
     // Minimum fields needed for a valid receipt
+    // date is optional - users can enter it manually if missing
     // merchantName is preferred but not required - some receipts don't have clear merchant names
-    return new Set(["date", "totalAmount"]);
+    return new Set(["totalAmount"]);
   }
 
   getOptionalFields(): Set<string> {
@@ -82,53 +83,26 @@ export class ReceiptProcessor extends BaseDocumentProcessor {
     const imageBuffer = await imageResp.arrayBuffer();
     const base64Image = Buffer.from(imageBuffer).toString("base64");
 
-    // Call AI API for OCR (uses GPT-4o-mini primary, GPT-4o fallback)
-    // If validation fails, retry with GPT-4o for better accuracy
-    let extractedData = await this.extractWithAI(
+    // Call AI API for OCR (uses GPT-4o-mini for cost optimization)
+    const extractedData = await this.extractWithAI(
       base64Image,
       fileUrl,
       fieldsToExtract,
-      fileName,
-      false // Use GPT-4o-mini first
+      fileName
     );
 
-    // Validate minimum requirements - retry with GPT-4o if validation fails
+    // Validate minimum requirements
     const validation = this.validateExtractedData(extractedData);
     if (!validation.isValid) {
-      devLogger.warn("Receipt extraction missing required fields, retrying with GPT-4o", {
+      devLogger.error("Receipt extraction missing required fields", {
         missingFields: validation.missingFields,
         fileName: fileName || "unknown",
-        model: "gpt-4o-mini",
       });
-
-      // Retry with GPT-4o for better accuracy
-      extractedData = await this.extractWithAI(
-        base64Image,
-        fileUrl,
-        fieldsToExtract,
-        fileName,
-        true // Force GPT-4o
+      throw new Error(
+        `Failed to extract required fields from receipt: ${validation.missingFields.join(
+          ", "
+        )}. The image may be unclear or not a valid receipt.`
       );
-
-      // Validate again after retry
-      const retryValidation = this.validateExtractedData(extractedData);
-      if (!retryValidation.isValid) {
-        devLogger.error("Receipt extraction still missing required fields after GPT-4o retry", {
-          missingFields: retryValidation.missingFields,
-          fileName: fileName || "unknown",
-          model: "gpt-4o",
-        });
-        throw new Error(
-          `Failed to extract required fields from receipt: ${retryValidation.missingFields.join(
-            ", "
-          )}. The image may be unclear or not a valid receipt.`
-        );
-      }
-
-      devLogger.info("Receipt extraction succeeded after GPT-4o retry", {
-        fileName: fileName || "unknown",
-        model: "gpt-4o",
-      });
     }
 
     // Auto-categorize if merchant name is present
@@ -152,7 +126,29 @@ export class ReceiptProcessor extends BaseDocumentProcessor {
       documentId: "", // Will be set by caller
       documentType: "receipt",
       merchantName: extractedData.merchantName || null,
-      date: extractedData.date ? new Date(extractedData.date) : null,
+      date: extractedData.date
+        ? (() => {
+            try {
+              const parsedDate = new Date(extractedData.date);
+              // Check if date is valid
+              if (isNaN(parsedDate.getTime())) {
+                devLogger.warn("Invalid date value from extraction", {
+                  dateValue: extractedData.date,
+                  fileName: fileName || "unknown",
+                });
+                return null;
+              }
+              return parsedDate;
+            } catch (error) {
+              devLogger.warn("Error parsing date from extraction", {
+                dateValue: extractedData.date,
+                error: error instanceof Error ? error.message : String(error),
+                fileName: fileName || "unknown",
+              });
+              return null;
+            }
+          })()
+        : null,
       subtotal: extractedData.subtotal || null,
       taxAmount: extractedData.taxAmount || null,
       totalAmount: extractedData.totalAmount || null,
@@ -207,8 +203,7 @@ export class ReceiptProcessor extends BaseDocumentProcessor {
     base64Image: string,
     imageUrl: string,
     fieldsToExtract: Set<string>,
-    fileName?: string,
-    useGPT4o: boolean = false
+    fileName?: string
   ): Promise<Record<string, any>> {
     // Build Zod schema for structured output
     const receiptSchema = this.buildReceiptSchema(fieldsToExtract);
@@ -252,41 +247,23 @@ export class ReceiptProcessor extends BaseDocumentProcessor {
     const imageMimeType = this.getMimeType(imageUrl);
 
     // Call AI with structured output (Zod schema enforces structure)
-    // Use GPT-4o-mini for cost optimization (93% cheaper), or GPT-4o if forced
-    const result = useGPT4o
-      ? await generateObject(prompt, receiptSchema, {
-          image: { data: base64Image, mimeType: imageMimeType },
-          temperature: AI_TEMPERATURES.STRUCTURED_OUTPUT,
-          loggingContext: {
-            userId: this.userId,
-            entityId: null, // Will be set after receipt is created
-            entityType: "receipt",
-            promptType: "extraction",
-            inputData: {
-              fileName,
-              country: this.country,
-              currency: this.currency,
-              fieldsToExtract: Array.from(fieldsToExtract),
-              retry: true, // Mark as retry
-            },
-          },
-        })
-      : await generateObjectForExtraction(prompt, receiptSchema, {
-          image: { data: base64Image, mimeType: imageMimeType },
-          temperature: AI_TEMPERATURES.STRUCTURED_OUTPUT,
-          loggingContext: {
-            userId: this.userId,
-            entityId: null, // Will be set after receipt is created
-            entityType: "receipt",
-            promptType: "extraction",
-            inputData: {
-              fileName,
-              country: this.country,
-              currency: this.currency,
-              fieldsToExtract: Array.from(fieldsToExtract),
-            },
-          },
-        });
+    // Using GPT-4o-mini for cost optimization (93% cheaper than GPT-4o)
+    const result = await generateObjectForExtraction(prompt, receiptSchema, {
+      image: { data: base64Image, mimeType: imageMimeType },
+      temperature: AI_TEMPERATURES.STRUCTURED_OUTPUT,
+      loggingContext: {
+        userId: this.userId,
+        entityId: null, // Will be set after receipt is created
+        entityType: "receipt",
+        promptType: "extraction",
+        inputData: {
+          fileName,
+          country: this.country,
+          currency: this.currency,
+          fieldsToExtract: Array.from(fieldsToExtract),
+        },
+      },
+    });
 
     if (!result.success || !result.data) {
       throw new Error(result.error || "AI extraction failed");
