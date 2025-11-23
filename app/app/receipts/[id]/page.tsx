@@ -37,7 +37,7 @@ export default async function ReceiptDetailPage({
 
   return (
     <div className="flex-1 max-w-4xl mx-auto w-full p-6 space-y-8">
-      <PageHeader title="Receipt Details" backHref="/app" />
+      <PageHeader title="Receipt Details" useHistoryBack />
       <ReceiptDetailView
         receipt={receipt[0]}
         categories={categories}

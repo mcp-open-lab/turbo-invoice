@@ -96,17 +96,17 @@ export function DesktopNav() {
           })}
         </div>
 
-                {/* User Menu - Only visible on desktop (md+) */}
-                <div className="flex items-center gap-4 flex-shrink-0">
-                  <UserButton
-                    afterSignOutUrl="/"
-                    appearance={{
-                      elements: {
-                        avatarBox: "h-9 w-9",
-                      },
-                    }}
-                  />
-                </div>
+        {/* User Menu - Only visible on desktop (md+) */}
+        <div className="flex items-center gap-4 flex-shrink-0">
+          <UserButton
+            afterSignOutUrl="/"
+            appearance={{
+              elements: {
+                avatarBox: "h-9 w-9",
+              },
+            }}
+          />
+        </div>
       </div>
     </nav>
   );

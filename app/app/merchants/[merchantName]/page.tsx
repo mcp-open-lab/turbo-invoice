@@ -27,7 +27,7 @@ export default async function MerchantDetailPage({
     <div className="flex-1 max-w-6xl mx-auto w-full p-6 space-y-8">
       <PageHeader
         title={`Merchant: ${decodedMerchantName}`}
-        backHref="/app/settings/rules"
+        useHistoryBack
       />
       <MerchantDetailView
         merchantName={decodedMerchantName}

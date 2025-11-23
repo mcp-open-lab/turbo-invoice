@@ -63,7 +63,7 @@ export default async function BankTransactionDetailPage({
 
   return (
     <div className="flex-1 max-w-4xl mx-auto w-full p-6 space-y-8">
-      <PageHeader title="Transaction Details" backHref="/app" />
+      <PageHeader title="Transaction Details" useHistoryBack />
       <BankTransactionDetailView
         transaction={transaction[0]}
         categories={categories}
