@@ -14,10 +14,11 @@ import {
 } from "@/components/ui/sheet";
 import { SlidersHorizontal, X, ChevronRight, Loader2 } from "lucide-react";
 import { groupItemsByMonth } from "@/lib/utils/timeline";
-import { RECEIPT_CATEGORIES, RECEIPT_STATUSES } from "@/lib/consts";
+import { RECEIPT_STATUSES } from "@/lib/consts";
 import Link from "next/link";
 import type { TimelineItem, TimelineFilters } from "@/lib/api/timeline";
-import { fetchTimelineItems } from "@/app/actions/timeline";
+import { fetchTimelineItems, getTimelineMerchants, getTimelineBusinesses } from "@/app/actions/timeline";
+import type { categories as categoriesSchema, businesses as businessesSchema } from "@/lib/db/schema";
 
 type UserSettings = {
   visibleFields?: Record<string, boolean> | null;
@@ -31,18 +32,23 @@ type UserSettings = {
   } | null;
 };
 
+type Category = typeof categoriesSchema.$inferSelect;
+type Business = typeof businessesSchema.$inferSelect;
+
 type TimelineProps = {
   initialItems: TimelineItem[];
   userSettings?: UserSettings | null;
+  categories: Category[];
+  merchants: string[];
+  businesses: Business[];
 };
 
-const categories = RECEIPT_CATEGORIES;
 const statuses = RECEIPT_STATUSES;
 
-export function Timeline({ initialItems, userSettings }: TimelineProps) {
+export function Timeline({ initialItems, userSettings, categories, merchants, businesses }: TimelineProps) {
   const [items, setItems] = useState<TimelineItem[]>(initialItems);
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true); // Assume true initially if full page, but we can be smarter
+  const [hasMore, setHasMore] = useState(true);
   const [isPending, startTransition] = useTransition();
   const [filterOpen, setFilterOpen] = useState(false);
 
@@ -51,19 +57,35 @@ export function Timeline({ initialItems, userSettings }: TimelineProps) {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [documentTypeFilter, setDocumentTypeFilter] = useState("all");
+  const [businessFilter, setBusinessFilter] = useState("all");
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState("all");
+  const [merchantFilter, setMerchantFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
+  const [amountMin, setAmountMin] = useState("");
+  const [amountMax, setAmountMax] = useState("");
 
   // Group items for display
   const filteredGroups = useMemo(() => groupItemsByMonth(items), [items]);
 
+  const buildFilters = (): TimelineFilters => ({
+    search: search || undefined,
+    category: categoryFilter !== "all" ? categoryFilter : undefined,
+    status: statusFilter !== "all" ? statusFilter : undefined,
+    type: documentTypeFilter !== "all" ? documentTypeFilter : undefined,
+    businessFilter: businessFilter !== "all" ? businessFilter : undefined,
+    transactionType: transactionTypeFilter !== "all" ? transactionTypeFilter : undefined,
+    merchant: merchantFilter !== "all" ? merchantFilter : undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    amountMin: amountMin ? parseFloat(amountMin) : undefined,
+    amountMax: amountMax ? parseFloat(amountMax) : undefined,
+  });
+
   const handleLoadMore = () => {
     startTransition(async () => {
       const nextPage = page + 1;
-      const filters: TimelineFilters = {
-        search: search || undefined,
-        category: categoryFilter !== "all" ? categoryFilter : undefined,
-        status: statusFilter !== "all" ? statusFilter : undefined,
-        type: documentTypeFilter !== "all" ? documentTypeFilter : undefined,
-      };
+      const filters = buildFilters();
       
       const result = await fetchTimelineItems(nextPage, 20, filters);
       
@@ -77,12 +99,7 @@ export function Timeline({ initialItems, userSettings }: TimelineProps) {
 
   const applyFilters = () => {
     startTransition(async () => {
-      const filters: TimelineFilters = {
-        search: search || undefined,
-        category: categoryFilter !== "all" ? categoryFilter : undefined,
-        status: statusFilter !== "all" ? statusFilter : undefined,
-        type: documentTypeFilter !== "all" ? documentTypeFilter : undefined,
-      };
+      const filters = buildFilters();
 
       // Reset to page 1
       const result = await fetchTimelineItems(1, 20, filters);
@@ -111,6 +128,13 @@ export function Timeline({ initialItems, userSettings }: TimelineProps) {
     categoryFilter !== "all" || 
     statusFilter !== "all" || 
     documentTypeFilter !== "all" ||
+    businessFilter !== "all" ||
+    transactionTypeFilter !== "all" ||
+    merchantFilter !== "all" ||
+    dateFrom !== undefined ||
+    dateTo !== undefined ||
+    amountMin !== "" ||
+    amountMax !== "" ||
     search !== "";
 
   const resetFilters = () => {
@@ -118,6 +142,13 @@ export function Timeline({ initialItems, userSettings }: TimelineProps) {
     setCategoryFilter("all");
     setStatusFilter("all");
     setDocumentTypeFilter("all");
+    setBusinessFilter("all");
+    setTransactionTypeFilter("all");
+    setMerchantFilter("all");
+    setDateFrom(undefined);
+    setDateTo(undefined);
+    setAmountMin("");
+    setAmountMax("");
     // We need to trigger fetch with empty filters
     // Ideally call applyFilters() but state updates are async.
     // So we call fetch directly with empty object
@@ -166,6 +197,44 @@ export function Timeline({ initialItems, userSettings }: TimelineProps) {
               </SheetDescription>
             </SheetHeader>
             <div className="mt-6 space-y-6 flex-1 overflow-y-auto">
+              {/* Transaction Type Filter */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  Transaction Type
+                </label>
+                <select
+                  className="w-full border rounded-md px-3 py-2 text-sm bg-background"
+                  value={transactionTypeFilter}
+                  onChange={(e) => setTransactionTypeFilter(e.target.value)}
+                >
+                  <option value="all">All Types</option>
+                  <option value="income">Income</option>
+                  <option value="expense">Expense</option>
+                </select>
+              </div>
+
+              {/* Business Context Filter */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  Business Context
+                </label>
+                <select
+                  className="w-full border rounded-md px-3 py-2 text-sm bg-background"
+                  value={businessFilter}
+                  onChange={(e) => setBusinessFilter(e.target.value)}
+                >
+                  <option value="all">All Transactions</option>
+                  <option value="personal">Personal Only</option>
+                  <option value="business">Business Only</option>
+                  {businesses.map((biz) => (
+                    <option key={biz.id} value={biz.id}>
+                      {biz.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Document Type Filter */}
               <div>
                 <label className="text-sm font-medium mb-2 block">
                   Document Type
@@ -180,6 +249,8 @@ export function Timeline({ initialItems, userSettings }: TimelineProps) {
                   <option value="transaction">Bank Statements</option>
                 </select>
               </div>
+
+              {/* Category Filter */}
               <div>
                 <label className="text-sm font-medium mb-2 block">
                   Category
@@ -190,13 +261,34 @@ export function Timeline({ initialItems, userSettings }: TimelineProps) {
                   onChange={(e) => setCategoryFilter(e.target.value)}
                 >
                   <option value="all">All categories</option>
-                  {categories.map((category: string) => (
-                    <option key={category} value={category}>
-                      {category}
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.name}>
+                      {cat.name}
                     </option>
                   ))}
                 </select>
               </div>
+
+              {/* Merchant Filter */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  Merchant
+                </label>
+                <select
+                  className="w-full border rounded-md px-3 py-2 text-sm bg-background"
+                  value={merchantFilter}
+                  onChange={(e) => setMerchantFilter(e.target.value)}
+                >
+                  <option value="all">All merchants</option>
+                  {merchants.map((merchant) => (
+                    <option key={merchant} value={merchant}>
+                      {merchant}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Status Filter */}
               <div>
                 <label className="text-sm font-medium mb-2 block">Status</label>
                 <select
@@ -211,6 +303,48 @@ export function Timeline({ initialItems, userSettings }: TimelineProps) {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Date Range Filter */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Date Range</label>
+                <div className="space-y-2">
+                  <Input
+                    type="date"
+                    placeholder="From date"
+                    value={dateFrom ? dateFrom.toISOString().split('T')[0] : ""}
+                    onChange={(e) => setDateFrom(e.target.value ? new Date(e.target.value) : undefined)}
+                    className="w-full"
+                  />
+                  <Input
+                    type="date"
+                    placeholder="To date"
+                    value={dateTo ? dateTo.toISOString().split('T')[0] : ""}
+                    onChange={(e) => setDateTo(e.target.value ? new Date(e.target.value) : undefined)}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Amount Range Filter */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Amount Range</label>
+                <div className="space-y-2">
+                  <Input
+                    type="number"
+                    placeholder="Min amount"
+                    value={amountMin}
+                    onChange={(e) => setAmountMin(e.target.value)}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max amount"
+                    value={amountMax}
+                    onChange={(e) => setAmountMax(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
               </div>
               
               <div className="flex gap-2 pt-4">

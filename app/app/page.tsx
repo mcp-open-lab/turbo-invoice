@@ -5,6 +5,8 @@ import { AddToHomeScreenButton } from "@/components/add-to-home";
 import { getUserSettings } from "@/app/actions/user-settings";
 import { PageHeader } from "@/components/page-header";
 import { getTimelineItems } from "@/lib/api/timeline";
+import { getUserCategories } from "@/app/actions/financial-categories";
+import { getTimelineMerchants, getTimelineBusinesses } from "@/app/actions/timeline";
 
 export default async function Dashboard() {
   const { userId } = await auth();
@@ -24,6 +26,13 @@ export default async function Dashboard() {
     limit: 20,
     offset: 0
   });
+
+  // Fetch filter metadata
+  const [categories, merchants, businesses] = await Promise.all([
+    getUserCategories(),
+    getTimelineMerchants(),
+    getTimelineBusinesses(),
+  ]);
 
   return (
     <div className="flex-1 max-w-4xl mx-auto w-full p-6 space-y-8">
@@ -46,6 +55,9 @@ export default async function Dashboard() {
               }
             : null
         }
+        categories={categories}
+        merchants={merchants}
+        businesses={businesses}
       />
     </div>
   );

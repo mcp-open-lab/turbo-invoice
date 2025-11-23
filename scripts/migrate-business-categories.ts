@@ -1,18 +1,18 @@
 /**
  * Migration: Business Table Setup
- * 
+ *
  * This migration sets up the businesses table and links existing business transactions.
- * 
- * Note: Categories keep usageScope='both' - they can be used for both personal 
+ *
+ * Note: Categories keep usageScope='both' - they can be used for both personal
  * and business transactions. The businessId field on transactions determines context:
  * - businessId=NULL → personal transaction
  * - businessId=set → business transaction
- * 
+ *
  * What it does:
  * 1. Finds users who have business transactions (isBusinessExpense='true')
  * 2. Creates a default "My Business" entry for those users
  * 3. Links existing business receipts to those businesses
- * 
+ *
  * Run with: node --env-file=.env.local -r esbuild-register scripts/migrate-business-categories.ts
  */
 
