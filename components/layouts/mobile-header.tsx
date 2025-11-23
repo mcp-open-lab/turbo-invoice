@@ -16,8 +16,9 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/app", icon: Home, label: "Timeline" },
-  { href: "/app/documents", icon: FileText, label: "Documents" },
   { href: "/app/import", icon: Upload, label: "Import" },
+  { href: "/app/invoices", icon: FileText, label: "Invoices" },
+  { href: "/app/budgets", icon: Building2, label: "Budgets" },
   { href: "/app/settings", icon: Settings, label: "Settings" },
 ];
 

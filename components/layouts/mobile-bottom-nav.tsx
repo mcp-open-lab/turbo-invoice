@@ -6,8 +6,7 @@ import { Home, Receipt, Upload, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/app", icon: Home, label: "Home" },
-  { href: "/app/documents", icon: Receipt, label: "Docs" },
+  { href: "/app", icon: Home, label: "Timeline" },
   { href: "/app/import", icon: Upload, label: "Import" },
   { href: "/app/settings", icon: Settings, label: "Settings" },
 ];
