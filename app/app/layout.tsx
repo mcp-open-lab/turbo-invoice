@@ -1,7 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { QuickActions } from "@/components/quick-actions";
-import { DesktopNav } from "@/components/desktop-nav";
+import { AppShell } from "@/components/layouts/app-shell";
 
 export default async function AppLayout({
   children,
@@ -13,13 +12,5 @@ export default async function AppLayout({
     redirect("/sign-in");
   }
 
-  return (
-    <div className="min-h-screen bg-background">
-      <DesktopNav />
-      <div className="lg:pt-16">
-        {children}
-      </div>
-      <QuickActions />
-    </div>
-  );
+  return <AppShell>{children}</AppShell>;
 }

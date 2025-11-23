@@ -8,7 +8,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { UserButton } from "@clerk/nextjs";
 
 export default async function BatchDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -29,18 +28,13 @@ export default async function BatchDetailPage(props: {
 
     return (
       <div className="flex-1 max-w-6xl mx-auto w-full p-6 space-y-6">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/app/import?tab=jobs">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
-            <h1 className="text-2xl font-bold">Batch Details</h1>
-          </div>
-          <div className="lg:hidden">
-          <UserButton />
-          </div>
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/app/import?tab=jobs">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <h1 className="text-2xl font-bold">Batch Details</h1>
         </div>
 
         <BatchDetailContainer initialBatch={batch} initialItems={items} />
