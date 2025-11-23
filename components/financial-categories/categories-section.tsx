@@ -38,8 +38,8 @@ type CategoriesSectionProps = {
   setNewCategoryName: (name: string) => void;
   newCategoryTransactionType: "income" | "expense";
   setNewCategoryTransactionType: (type: "income" | "expense") => void;
-  newCategoryUsageScope: "personal" | "business" | "both";
-  setNewCategoryUsageScope: (scope: "personal" | "business" | "both") => void;
+  newCategoryUsageScope: "personal" | "business";
+  setNewCategoryUsageScope: (scope: "personal" | "business") => void;
   newCategoryDescription: string;
   setNewCategoryDescription: (description: string) => void;
   categoryDialogOpen: boolean;
@@ -150,18 +150,15 @@ export function CategoriesSection({
                 <Select
                   value={newCategoryUsageScope}
                   onValueChange={(v) =>
-                    setNewCategoryUsageScope(
-                      v as "personal" | "business" | "both"
-                    )
+                    setNewCategoryUsageScope(v as "personal" | "business")
                   }
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="both">Personal & Business</SelectItem>
-                    <SelectItem value="personal">Personal Only</SelectItem>
-                    <SelectItem value="business">Business Only</SelectItem>
+                    <SelectItem value="personal">Personal</SelectItem>
+                    <SelectItem value="business">Business</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

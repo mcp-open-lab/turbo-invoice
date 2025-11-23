@@ -20,8 +20,8 @@ export function useCategories({ categories }: UseCategoriesProps) {
   const [newCategoryTransactionType, setNewCategoryTransactionType] =
     useState<"income" | "expense">("expense");
   const [newCategoryUsageScope, setNewCategoryUsageScope] = useState<
-    "personal" | "business" | "both"
-  >("both");
+    "personal" | "business"
+  >("business");
   const [newCategoryDescription, setNewCategoryDescription] = useState("");
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
 
@@ -54,7 +54,7 @@ export function useCategories({ categories }: UseCategoriesProps) {
         toast.success("Category created!");
         setNewCategoryName("");
         setNewCategoryTransactionType("expense");
-        setNewCategoryUsageScope("both");
+        setNewCategoryUsageScope("business");
         setNewCategoryDescription("");
         setCategoryDialogOpen(false);
         window.location.reload();

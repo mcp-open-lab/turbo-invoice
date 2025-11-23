@@ -241,9 +241,10 @@ export const receipts = pgTable(
     date: timestamp("date"),
     category: text("category"), // Denormalized for display/fallback
     categoryId: text("category_id"), // FK to categories
+    businessId: text("business_id"), // FK to businesses (null = personal transaction)
     description: text("description"),
     businessPurpose: text("business_purpose"), // Why this expense (for tax deductions)
-    isBusinessExpense: text("is_business_expense").default("true"), // 'true' | 'false'
+    isBusinessExpense: text("is_business_expense").default("true"), // 'true' | 'false' (deprecated, use businessId)
     paymentMethod: text("payment_method"), // 'cash' | 'card' | 'check' | 'other'
 
     status: text("status").default("needs_review"),
@@ -318,7 +319,8 @@ export const bankStatementTransactions = pgTable(
     // Classification
     category: text("category"), // Denormalized for display/fallback
     categoryId: text("category_id"), // FK to categories
-    isBusinessExpense: text("is_business_expense"), // 'true' | 'false'
+    businessId: text("business_id"), // FK to businesses (null = personal transaction)
+    isBusinessExpense: text("is_business_expense"), // 'true' | 'false' (deprecated, use businessId)
     businessPurpose: text("business_purpose"),
     paymentMethod: text("payment_method"), // 'cash' | 'card' | 'check' | 'other' | null
 
@@ -391,6 +393,32 @@ export const invoices = pgTable("invoices", {
 });
 
 // ============================================
+// BUSINESSES
+// ============================================
+
+export const businesses = pgTable("businesses", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  userId: text("user_id").notNull(),
+  
+  name: text("name").notNull(),
+  type: text("type").notNull(), // 'business' | 'contract'
+  description: text("description"),
+  
+  // Tax/legal information
+  taxId: text("tax_id"), // EIN, GST/HST number, etc.
+  address: text("address"),
+  
+  // Display
+  color: text("color"), // Hex color for UI
+  icon: text("icon"), // Optional icon identifier
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ============================================
 // CATEGORIES & RULES
 // ============================================
 
@@ -404,7 +432,7 @@ export const categories = pgTable("categories", {
   
   // Financial classification (with defaults for existing data)
   transactionType: text("transaction_type").notNull().default("expense"), // 'income' | 'expense'
-  usageScope: text("usage_scope").notNull().default("both"), // 'personal' | 'business' | 'both'
+  usageScope: text("usage_scope").notNull().default("business"), // 'personal' | 'business'
   
   // Hierarchy
   parentId: text("parent_id"), // For future hierarchical categories

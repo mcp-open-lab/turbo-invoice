@@ -431,6 +431,24 @@ export function SettingsFormV2({ initialSettings }: SettingsFormProps) {
           </div>
         </Card>
 
+        {/* Link to Businesses */}
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Businesses & Contracts</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Manage your businesses and contracts to organize transactions and separate personal vs business expenses
+              </p>
+            </div>
+            <Link href="/app/settings/businesses">
+              <Button variant="outline" type="button">
+                Manage
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </Card>
+
         <div className="flex justify-end">
           <Button type="submit" disabled={isPending}>
             {isPending ? "Saving..." : "Save Settings"}
