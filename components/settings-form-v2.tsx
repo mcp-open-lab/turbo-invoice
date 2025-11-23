@@ -119,7 +119,7 @@ export function SettingsFormV2({ initialSettings }: SettingsFormProps) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* General Settings */}
         <Card className="p-6">
-          <Accordion type="single" collapsible className="w-full" defaultValue="general">
+          <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="general">
               <AccordionTrigger className="text-lg font-semibold">
                 General Settings
