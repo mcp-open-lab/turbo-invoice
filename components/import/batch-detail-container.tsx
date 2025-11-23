@@ -31,9 +31,11 @@ export function BatchDetailContainer({
       <BatchSummaryCard batch={batch} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <BatchItemsTable items={items} />
-        <BatchActivityLog batchId={batch.batchId} initialLogs={initialActivityLogs} />
+        <BatchActivityLog
+          batchId={batch.batchId}
+          initialLogs={initialActivityLogs}
+        />
       </div>
     </div>
   );
 }
-
