@@ -14,7 +14,7 @@ import {
   type ProcessedDocument,
   type DocumentProcessorConfig,
 } from "./base-document-processor";
-import { generateObjectForExtraction } from "@/lib/ai/client";
+import { generateObjectForExtraction, generateObject } from "@/lib/ai/client";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { devLogger } from "@/lib/dev-logger";
@@ -82,26 +82,53 @@ export class ReceiptProcessor extends BaseDocumentProcessor {
     const imageBuffer = await imageResp.arrayBuffer();
     const base64Image = Buffer.from(imageBuffer).toString("base64");
 
-    // Call AI API for OCR (uses OpenAI primary, Gemini fallback)
-    const extractedData = await this.extractWithAI(
+    // Call AI API for OCR (uses GPT-4o-mini primary, GPT-4o fallback)
+    // If validation fails, retry with GPT-4o for better accuracy
+    let extractedData = await this.extractWithAI(
       base64Image,
       fileUrl,
       fieldsToExtract,
-      fileName
+      fileName,
+      false // Use GPT-4o-mini first
     );
 
-    // Validate minimum requirements - throw error if missing required fields
+    // Validate minimum requirements - retry with GPT-4o if validation fails
     const validation = this.validateExtractedData(extractedData);
     if (!validation.isValid) {
-      devLogger.error("Receipt extraction missing required fields", {
+      devLogger.warn("Receipt extraction missing required fields, retrying with GPT-4o", {
         missingFields: validation.missingFields,
         fileName: fileName || "unknown",
+        model: "gpt-4o-mini",
       });
-      throw new Error(
-        `Failed to extract required fields from receipt: ${validation.missingFields.join(
-          ", "
-        )}. The image may be unclear or not a valid receipt.`
+
+      // Retry with GPT-4o for better accuracy
+      extractedData = await this.extractWithAI(
+        base64Image,
+        fileUrl,
+        fieldsToExtract,
+        fileName,
+        true // Force GPT-4o
       );
+
+      // Validate again after retry
+      const retryValidation = this.validateExtractedData(extractedData);
+      if (!retryValidation.isValid) {
+        devLogger.error("Receipt extraction still missing required fields after GPT-4o retry", {
+          missingFields: retryValidation.missingFields,
+          fileName: fileName || "unknown",
+          model: "gpt-4o",
+        });
+        throw new Error(
+          `Failed to extract required fields from receipt: ${retryValidation.missingFields.join(
+            ", "
+          )}. The image may be unclear or not a valid receipt.`
+        );
+      }
+
+      devLogger.info("Receipt extraction succeeded after GPT-4o retry", {
+        fileName: fileName || "unknown",
+        model: "gpt-4o",
+      });
     }
 
     // Auto-categorize if merchant name is present
@@ -180,7 +207,8 @@ export class ReceiptProcessor extends BaseDocumentProcessor {
     base64Image: string,
     imageUrl: string,
     fieldsToExtract: Set<string>,
-    fileName?: string
+    fileName?: string,
+    useGPT4o: boolean = false
   ): Promise<Record<string, any>> {
     // Build Zod schema for structured output
     const receiptSchema = this.buildReceiptSchema(fieldsToExtract);
