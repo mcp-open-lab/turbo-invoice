@@ -118,9 +118,13 @@ export function SettingsFormV2({ initialSettings }: SettingsFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* General Settings */}
-        <Card className="p-6 space-y-4">
-          <h2 className="text-lg font-semibold">General Settings</h2>
-          <div className="space-y-4">
+        <Card className="p-6">
+          <Accordion type="single" collapsible className="w-full" defaultValue="general">
+            <AccordionItem value="general">
+              <AccordionTrigger className="text-lg font-semibold">
+                General Settings
+              </AccordionTrigger>
+              <AccordionContent className="space-y-4 pt-4">
             <FormField
               control={form.control}
               name="usageType"
@@ -254,7 +258,9 @@ export function SettingsFormV2({ initialSettings }: SettingsFormProps) {
                 </FormItem>
               )}
             />
-          </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </Card>
 
         {/* Document Type Settings */}
