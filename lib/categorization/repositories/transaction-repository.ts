@@ -106,7 +106,7 @@ export class TransactionRepository {
       .where(
         and(
           eq(receipts.userId, userId),
-          eq(receipts.merchantName, merchantName),
+          sql`LOWER(${receipts.merchantName}) = LOWER(${merchantName})`,
           isNotNull(receipts.categoryId)
         )
       )
@@ -150,7 +150,7 @@ export class TransactionRepository {
       .from(bankStatementTransactions)
       .where(
         and(
-          eq(bankStatementTransactions.merchantName, merchantName),
+          sql`LOWER(${bankStatementTransactions.merchantName}) = LOWER(${merchantName})`,
           isNotNull(bankStatementTransactions.categoryId)
         )
       )
@@ -373,7 +373,7 @@ export class TransactionRepository {
         source: "receipt" | "bank_transaction";
       }> = [];
 
-      // Get receipts for this merchant
+      // Get receipts for this merchant (case-insensitive)
       const receiptData = await db
         .select({
           id: receipts.id,
@@ -387,7 +387,7 @@ export class TransactionRepository {
         .where(
           and(
             eq(receipts.userId, userId),
-            eq(receipts.merchantName, merchantName)
+            sql`LOWER(${receipts.merchantName}) = LOWER(${merchantName})`
           )
         )
         .orderBy(desc(receipts.date));
@@ -443,7 +443,7 @@ export class TransactionRepository {
         .where(
           and(
             eq(documents.userId, userId),
-            eq(bankStatementTransactions.merchantName, merchantName)
+            sql`LOWER(${bankStatementTransactions.merchantName}) = LOWER(${merchantName})`
           )
         )
         .orderBy(desc(bankStatementTransactions.transactionDate));
