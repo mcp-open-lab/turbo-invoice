@@ -1,5 +1,11 @@
 import { db } from "@/lib/db";
-import { receipts, bankStatementTransactions, bankStatements, documents, categories } from "@/lib/db/schema";
+import {
+  receipts,
+  bankStatementTransactions,
+  bankStatements,
+  documents,
+  categories,
+} from "@/lib/db/schema";
 import { eq, and, isNotNull, desc, sql, or, inArray } from "drizzle-orm";
 import { devLogger } from "@/lib/dev-logger";
 
@@ -30,6 +36,9 @@ export interface MerchantStats {
   categoryUsageCount: number; // Number of times the most common category was used
   lastUsedDate: Date;
   hasRule: boolean; // Whether a rule exists for this merchant
+  ruleId: string | null; // The rule ID if a rule exists
+  ruleCategoryId: string | null; // The category ID from the rule
+  ruleDisplayName: string | null; // The display name from the rule
 }
 
 /**
@@ -200,7 +209,10 @@ export class TransactionRepository {
           date: bankStatementTransactions.transactionDate,
         })
         .from(bankStatementTransactions)
-        .innerJoin(bankStatements, eq(bankStatementTransactions.bankStatementId, bankStatements.id))
+        .innerJoin(
+          bankStatements,
+          eq(bankStatementTransactions.bankStatementId, bankStatements.id)
+        )
         .innerJoin(documents, eq(bankStatements.documentId, documents.id))
         .where(
           and(
@@ -211,16 +223,19 @@ export class TransactionRepository {
         );
 
       // Aggregate merchant data
-      const merchantMap = new Map<string, {
-        count: number;
-        categoryFrequency: Map<string, number>;
-        lastDate: Date;
-      }>();
+      const merchantMap = new Map<
+        string,
+        {
+          count: number;
+          categoryFrequency: Map<string, number>;
+          lastDate: Date;
+        }
+      >();
 
       // Process receipts
       for (const row of receiptStats) {
         if (!row.merchantName || !row.categoryId) continue;
-        
+
         const key = row.merchantName.toLowerCase();
         const existing = merchantMap.get(key) || {
           count: 0,
@@ -243,7 +258,7 @@ export class TransactionRepository {
       // Process bank transactions
       for (const row of bankStats) {
         if (!row.merchantName || !row.categoryId) continue;
-        
+
         const key = row.merchantName.toLowerCase();
         const existing = merchantMap.get(key) || {
           count: 0,
@@ -272,12 +287,13 @@ export class TransactionRepository {
         )
       );
 
-      const categoryData = allCategoryIds.length > 0
-        ? await db
-            .select()
-            .from(categories)
-            .where(inArray(categories.id, allCategoryIds))
-        : [];
+      const categoryData =
+        allCategoryIds.length > 0
+          ? await db
+              .select()
+              .from(categories)
+              .where(inArray(categories.id, allCategoryIds))
+          : [];
 
       const categoryMap = new Map(categoryData.map((c) => [c.id, c.name]));
 
@@ -305,6 +321,9 @@ export class TransactionRepository {
             categoryUsageCount: maxCount,
             lastUsedDate: data.lastDate,
             hasRule: false, // Will be set in the calling function
+            ruleId: null,
+            ruleCategoryId: null,
+            ruleDisplayName: null,
           };
         }
       );
@@ -377,7 +396,7 @@ export class TransactionRepository {
       const receiptCategoryIds = receiptData
         .filter((r) => r.categoryId)
         .map((r) => r.categoryId!);
-      
+
       const receiptCategories =
         receiptCategoryIds.length > 0
           ? await db
@@ -386,9 +405,7 @@ export class TransactionRepository {
               .where(inArray(categories.id, receiptCategoryIds))
           : [];
 
-      const categoryMap = new Map(
-        receiptCategories.map((c) => [c.id, c.name])
-      );
+      const categoryMap = new Map(receiptCategories.map((c) => [c.id, c.name]));
 
       // Add receipts to transactions
       for (const receipt of receiptData) {
@@ -482,4 +499,3 @@ export class TransactionRepository {
     }
   }
 }
-

@@ -39,7 +39,7 @@ export default async function BatchDetailPage(props: {
             <h1 className="text-2xl font-bold">Batch Details</h1>
           </div>
           <div className="lg:hidden">
-            <UserButton />
+          <UserButton />
           </div>
         </div>
 
@@ -59,7 +59,7 @@ export default async function BatchDetailPage(props: {
             <h1 className="text-2xl font-bold">Batch Details</h1>
           </div>
           <div className="lg:hidden">
-            <UserButton />
+          <UserButton />
           </div>
         </div>
         <div className="p-8 text-center text-muted-foreground border rounded-lg">

@@ -19,7 +19,13 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Check, Edit2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Plus, Check, Edit2, MoreVertical, Trash2 } from "lucide-react";
 import type { categories } from "@/lib/db/schema";
 import type { MerchantStats } from "@/lib/categorization/repositories/transaction-repository";
 
@@ -37,8 +43,15 @@ type MerchantHistorySectionProps = {
   setNewMerchantDisplayName: (name: string) => void;
   merchantDialogOpen: boolean;
   setMerchantDialogOpen: (open: boolean) => void;
+  editMerchantDialogOpen: boolean;
+  setEditMerchantDialogOpen: (open: boolean) => void;
+  editingMerchant: MerchantStats | null;
+  setEditingMerchant: (merchant: MerchantStats | null) => void;
   handleCreateMerchantRule: () => void;
   handleQuickCreateRule: (merchantName: string, categoryId: string) => void;
+  handleEditMerchantRule: (merchant: MerchantStats) => void;
+  handleUpdateMerchantRule: () => void;
+  handleDeleteMerchantRule: (ruleId: string) => void;
 };
 
 export function MerchantHistorySection({
@@ -53,8 +66,15 @@ export function MerchantHistorySection({
   setNewMerchantDisplayName,
   merchantDialogOpen,
   setMerchantDialogOpen,
+  editMerchantDialogOpen,
+  setEditMerchantDialogOpen,
+  editingMerchant,
+  setEditingMerchant,
   handleCreateMerchantRule,
   handleQuickCreateRule,
+  handleEditMerchantRule,
+  handleUpdateMerchantRule,
+  handleDeleteMerchantRule,
 }: MerchantHistorySectionProps) {
   return (
     <Card className="p-6">
@@ -139,6 +159,80 @@ export function MerchantHistorySection({
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Merchant Rule Dialog */}
+        <Dialog
+          open={editMerchantDialogOpen}
+          onOpenChange={setEditMerchantDialogOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Merchant Rule</DialogTitle>
+              <DialogDescription>
+                Update the category or display name for this merchant
+              </DialogDescription>
+            </DialogHeader>
+            {editingMerchant && (
+              <div className="space-y-4 py-4">
+                <div>
+                  <label className="text-sm font-medium">Merchant Name</label>
+                  <Input
+                    value={editingMerchant.merchantName}
+                    disabled
+                    className="bg-muted"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">
+                    Display Name (Optional)
+                  </label>
+                  <Input
+                    placeholder="Friendly name for this merchant"
+                    value={newMerchantDisplayName}
+                    onChange={(e) => setNewMerchantDisplayName(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Category</label>
+                  <Select
+                    value={newMerchantCategoryId}
+                    onValueChange={setNewMerchantCategoryId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name} {cat.type === "system" ? "(System)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditMerchantDialogOpen(false);
+                  setEditingMerchant(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleUpdateMerchantRule}
+                disabled={isPending || !newMerchantCategoryId}
+              >
+                Update Rule
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {merchantStats.length === 0 ? (
@@ -195,28 +289,55 @@ export function MerchantHistorySection({
                   {new Date(stat.lastUsedDate).toLocaleDateString()}
                 </div>
                 <div className="col-span-2 flex justify-end">
-                  {stat.hasRule ? (
-                    <Badge variant="secondary" className="text-xs whitespace-nowrap">
-                      <Check className="h-3 w-3 mr-1" />
-                      Rule Set
-                    </Badge>
-                  ) : stat.mostCommonCategoryId ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        handleQuickCreateRule(
-                          stat.merchantName,
-                          stat.mostCommonCategoryId!
-                        )
-                      }
-                      disabled={isPending}
-                      className="h-8 px-3 text-xs whitespace-nowrap"
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Create Rule
-                    </Button>
-                  ) : null}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        disabled={isPending}
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {stat.hasRule ? (
+                        <>
+                          <DropdownMenuItem
+                            onClick={() => handleEditMerchantRule(stat)}
+                          >
+                            <Edit2 className="h-4 w-4 mr-2" />
+                            Edit Rule
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              stat.ruleId && handleDeleteMerchantRule(stat.ruleId)
+                            }
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Rule
+                          </DropdownMenuItem>
+                        </>
+                      ) : stat.mostCommonCategoryId ? (
+                        <DropdownMenuItem
+                          onClick={() =>
+                            handleQuickCreateRule(
+                              stat.merchantName,
+                              stat.mostCommonCategoryId!
+                            )
+                          }
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create Rule
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem disabled>
+                          No category available
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             ))}

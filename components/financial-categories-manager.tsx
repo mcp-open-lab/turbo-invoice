@@ -31,6 +31,12 @@ export function FinancialCategoriesManager({
         isPending={hook.isPending}
         newCategoryName={hook.newCategoryName}
         setNewCategoryName={hook.setNewCategoryName}
+        newCategoryTransactionType={hook.newCategoryTransactionType}
+        setNewCategoryTransactionType={hook.setNewCategoryTransactionType}
+        newCategoryUsageScope={hook.newCategoryUsageScope}
+        setNewCategoryUsageScope={hook.setNewCategoryUsageScope}
+        newCategoryDescription={hook.newCategoryDescription}
+        setNewCategoryDescription={hook.setNewCategoryDescription}
         categoryDialogOpen={hook.categoryDialogOpen}
         setCategoryDialogOpen={hook.setCategoryDialogOpen}
         handleCreateCategory={hook.handleCreateCategory}
@@ -51,8 +57,14 @@ export function FinancialCategoriesManager({
         setNewRuleValue={hook.setNewRuleValue}
         ruleDialogOpen={hook.ruleDialogOpen}
         setRuleDialogOpen={hook.setRuleDialogOpen}
+        editRuleDialogOpen={hook.editRuleDialogOpen}
+        setEditRuleDialogOpen={hook.setEditRuleDialogOpen}
+        editingRule={hook.editingRule}
+        setEditingRule={hook.setEditingRule}
         handleCreateRule={hook.handleCreateRule}
+        handleUpdateRule={hook.handleUpdateRule}
         handleDeleteRule={hook.handleDeleteRule}
+        handleEditRule={hook.handleEditRule}
         getRulePlaceholder={hook.getRulePlaceholder}
       />
 
@@ -68,8 +80,15 @@ export function FinancialCategoriesManager({
         setNewMerchantDisplayName={hook.setNewMerchantDisplayName}
         merchantDialogOpen={hook.merchantDialogOpen}
         setMerchantDialogOpen={hook.setMerchantDialogOpen}
+        editMerchantDialogOpen={hook.editMerchantDialogOpen}
+        setEditMerchantDialogOpen={hook.setEditMerchantDialogOpen}
+        editingMerchant={hook.editingMerchant}
+        setEditingMerchant={hook.setEditingMerchant}
         handleCreateMerchantRule={hook.handleCreateMerchantRule}
         handleQuickCreateRule={hook.handleQuickCreateRule}
+        handleEditMerchantRule={hook.handleEditMerchantRule}
+        handleUpdateMerchantRule={hook.handleUpdateMerchantRule}
+        handleDeleteMerchantRule={hook.handleDeleteMerchantRule}
       />
     </div>
   );

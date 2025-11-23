@@ -18,7 +18,13 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Plus, Trash2, Edit2, MoreVertical } from "lucide-react";
 import type { categories, categoryRules } from "@/lib/db/schema";
 
 type Category = typeof categories.$inferSelect;
@@ -38,8 +44,14 @@ type RulesSectionProps = {
   setNewRuleValue: (value: string) => void;
   ruleDialogOpen: boolean;
   setRuleDialogOpen: (open: boolean) => void;
+  editRuleDialogOpen: boolean;
+  setEditRuleDialogOpen: (open: boolean) => void;
+  editingRule: CategoryRule | null;
+  setEditingRule: (rule: CategoryRule | null) => void;
   handleCreateRule: () => void;
+  handleUpdateRule: () => void;
   handleDeleteRule: (ruleId: string) => void;
+  handleEditRule: (rule: CategoryRule) => void;
   getRulePlaceholder: () => string;
 };
 
@@ -57,8 +69,14 @@ export function RulesSection({
   setNewRuleValue,
   ruleDialogOpen,
   setRuleDialogOpen,
+  editRuleDialogOpen,
+  setEditRuleDialogOpen,
+  editingRule,
+  setEditingRule,
   handleCreateRule,
+  handleUpdateRule,
   handleDeleteRule,
+  handleEditRule,
   getRulePlaceholder,
 }: RulesSectionProps) {
   return (
@@ -190,17 +208,123 @@ export function RulesSection({
                   </span>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleEditRule(rule)}>
+                    <Edit2 className="h-4 w-4 mr-2" />
+                    Edit Rule
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
                 onClick={() => handleDeleteRule(rule.id)}
+                    className="text-destructive focus:text-destructive"
               >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Rule
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ))}
         </div>
       )}
+
+      {/* Edit Rule Dialog */}
+      <Dialog open={editRuleDialogOpen} onOpenChange={setEditRuleDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Auto-Categorization Rule</DialogTitle>
+            <DialogDescription>
+              Update the pattern or category for this rule
+            </DialogDescription>
+          </DialogHeader>
+          {editingRule && (
+            <div className="space-y-4 py-4">
+              <div>
+                <label className="text-sm font-medium">Category</label>
+                <Select
+                  value={newRuleCategoryId}
+                  onValueChange={setNewRuleCategoryId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name} {cat.type === "system" ? "(System)" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Match Field</label>
+                <Select
+                  value={newRuleField}
+                  onValueChange={(v) => setNewRuleField(v as any)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="merchantName">Merchant Name</SelectItem>
+                    <SelectItem value="description">Description</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Match Type</label>
+                <Select
+                  value={newRuleMatchType}
+                  onValueChange={(v) => setNewRuleMatchType(v as any)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="contains">Contains</SelectItem>
+                    <SelectItem value="exact">Exact Match</SelectItem>
+                    <SelectItem value="regex">Regex</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Pattern</label>
+                <Input
+                  placeholder={getRulePlaceholder()}
+                  value={newRuleValue}
+                  onChange={(e) => setNewRuleValue(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditRuleDialogOpen(false);
+                setEditingRule(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUpdateRule}
+              disabled={isPending || !newRuleCategoryId || !newRuleValue.trim()}
+            >
+              Update Rule
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

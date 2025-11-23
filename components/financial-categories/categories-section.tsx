@@ -17,6 +17,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Plus, Trash2, Tag, TrendingUp, TrendingDown } from "lucide-react";
 import type { categories } from "@/lib/db/schema";
 
@@ -28,6 +36,12 @@ type CategoriesSectionProps = {
   isPending: boolean;
   newCategoryName: string;
   setNewCategoryName: (name: string) => void;
+  newCategoryTransactionType: "income" | "expense";
+  setNewCategoryTransactionType: (type: "income" | "expense") => void;
+  newCategoryUsageScope: "personal" | "business" | "both";
+  setNewCategoryUsageScope: (scope: "personal" | "business" | "both") => void;
+  newCategoryDescription: string;
+  setNewCategoryDescription: (description: string) => void;
   categoryDialogOpen: boolean;
   setCategoryDialogOpen: (open: boolean) => void;
   handleCreateCategory: () => void;
@@ -40,6 +54,12 @@ export function CategoriesSection({
   isPending,
   newCategoryName,
   setNewCategoryName,
+  newCategoryTransactionType,
+  setNewCategoryTransactionType,
+  newCategoryUsageScope,
+  setNewCategoryUsageScope,
+  newCategoryDescription,
+  setNewCategoryDescription,
   categoryDialogOpen,
   setCategoryDialogOpen,
   handleCreateCategory,
@@ -98,14 +118,65 @@ export function CategoriesSection({
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
+              <div>
+                <label className="text-sm font-medium">Category Name</label>
               <Input
-                placeholder="Category name (e.g., Gym Membership)"
+                  placeholder="e.g., Gym Membership"
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleCreateCategory();
-                }}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Transaction Type</label>
+                <Select
+                  value={newCategoryTransactionType}
+                  onValueChange={(v) =>
+                    setNewCategoryTransactionType(v as "income" | "expense")
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="expense">Expense</SelectItem>
+                    <SelectItem value="income">Income</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Usage Scope</label>
+                <Select
+                  value={newCategoryUsageScope}
+                  onValueChange={(v) =>
+                    setNewCategoryUsageScope(
+                      v as "personal" | "business" | "both"
+                    )
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="both">Personal & Business</SelectItem>
+                    <SelectItem value="personal">Personal Only</SelectItem>
+                    <SelectItem value="business">Business Only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">
+                  Description (Optional)
+                </label>
+                <Textarea
+                  placeholder="Add a description for this category"
+                  value={newCategoryDescription}
+                  onChange={(e) => setNewCategoryDescription(e.target.value)}
+                  rows={3}
               />
+              </div>
             </div>
             <DialogFooter>
               <Button

@@ -27,6 +27,9 @@ export async function getUserCategories() {
 // Create a new user category
 const CreateCategorySchema = z.object({
   name: z.string().min(1, "Category name is required").max(50),
+  transactionType: z.enum(["income", "expense"]),
+  usageScope: z.enum(["personal", "business", "both"]),
+  description: z.string().optional(),
 });
 
 export const createUserCategory = createSafeAction(
@@ -70,6 +73,9 @@ export const createUserCategory = createSafeAction(
         name: validated.name,
         type: "user",
         userId,
+        transactionType: validated.transactionType,
+        usageScope: validated.usageScope,
+        description: validated.description || null,
       })
       .returning();
 
@@ -183,6 +189,68 @@ export const createCategoryRule = createSafeAction(
   }
 );
 
+// Update a category rule
+const UpdateRuleSchema = z.object({
+  ruleId: z.string(),
+  categoryId: z.string(),
+  matchType: z.enum(["exact", "contains", "regex"]),
+  field: z.enum(["merchantName", "description"]),
+  value: z.string().min(1, "Pattern is required"),
+});
+
+export const updateCategoryRule = createSafeAction(
+  "updateCategoryRule",
+  async (data: z.infer<typeof UpdateRuleSchema>) => {
+    const validated = UpdateRuleSchema.parse(data);
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    // Verify ownership
+    const rule = await db
+      .select()
+      .from(categoryRules)
+      .where(eq(categoryRules.id, validated.ruleId))
+      .limit(1);
+
+    if (rule.length === 0 || rule[0].userId !== userId) {
+      throw new Error("Rule not found or unauthorized");
+    }
+
+    // Verify category exists
+    const category = await db
+      .select()
+      .from(categories)
+      .where(eq(categories.id, validated.categoryId))
+      .limit(1);
+
+    if (category.length === 0) {
+      throw new Error("Category not found");
+    }
+
+    if (category[0].type === "user" && category[0].userId !== userId) {
+      throw new Error("Unauthorized to use this category");
+    }
+
+    await db
+      .update(categoryRules)
+      .set({
+        categoryId: validated.categoryId,
+        matchType: validated.matchType,
+        field: validated.field,
+        value: validated.value,
+        updatedAt: new Date(),
+      })
+      .where(eq(categoryRules.id, validated.ruleId));
+
+    devLogger.info("Category rule updated", {
+      context: { ruleId: validated.ruleId },
+    });
+
+    revalidatePath("/app/settings/categories");
+    return { success: true };
+  }
+);
+
 // Delete a rule
 const DeleteRuleSchema = z.object({
   ruleId: z.string(),
@@ -206,9 +274,38 @@ export const deleteCategoryRule = createSafeAction(
       throw new Error("Rule not found or unauthorized");
     }
 
+    /**
+     * IMPLICATIONS OF DELETING A RULE:
+     *
+     * 1. Future Transactions:
+     *    - New transactions matching this rule will NO LONGER be auto-categorized
+     *    - They will fall back to History Matcher (if past transactions exist)
+     *    - Or AI Matcher (if enabled and no history)
+     *    - Or remain uncategorized
+     *
+     * 2. Existing Transactions:
+     *    - Transactions already categorized by this rule KEEP their categoryId
+     *    - No cascade delete - existing data is NOT affected
+     *    - The categoryId is stored on the transaction record itself
+     *
+     * 3. Categorization Priority:
+     *    - Rules have Priority 1 (highest - checked first)
+     *    - After deletion, History Matcher (Priority 2) may take over
+     *    - Or AI Matcher (Priority 100) as fallback
+     *
+     * 4. No Transaction Count:
+     *    - We don't track which transactions were categorized by which rule
+     *    - Cannot show "X transactions will be affected" warning
+     *    - Deletion is immediate and affects future categorization only
+     */
+
     await db
       .delete(categoryRules)
       .where(eq(categoryRules.id, validated.ruleId));
+
+    devLogger.info("Category rule deleted", {
+      context: { ruleId: validated.ruleId },
+    });
 
     revalidatePath("/app/settings/categories");
     return { success: true };
@@ -228,7 +325,10 @@ export async function getMerchantStatistics() {
   // Check which merchants have existing rules
   const merchantRules = await db
     .select({
+      id: categoryRules.id,
       value: categoryRules.value,
+      categoryId: categoryRules.categoryId,
+      displayName: categoryRules.displayName,
       field: categoryRules.field,
       matchType: categoryRules.matchType,
     })
@@ -236,19 +336,29 @@ export async function getMerchantStatistics() {
     .where(
       and(
         eq(categoryRules.userId, userId),
-        eq(categoryRules.field, "merchantName")
+        eq(categoryRules.field, "merchantName"),
+        eq(categoryRules.matchType, "exact")
       )
     );
 
-  // Mark merchants that have rules
-  const rulesSet = new Set(
-    merchantRules
-      .filter((r) => r.matchType === "exact")
-      .map((r) => r.value.toLowerCase())
+  // Create a map of merchant name -> rule data
+  const rulesMap = new Map(
+    merchantRules.map((r) => [r.value.toLowerCase(), r])
   );
 
   stats.forEach((stat) => {
-    stat.hasRule = rulesSet.has(stat.merchantName.toLowerCase());
+    const rule = rulesMap.get(stat.merchantName.toLowerCase());
+    if (rule) {
+      stat.hasRule = true;
+      stat.ruleId = rule.id;
+      stat.ruleCategoryId = rule.categoryId;
+      stat.ruleDisplayName = rule.displayName;
+    } else {
+      stat.hasRule = false;
+      stat.ruleId = null;
+      stat.ruleCategoryId = null;
+      stat.ruleDisplayName = null;
+    }
   });
 
   devLogger.info("Merchant statistics retrieved", {
@@ -331,6 +441,65 @@ export const createMerchantRule = createSafeAction(
 
     revalidatePath("/app/settings/categories");
     return newRule[0];
+  }
+);
+
+// Update a merchant rule
+const UpdateMerchantRuleSchema = z.object({
+  ruleId: z.string(),
+  categoryId: z.string(),
+  displayName: z.string().optional(),
+});
+
+export const updateMerchantRule = createSafeAction(
+  "updateMerchantRule",
+  async (data: z.infer<typeof UpdateMerchantRuleSchema>) => {
+    const validated = UpdateMerchantRuleSchema.parse(data);
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    // Verify ownership and rule type
+    const rule = await db
+      .select()
+      .from(categoryRules)
+      .where(eq(categoryRules.id, validated.ruleId))
+      .limit(1);
+
+    if (
+      rule.length === 0 ||
+      rule[0].userId !== userId ||
+      rule[0].field !== "merchantName" ||
+      rule[0].matchType !== "exact"
+    ) {
+      throw new Error("Rule not found or unauthorized");
+    }
+
+    // Verify category exists
+    const category = await db
+      .select()
+      .from(categories)
+      .where(eq(categories.id, validated.categoryId))
+      .limit(1);
+
+    if (category.length === 0) {
+      throw new Error("Category not found");
+    }
+
+    await db
+      .update(categoryRules)
+      .set({
+        categoryId: validated.categoryId,
+        displayName: validated.displayName || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(categoryRules.id, validated.ruleId));
+
+    devLogger.info("Merchant rule updated", {
+      context: { ruleId: validated.ruleId, categoryId: validated.categoryId },
+    });
+
+    revalidatePath("/app/settings/categories");
+    return { success: true };
   }
 );
 

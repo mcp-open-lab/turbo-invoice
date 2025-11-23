@@ -25,7 +25,7 @@ export function PageHeader({ title, backHref }: PageHeaderProps) {
       </div>
       {/* Show UserButton only on mobile/tablet, hidden on desktop (lg+) */}
       <div className="lg:hidden">
-        <UserButton />
+      <UserButton />
       </div>
     </div>
   );
