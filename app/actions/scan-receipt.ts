@@ -16,6 +16,7 @@ import { devLogger } from "@/lib/dev-logger";
 import { ReceiptProcessor } from "@/lib/import/processors/receipt-processor";
 import { calculateFileHash } from "@/lib/utils/file-hash";
 import { getMimeTypeFromUrl, getFileFormatFromUrl } from "@/lib/constants";
+import { ActivityLogger } from "@/lib/import/activity-logger";
 
 function getFileName(url: string): string | null {
   try {
@@ -45,6 +46,7 @@ async function scanReceiptHandler(
   const defaultValues = settings?.defaultValues || {};
 
   let batchItem: { id: string } | undefined;
+  const startTime = Date.now();
 
   try {
     devLogger.info("Processing receipt", {
@@ -53,6 +55,13 @@ async function scanReceiptHandler(
       country,
       currency,
     });
+
+    const fileName = getFileName(imageUrl) || "receipt.jpg";
+
+    // Log AI extraction start
+    if (batchId && batchItem) {
+      await ActivityLogger.aiExtractionStart(batchId, batchItem.id, fileName);
+    }
 
     // Check for duplicate file first
     const fileHash = await calculateFileHash(imageUrl);
@@ -65,6 +74,14 @@ async function scanReceiptHandler(
       .limit(1);
 
     if (existingDocument.length > 0) {
+      if (batchId && batchItem) {
+        await ActivityLogger.duplicateDetected(
+          batchId,
+          batchItem.id,
+          fileName,
+          "exact_file_hash"
+        );
+      }
       throw new Error(
         `Duplicate file detected. This file has already been uploaded (${
           existingDocument[0].fileName || "previous upload"
@@ -80,8 +97,19 @@ async function scanReceiptHandler(
       currency,
     });
 
-    const fileName = getFileName(imageUrl) || "receipt.jpg";
     const extractedData = await processor.processDocument(imageUrl, fileName);
+
+    // Log AI extraction complete
+    if (batchId && batchItem) {
+      const extractionDuration = Date.now() - startTime;
+      await ActivityLogger.aiExtractionComplete(batchId, batchItem.id, fileName, extractionDuration, {
+        merchantName: extractedData.merchantName || undefined,
+        amount: extractedData.totalAmount || undefined,
+      });
+
+      // Log categorization start
+      await ActivityLogger.aiCategorizationStart(batchId, batchItem.id, fileName);
+    }
 
     // Only create document record AFTER successful extraction
     const fileFormat = getFileFormatFromUrl(imageUrl);
@@ -151,6 +179,18 @@ async function scanReceiptHandler(
         ? String(defaultValues.isBusinessExpense)
         : null;
 
+    // Log categorization complete
+    if (batchId && batchItem) {
+      await ActivityLogger.aiCategorizationComplete(
+        batchId,
+        batchItem.id,
+        fileName,
+        extractedData.category || "Uncategorized",
+        "ai",
+        extractedData.businessId ? "Business" : undefined
+      );
+    }
+
     // Save to database with categorization results (including businessId)
     await db.insert(receipts).values({
       documentId: document.id,
@@ -182,10 +222,14 @@ async function scanReceiptHandler(
 
     // Update batch item if part of batch
     if (batchId && batchItem) {
+      const totalDuration = Date.now() - startTime;
       await db
         .update(importBatchItems)
         .set({ status: "completed" })
         .where(eq(importBatchItems.id, batchItem.id));
+      
+      // Log item completion
+      await ActivityLogger.itemCompleted(batchId, batchItem.id, fileName, totalDuration);
     }
 
     revalidatePath("/app");
@@ -195,17 +239,22 @@ async function scanReceiptHandler(
     });
     return { success: true };
   } catch (error) {
+    const fileName = getFileName(imageUrl) || "receipt.jpg";
+    
     // Update batch item on error
     if (batchId && typeof batchItem !== "undefined") {
       try {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
         await db
           .update(importBatchItems)
           .set({
             status: "failed",
-            errorMessage:
-              error instanceof Error ? error.message : "Unknown error",
+            errorMessage,
           })
           .where(eq(importBatchItems.id, batchItem.id));
+        
+        // Log failure
+        await ActivityLogger.itemFailed(batchId, batchItem.id, fileName, errorMessage);
       } catch (batchError) {
         devLogger.error("Failed to update batch item on error", {
           batchError,

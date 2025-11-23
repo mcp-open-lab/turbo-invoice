@@ -8,6 +8,7 @@ import { createBatchItem } from "@/app/actions/import-batch-items";
 import { enqueueBatch } from "@/lib/import/queue-sender";
 import type { ImportJobPayload } from "@/lib/import/queue-types";
 import { devLogger } from "@/lib/dev-logger";
+import { ActivityLogger } from "@/lib/import/activity-logger";
 
 const batchImportSchema = z.object({
   importType: z.enum(["receipts", "bank_statements", "mixed"]),
@@ -53,6 +54,9 @@ async function batchImportHandler(
 
   const batchId = batchResult.batchId;
 
+  // Log batch creation
+  await ActivityLogger.batchCreated(batchId, input.files.length);
+
   // Step 2: Create batch items
   const batchItems: Array<{ id: string; fileName: string; fileUrl: string; order: number }> = [];
 
@@ -73,6 +77,14 @@ async function batchImportHandler(
         fileUrl: file.fileUrl,
         order: i,
       });
+      
+      // Log file upload
+      await ActivityLogger.fileUploaded(
+        batchId,
+        itemResult.itemId,
+        file.fileName,
+        file.fileSizeBytes || 0
+      );
     }
   }
 

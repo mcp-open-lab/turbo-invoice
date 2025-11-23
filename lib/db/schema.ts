@@ -144,6 +144,34 @@ export const importBatchItems = pgTable(
   })
 );
 
+// Activity logs for batch processing (shows AI processing in real-time)
+export const batchActivityLogs = pgTable(
+  "batch_activity_logs",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    batchId: text("batch_id").notNull(), // FK to import_batches
+    batchItemId: text("batch_item_id"), // FK to import_batch_items (null for batch-level events)
+    
+    // Activity details
+    activityType: text("activity_type").notNull(), // 'batch_created' | 'file_uploaded' | 'ai_extraction_start' | 'ai_extraction_complete' | 'categorization_start' | 'categorization_complete' | 'duplicate_detected' | 'item_completed' | 'item_failed' | 'batch_completed'
+    message: text("message").notNull(),
+    details: text("details"), // JSON string for additional context
+    
+    // Metadata
+    fileName: text("file_name"), // For item-level activities
+    duration: integer("duration_ms"), // Processing duration in ms
+    
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    batchIdIdx: index("batch_activity_logs_batch_id_idx").on(table.batchId),
+    batchItemIdIdx: index("batch_activity_logs_batch_item_id_idx").on(table.batchItemId),
+    createdAtIdx: index("batch_activity_logs_created_at_idx").on(table.createdAt),
+  })
+);
+
 // ============================================
 // EXTRACTION & METADATA
 // ============================================

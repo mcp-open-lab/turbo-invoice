@@ -6,6 +6,7 @@ import {
   getBatchStatusSummary,
   getBatchItemsStatus,
 } from "@/lib/import/batch-tracker";
+import { getBatchActivityLogs } from "@/app/actions/batch-activity";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -22,9 +23,10 @@ export default async function BatchDetailPage(props: {
   const batchId = params.id;
 
   try {
-    const [batch, items] = await Promise.all([
+    const [batch, items, activityLogs] = await Promise.all([
       getBatchStatusSummary(batchId, userId),
       getBatchItemsStatus(batchId, userId),
+      getBatchActivityLogs(batchId).catch(() => []), // Gracefully handle if no logs yet
     ]);
 
     return (
@@ -38,7 +40,11 @@ export default async function BatchDetailPage(props: {
             <h1 className="text-2xl font-bold">Batch Details</h1>
         </div>
 
-        <BatchDetailContainer initialBatch={batch} initialItems={items} />
+        <BatchDetailContainer 
+          initialBatch={batch} 
+          initialItems={items}
+          initialActivityLogs={activityLogs}
+        />
       </PageContainer>
     );
   } catch (error) {
