@@ -452,6 +452,7 @@ export const categoryRules = pgTable("category_rules", {
     .$defaultFn(() => createId()),
   categoryId: text("category_id").notNull(), // FK to categories
   userId: text("user_id").notNull(), // FK to users
+  businessId: text("business_id"), // Optional FK to businesses - for business-specific rules
   matchType: text("match_type").notNull(), // 'exact' | 'contains' | 'regex'
   field: text("field").notNull(), // 'merchantName' | 'description'
   value: text("value").notNull(), // The pattern to match

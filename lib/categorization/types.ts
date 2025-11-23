@@ -12,6 +12,7 @@ export interface TransactionToCategorize {
 export interface CategorizationResult {
   categoryId: string | null;
   categoryName: string | null;
+  businessId?: string | null; // Optional business assignment
   confidence: number; // 0.0 to 1.0
   method: "rule" | "history" | "ai" | "none";
   suggestedCategory?: string; // For new categories suggested by AI

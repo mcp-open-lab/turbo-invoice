@@ -52,11 +52,13 @@ export class RuleMatcher implements CategorizationStrategy {
             rule: rule.field,
             pattern: rule.value,
             category: category.name,
+            businessId: rule.businessId,
           });
 
           return {
             categoryId: category.id,
             categoryName: category.name,
+            businessId: rule.businessId ?? null,
             confidence: 1.0,
             method: "rule",
           };

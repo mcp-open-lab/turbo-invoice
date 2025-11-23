@@ -193,6 +193,7 @@ export const createCategoryRule = createSafeAction(
 const UpdateRuleSchema = z.object({
   ruleId: z.string(),
   categoryId: z.string(),
+  businessId: z.string().optional(), // Optional business assignment
   matchType: z.enum(["exact", "contains", "regex"]),
   field: z.enum(["merchantName", "description"]),
   value: z.string().min(1, "Pattern is required"),
@@ -235,6 +236,7 @@ export const updateCategoryRule = createSafeAction(
       .update(categoryRules)
       .set({
         categoryId: validated.categoryId,
+        businessId: validated.businessId || null,
         matchType: validated.matchType,
         field: validated.field,
         value: validated.value,
@@ -373,6 +375,7 @@ const CreateMerchantRuleSchema = z.object({
   merchantName: z.string().min(1, "Merchant name is required"),
   categoryId: z.string(),
   displayName: z.string().optional(),
+  businessId: z.string().optional(), // Optional business assignment for this rule
 });
 
 export const createMerchantRule = createSafeAction(
@@ -428,6 +431,7 @@ export const createMerchantRule = createSafeAction(
         id: createId(),
         categoryId: validated.categoryId,
         userId,
+        businessId: validated.businessId || null,
         matchType: "exact",
         field: "merchantName",
         value: validated.merchantName,
@@ -449,6 +453,7 @@ const UpdateMerchantRuleSchema = z.object({
   ruleId: z.string(),
   categoryId: z.string(),
   displayName: z.string().optional(),
+  businessId: z.string().optional(), // Optional business assignment
 });
 
 export const updateMerchantRule = createSafeAction(
@@ -490,6 +495,7 @@ export const updateMerchantRule = createSafeAction(
       .set({
         categoryId: validated.categoryId,
         displayName: validated.displayName || null,
+        businessId: validated.businessId || null,
         updatedAt: new Date(),
       })
       .where(eq(categoryRules.id, validated.ruleId));

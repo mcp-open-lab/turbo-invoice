@@ -45,6 +45,7 @@ export function useRules({
   const [newMerchantName, setNewMerchantName] = useState("");
   const [newMerchantCategoryId, setNewMerchantCategoryId] = useState("");
   const [newMerchantDisplayName, setNewMerchantDisplayName] = useState("");
+  const [newMerchantBusinessId, setNewMerchantBusinessId] = useState<string | undefined>(undefined);
   const [merchantDialogOpen, setMerchantDialogOpen] = useState(false);
   const [editMerchantDialogOpen, setEditMerchantDialogOpen] = useState(false);
   const [editingMerchant, setEditingMerchant] = useState<MerchantStats | null>(
@@ -154,11 +155,13 @@ export function useRules({
           merchantName: newMerchantName.trim(),
           categoryId: newMerchantCategoryId,
           displayName: newMerchantDisplayName.trim() || undefined,
+          businessId: newMerchantBusinessId,
         });
         toast.success("Merchant rule created!");
         setNewMerchantName("");
         setNewMerchantCategoryId("");
         setNewMerchantDisplayName("");
+        setNewMerchantBusinessId(undefined);
         setMerchantDialogOpen(false);
         window.location.reload();
       } catch (error) {
@@ -190,10 +193,18 @@ export function useRules({
     });
   };
 
-  const handleEditMerchantRule = (merchant: MerchantStats) => {
+  const handleEditMerchantRule = async (merchant: MerchantStats) => {
     setEditingMerchant(merchant);
     setNewMerchantCategoryId(merchant.ruleCategoryId || "");
     setNewMerchantDisplayName(merchant.ruleDisplayName || "");
+    
+    // Fetch the full rule to get businessId
+    if (merchant.ruleId) {
+      // We'll need to pass businessId through merchantStats or fetch it separately
+      // For now, reset to undefined (will be improved when we pass it through)
+      setNewMerchantBusinessId(undefined);
+    }
+    
     setEditMerchantDialogOpen(true);
   };
 
@@ -209,12 +220,14 @@ export function useRules({
           ruleId: editingMerchant.ruleId!,
           categoryId: newMerchantCategoryId,
           displayName: newMerchantDisplayName.trim() || undefined,
+          businessId: newMerchantBusinessId,
         });
         toast.success("Merchant rule updated!");
         setEditMerchantDialogOpen(false);
         setEditingMerchant(null);
         setNewMerchantCategoryId("");
         setNewMerchantDisplayName("");
+        setNewMerchantBusinessId(undefined);
         window.location.reload();
       } catch (error) {
         toast.error(
@@ -290,6 +303,8 @@ export function useRules({
     setNewMerchantCategoryId,
     newMerchantDisplayName,
     setNewMerchantDisplayName,
+    newMerchantBusinessId,
+    setNewMerchantBusinessId,
     merchantDialogOpen,
     setMerchantDialogOpen,
     editMerchantDialogOpen,

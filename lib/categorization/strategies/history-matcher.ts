@@ -41,12 +41,14 @@ export class HistoryMatcher implements CategorizationStrategy {
         devLogger.debug("HistoryMatcher: Match found", {
           merchantName: input.merchantName,
           category: history.categoryName,
+          businessId: history.businessId,
           entityType: history.entityType,
         });
 
         return {
           categoryId: history.categoryId,
           categoryName: history.categoryName,
+          businessId: history.businessId ?? null,
           confidence: 1.0,
           method: "history",
         };

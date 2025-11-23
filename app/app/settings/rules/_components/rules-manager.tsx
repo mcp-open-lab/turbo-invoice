@@ -13,12 +13,14 @@ type RulesManagerProps = {
   categories: Category[];
   rules: Array<{ rule: CategoryRule; category: Category }>;
   merchantStats: MerchantStats[];
+  businesses?: { id: string; name: string }[];
 };
 
 export function RulesManager({
   categories,
   rules,
   merchantStats,
+  businesses = [],
 }: RulesManagerProps) {
   const hook = useRules({ categories, rules, merchantStats });
 
@@ -27,6 +29,7 @@ export function RulesManager({
       <MerchantHistorySection
         categories={categories}
         merchantStats={merchantStats}
+        businesses={businesses}
         isPending={hook.isPending}
         newMerchantName={hook.newMerchantName}
         setNewMerchantName={hook.setNewMerchantName}
@@ -34,6 +37,8 @@ export function RulesManager({
         setNewMerchantCategoryId={hook.setNewMerchantCategoryId}
         newMerchantDisplayName={hook.newMerchantDisplayName}
         setNewMerchantDisplayName={hook.setNewMerchantDisplayName}
+        newMerchantBusinessId={hook.newMerchantBusinessId}
+        setNewMerchantBusinessId={hook.setNewMerchantBusinessId}
         merchantDialogOpen={hook.merchantDialogOpen}
         setMerchantDialogOpen={hook.setMerchantDialogOpen}
         editMerchantDialogOpen={hook.editMerchantDialogOpen}

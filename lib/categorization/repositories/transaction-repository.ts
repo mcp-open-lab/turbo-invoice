@@ -20,6 +20,7 @@ export type EntityType = "receipt" | "bank_transaction" | "credit_card";
 export interface TransactionHistory {
   categoryId: string;
   categoryName: string;
+  businessId?: string | null;
   merchantName: string;
   createdAt: Date;
   entityType: EntityType;
@@ -99,6 +100,7 @@ export class TransactionRepository {
     const pastReceipts = await db
       .select({
         categoryId: receipts.categoryId,
+        businessId: receipts.businessId,
         merchantName: receipts.merchantName,
         createdAt: receipts.createdAt,
       })
@@ -124,6 +126,7 @@ export class TransactionRepository {
         return {
           categoryId: pastReceipts[0].categoryId,
           categoryName: categoryData[0].name,
+          businessId: pastReceipts[0].businessId,
           merchantName: pastReceipts[0].merchantName!,
           createdAt: pastReceipts[0].createdAt!,
           entityType: "receipt",
@@ -144,6 +147,7 @@ export class TransactionRepository {
     const pastTransactions = await db
       .select({
         categoryId: bankStatementTransactions.categoryId,
+        businessId: bankStatementTransactions.businessId,
         merchantName: bankStatementTransactions.merchantName,
         createdAt: bankStatementTransactions.createdAt,
       })
@@ -168,6 +172,7 @@ export class TransactionRepository {
         return {
           categoryId: pastTransactions[0].categoryId,
           categoryName: categoryData[0].name,
+          businessId: pastTransactions[0].businessId,
           merchantName: pastTransactions[0].merchantName!,
           createdAt: pastTransactions[0].createdAt!,
           entityType: "bank_transaction",

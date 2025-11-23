@@ -70,10 +70,24 @@ Return your response as JSON matching this schema:
     }
 
     if (userPreferences.usageType) {
-      parts.push(`Usage Type: ${userPreferences.usageType}`);
+      const usageTypeContext = this.getUsageTypeContext(userPreferences.usageType);
+      parts.push(`Usage Type: ${userPreferences.usageType}${usageTypeContext}`);
     }
 
     return parts.length > 0 ? parts.join("\n") + "\n" : "";
+  }
+
+  private static getUsageTypeContext(usageType: string): string {
+    switch (usageType) {
+      case "business":
+        return " (Focus on business-related categories like Business Services, Office Supplies, Client Entertainment)";
+      case "personal":
+        return " (Focus on personal categories like Groceries, Personal Care, Home Expenses)";
+      case "mixed":
+        return " (User tracks both personal and business expenses - consider context)";
+      default:
+        return "";
+    }
   }
 }
 

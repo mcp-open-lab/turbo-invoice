@@ -34,6 +34,7 @@ type Category = typeof categories.$inferSelect;
 type MerchantHistorySectionProps = {
   categories: Category[];
   merchantStats: MerchantStats[];
+  businesses?: { id: string; name: string }[]; // Optional list of user businesses
   isPending: boolean;
   newMerchantName: string;
   setNewMerchantName: (name: string) => void;
@@ -41,6 +42,8 @@ type MerchantHistorySectionProps = {
   setNewMerchantCategoryId: (id: string) => void;
   newMerchantDisplayName: string;
   setNewMerchantDisplayName: (name: string) => void;
+  newMerchantBusinessId: string | undefined;
+  setNewMerchantBusinessId: (id: string | undefined) => void;
   merchantDialogOpen: boolean;
   setMerchantDialogOpen: (open: boolean) => void;
   editMerchantDialogOpen: boolean;
@@ -57,6 +60,7 @@ type MerchantHistorySectionProps = {
 export function MerchantHistorySection({
   categories,
   merchantStats,
+  businesses = [],
   isPending,
   newMerchantName,
   setNewMerchantName,
@@ -64,6 +68,8 @@ export function MerchantHistorySection({
   setNewMerchantCategoryId,
   newMerchantDisplayName,
   setNewMerchantDisplayName,
+  newMerchantBusinessId,
+  setNewMerchantBusinessId,
   merchantDialogOpen,
   setMerchantDialogOpen,
   editMerchantDialogOpen,
@@ -125,6 +131,34 @@ export function MerchantHistorySection({
                 <p className="text-xs text-muted-foreground mt-1">
                   For clarity in your rules list (e.g., &quot;Starbucks&quot; instead of
                   &quot;STARBUCKS STORE #1234&quot;)
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">
+                  Business (Optional)
+                </label>
+                <Select
+                  value={newMerchantBusinessId || "none"}
+                  onValueChange={(value) =>
+                    setNewMerchantBusinessId(value === "none" ? undefined : value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select business" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None (Personal)</SelectItem>
+                    {businesses.map((business) => (
+                      <SelectItem key={business.id} value={business.id}>
+                        {business.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Assign this merchant to a specific business. If not set, transactions
+                  will default to personal.
                 </p>
               </div>
 
@@ -192,6 +226,34 @@ export function MerchantHistorySection({
                     value={newMerchantDisplayName}
                     onChange={(e) => setNewMerchantDisplayName(e.target.value)}
                   />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">
+                    Business (Optional)
+                  </label>
+                  <Select
+                    value={newMerchantBusinessId || "none"}
+                    onValueChange={(value) =>
+                      setNewMerchantBusinessId(value === "none" ? undefined : value)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select business" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None (Personal)</SelectItem>
+                      {businesses.map((business) => (
+                        <SelectItem key={business.id} value={business.id}>
+                          {business.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Assign this merchant to a specific business. If not set, transactions
+                    will default to personal.
+                  </p>
                 </div>
 
                 <div>
