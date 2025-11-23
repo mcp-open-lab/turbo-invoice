@@ -39,44 +39,16 @@ describe("AI Client Fallback Logic", () => {
   });
 
   describe("generateObject", () => {
-    it("should use Gemini when available and successful", async () => {
-      process.env.GOOGLE_AI_API_KEY = "test-gemini-key";
-      delete process.env.OPENAI_API_KEY;
-      
-      mockGeminiGenerateObject.mockResolvedValue({
-        success: true,
-        data: { test: "value" },
-        tokensUsed: 100,
-        provider: "gemini",
-      });
-      mockGeminiGenerateObject.mockClear();
-
-      const { generateObject } = await import("@/lib/ai/client");
-      const schema = z.object({ test: z.string() });
-      const result = await generateObject("test prompt", schema);
-
-      expect(result.success).toBe(true);
-      expect(mockGeminiGenerateObject).toHaveBeenCalledTimes(1);
-    });
-
-    it("should fallback to OpenAI when Gemini fails", async () => {
-      process.env.GOOGLE_AI_API_KEY = "test-gemini-key";
+    it("should use OpenAI when available and successful", async () => {
       process.env.OPENAI_API_KEY = "test-openai-key";
-      
-      mockGeminiGenerateObject.mockResolvedValue({
-        success: false,
-        error: "Gemini rate limit",
-        provider: "gemini",
-      });
+      delete process.env.GOOGLE_AI_API_KEY;
       
       mockOpenAIGenerateObject.mockResolvedValue({
         success: true,
         data: { test: "value" },
-        tokensUsed: 50,
+        tokensUsed: 100,
         provider: "openai",
       });
-      
-      mockGeminiGenerateObject.mockClear();
       mockOpenAIGenerateObject.mockClear();
 
       const { generateObject } = await import("@/lib/ai/client");
@@ -84,19 +56,41 @@ describe("AI Client Fallback Logic", () => {
       const result = await generateObject("test prompt", schema);
 
       expect(result.success).toBe(true);
-      expect(mockGeminiGenerateObject).toHaveBeenCalledTimes(1);
       expect(mockOpenAIGenerateObject).toHaveBeenCalledTimes(1);
     });
 
-    it("should return error when both providers fail", async () => {
-      process.env.GOOGLE_AI_API_KEY = "test-gemini-key";
+    it("should fallback to Gemini when OpenAI fails", async () => {
       process.env.OPENAI_API_KEY = "test-openai-key";
+      process.env.GOOGLE_AI_API_KEY = "test-gemini-key";
+      
+      mockOpenAIGenerateObject.mockResolvedValue({
+        success: false,
+        error: "OpenAI rate limit",
+        provider: "openai",
+      });
       
       mockGeminiGenerateObject.mockResolvedValue({
-        success: false,
-        error: "Gemini error",
+        success: true,
+        data: { test: "value" },
+        tokensUsed: 50,
         provider: "gemini",
       });
+      
+      mockOpenAIGenerateObject.mockClear();
+      mockGeminiGenerateObject.mockClear();
+
+      const { generateObject } = await import("@/lib/ai/client");
+      const schema = z.object({ test: z.string() });
+      const result = await generateObject("test prompt", schema);
+
+      expect(result.success).toBe(true);
+      expect(mockOpenAIGenerateObject).toHaveBeenCalledTimes(1);
+      expect(mockGeminiGenerateObject).toHaveBeenCalledTimes(1);
+    });
+
+    it("should return error when both providers fail", async () => {
+      process.env.OPENAI_API_KEY = "test-openai-key";
+      process.env.GOOGLE_AI_API_KEY = "test-gemini-key";
       
       mockOpenAIGenerateObject.mockResolvedValue({
         success: false,
@@ -104,17 +98,23 @@ describe("AI Client Fallback Logic", () => {
         provider: "openai",
       });
       
-      mockGeminiGenerateObject.mockClear();
+      mockGeminiGenerateObject.mockResolvedValue({
+        success: false,
+        error: "Gemini error",
+        provider: "gemini",
+      });
+      
       mockOpenAIGenerateObject.mockClear();
+      mockGeminiGenerateObject.mockClear();
 
       const { generateObject } = await import("@/lib/ai/client");
       const schema = z.object({ test: z.string() });
       const result = await generateObject("test prompt", schema);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("OpenAI error");
-      expect(mockGeminiGenerateObject).toHaveBeenCalledTimes(1);
+      expect(result.error).toContain("Gemini error");
       expect(mockOpenAIGenerateObject).toHaveBeenCalledTimes(1);
+      expect(mockGeminiGenerateObject).toHaveBeenCalledTimes(1);
     });
 
     it("should return error when no providers are configured", async () => {

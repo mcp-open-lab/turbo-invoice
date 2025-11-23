@@ -22,34 +22,14 @@ function getOpenAIProvider(): OpenAIProvider | null {
 }
 
 /**
- * Generate structured object output from LLM with Gemini primary and OpenAI fallback
+ * Generate structured object output from LLM with OpenAI primary and Gemini fallback
+ * OpenAI works better with Zod schemas via zodResponseFormat (strict mode)
  */
 export async function generateObject<T>(
   prompt: string,
   schema: z.ZodSchema<T>,
   options?: CompletionOptions
 ): Promise<LLMResponse<T>> {
-  const gemini = getGeminiProvider();
-  
-  if (gemini) {
-    devLogger.info("Attempting LLM request with Gemini", {
-      context: { provider: "gemini" },
-    });
-    
-    const result = await gemini.generateObject(prompt, schema, options);
-    
-    if (result.success) {
-      devLogger.info("Gemini request successful", {
-        context: { tokensUsed: result.tokensUsed },
-      });
-      return result;
-    }
-    
-    devLogger.warn("Gemini request failed, attempting fallback to OpenAI", {
-      context: { error: result.error },
-    });
-  }
-
   const openai = getOpenAIProvider();
   
   if (openai) {
@@ -63,8 +43,29 @@ export async function generateObject<T>(
       devLogger.info("OpenAI request successful", {
         context: { tokensUsed: result.tokensUsed },
       });
+      return result;
+    }
+    
+    devLogger.warn("OpenAI request failed, attempting fallback to Gemini", {
+      context: { error: result.error },
+    });
+  }
+
+  const gemini = getGeminiProvider();
+  
+  if (gemini) {
+    devLogger.info("Attempting LLM request with Gemini", {
+      context: { provider: "gemini" },
+    });
+    
+    const result = await gemini.generateObject(prompt, schema, options);
+    
+    if (result.success) {
+      devLogger.info("Gemini request successful", {
+        context: { tokensUsed: result.tokensUsed },
+      });
     } else {
-      devLogger.error("OpenAI request failed", {
+      devLogger.error("Gemini request failed", {
         context: { error: result.error },
       });
     }
@@ -75,7 +76,7 @@ export async function generateObject<T>(
   return {
     success: false,
     error: "No LLM providers available. Please configure GOOGLE_AI_API_KEY or OPENAI_API_KEY.",
-    provider: "gemini",
+    provider: "openai",
   };
 }
 

@@ -35,19 +35,10 @@ export async function enqueueBatchItem(
     return { success: true, eventId: eventId || undefined };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorDetails =
-      error instanceof Error
-        ? {
-            message: error.message,
-            name: error.name,
-            stack: error.stack,
-          }
-        : { error: String(error) };
 
     devLogger.error("Failed to enqueue batch item", error, {
       batchItemId: payload.batchItemId,
       error: errorMessage,
-      errorDetails,
     });
 
     return { success: false, error: errorMessage };

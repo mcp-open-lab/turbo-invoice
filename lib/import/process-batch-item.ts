@@ -161,8 +161,19 @@ export async function processBatchItem(
       documentId,
     };
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
+    let errorMessage = "Unknown error";
+    
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === "string") {
+      errorMessage = error;
+    } else {
+      try {
+        errorMessage = JSON.stringify(error);
+      } catch {
+        errorMessage = String(error);
+      }
+    }
 
     // 4. Update batch item to failed
     await db

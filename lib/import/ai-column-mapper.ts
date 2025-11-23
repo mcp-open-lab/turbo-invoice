@@ -2,6 +2,7 @@ import { z } from "zod";
 import { generateObject } from "@/lib/ai/client";
 import type { ConversionConfig } from "./field-converters";
 import { CategoryFilterService } from "@/lib/categorization/category-filter";
+import { devLogger } from "@/lib/dev-logger";
 
 /**
  * Schema for column field mapping
@@ -19,14 +20,14 @@ const ConversionInstructionSchema = z.object({
   type: z.enum(["date", "amount", "description"]),
   format: z
     .string()
-    .optional()
+    .nullable()
     .describe("Date format string like 'DD/MM/YYYY'"),
-  excelSerial: z.boolean().optional(),
-  reverseSign: z.boolean().optional().describe("For amounts: multiply by -1"),
-  removeSymbols: z.boolean().optional(),
-  handleParentheses: z.boolean().optional(),
-  trim: z.boolean().optional(),
-  removeInternalCodes: z.boolean().optional(),
+  excelSerial: z.boolean().nullable(),
+  reverseSign: z.boolean().nullable().describe("For amounts: multiply by -1"),
+  removeSymbols: z.boolean().nullable(),
+  handleParentheses: z.boolean().nullable(),
+  trim: z.boolean().nullable(),
+  removeInternalCodes: z.boolean().nullable(),
 });
 
 /**
@@ -35,16 +36,16 @@ const ConversionInstructionSchema = z.object({
 const MappingConfigSchema = z.object({
   headerRowIndex: z.number().describe("0-based index of the header row"),
   fieldMappings: z.object({
-    transactionDate: FieldMappingSchema.optional(),
-    postedDate: FieldMappingSchema.optional(),
-    description: FieldMappingSchema.optional(),
-    amount: FieldMappingSchema.optional(),
-    debit: FieldMappingSchema.optional(),
-    credit: FieldMappingSchema.optional(),
-    balance: FieldMappingSchema.optional(),
-    category: FieldMappingSchema.optional(),
-    merchantName: FieldMappingSchema.optional(),
-    referenceNumber: FieldMappingSchema.optional(),
+    transactionDate: FieldMappingSchema.nullable(),
+    postedDate: FieldMappingSchema.nullable(),
+    description: FieldMappingSchema.nullable(),
+    amount: FieldMappingSchema.nullable(),
+    debit: FieldMappingSchema.nullable(),
+    credit: FieldMappingSchema.nullable(),
+    balance: FieldMappingSchema.nullable(),
+    category: FieldMappingSchema.nullable(),
+    merchantName: FieldMappingSchema.nullable(),
+    referenceNumber: FieldMappingSchema.nullable(),
   }),
   conversions: z
     .array(ConversionInstructionSchema)
@@ -53,7 +54,7 @@ const MappingConfigSchema = z.object({
     ),
   currency: z
     .string()
-    .optional()
+    .nullable()
     .describe("Inferred currency code like USD, CAD, EUR"),
   confidence: z
     .number()
@@ -180,20 +181,82 @@ Rules:
 2. CRITICAL: If debit/credit columns are mapped, you MUST include conversion instructions for both: { "field": "debit", "type": "amount" } and { "field": "credit", "type": "amount" }
 3. If only a single "Amount" column exists, map it to "amount" and follow CRITICAL INSTRUCTIONS for "reverseSign".
 4. "transactionDate": Primary date column.
-5. "description": Main transaction text column.
-6. "balance": Account balance column (if present).
-7. Only include fields and conversions that exist in the spreadsheet.
-8. Return JSON only.`;
+5. "description": Main transaction text column (usually contains merchant/vendor name).
+6. "merchantName": CRITICAL - Extract merchant/vendor names from transaction descriptions. If a separate merchant/vendor column exists, map it. If not, analyze the description column and extract the merchant name (e.g., from "STARBUCKS #1234" extract "STARBUCKS", from "AMAZON.COM PURCHASE" extract "AMAZON.COM"). You can map the same column to both "description" and "merchantName" if needed. Always try to extract merchant names - do not leave merchantName as null if the description contains identifiable merchant information.
+7. "balance": Account balance column (if present).
+8. Only include fields and conversions that exist in the spreadsheet.
+9. Return JSON only.`;
 
-  const result = await generateObject(prompt, MappingConfigSchema, {
-    temperature: 0.1,
-  });
+  try {
+    devLogger.debug("Calling AI for column mapping", {
+      previewRowsCount: previewRows.length,
+      totalRows,
+      statementType,
+      previewSample: formattedPreview.substring(0, 500),
+    });
 
-  if (!result.success || !result.data) {
+    const result = await generateObject(prompt, MappingConfigSchema, {
+      temperature: 0.1,
+    });
+
+    devLogger.debug("AI column mapping response received", {
+      success: result.success,
+      provider: result.provider,
+      hasData: !!result.data,
+      error: result.error,
+    });
+
+    if (!result.success || !result.data) {
+      devLogger.error("AI column mapping failed", {
+        error: result.error,
+        provider: result.provider,
+        previewRowsCount: previewRows.length,
+        totalRows,
+        statementType,
+        previewSample: formattedPreview.substring(0, 500),
+        promptLength: prompt.length,
+      });
+      return null;
+    }
+
+    // Validate that we got at least some mappings
+    const fieldMappings = result.data.fieldMappings;
+    const hasAnyMapping = Object.values(fieldMappings).some(
+      (mapping) => mapping !== undefined && mapping !== null
+    );
+
+    if (!hasAnyMapping) {
+      devLogger.error("AI returned empty field mappings", {
+        provider: result.provider,
+        fieldMappingsKeys: Object.keys(fieldMappings),
+        headerRowIndex: result.data.headerRowIndex,
+      });
+      return null;
+    }
+
+    // Ensure conversions array exists (default to empty if missing)
+    const validatedData = {
+      ...result.data,
+      conversions: result.data.conversions || [],
+      confidence: result.data.confidence ?? 0.5,
+    };
+
+    devLogger.info("AI column mapping succeeded", {
+      provider: result.provider,
+      fieldCount: Object.values(fieldMappings).filter((m) => m).length,
+      confidence: validatedData.confidence,
+      hasConversions: validatedData.conversions.length > 0,
+    });
+
+    return validatedData;
+  } catch (error) {
+    devLogger.error("Exception during AI column mapping", {
+      error: error instanceof Error ? error.message : String(error),
+      previewRowsCount: previewRows.length,
+      statementType,
+    });
     return null;
   }
-
-  return result.data;
 }
 
 /**
@@ -210,21 +273,21 @@ export function convertInstructionsToConfig(
     if (type === "date") {
       config[field] = {
         type: "date",
-        format: instruction.format,
-        excelSerial: instruction.excelSerial,
+        format: instruction.format ?? undefined,
+        excelSerial: instruction.excelSerial ?? undefined,
       };
     } else if (type === "amount") {
       config[field] = {
         type: "amount",
-        reverseSign: instruction.reverseSign,
-        removeSymbols: instruction.removeSymbols,
-        handleParentheses: instruction.handleParentheses,
+        reverseSign: instruction.reverseSign ?? undefined,
+        removeSymbols: instruction.removeSymbols ?? undefined,
+        handleParentheses: instruction.handleParentheses ?? undefined,
       };
     } else if (type === "description") {
       config[field] = {
         type: "description",
-        trim: instruction.trim,
-        removeInternalCodes: instruction.removeInternalCodes,
+        trim: instruction.trim ?? undefined,
+        removeInternalCodes: instruction.removeInternalCodes ?? undefined,
       };
     }
   }

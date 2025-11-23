@@ -57,6 +57,27 @@ async function resetDocuments() {
     await db.delete(importBatches);
     console.log("   ✓ Import batches deleted");
 
+    // Verify cleanup - check if any documents remain
+    const remainingDocs = await db.select().from(documents).limit(1);
+    if (remainingDocs.length > 0) {
+      console.warn("\n⚠️  Warning: Some documents still exist after reset!");
+    } else {
+      console.log("\n✓ Verified: All documents removed");
+    }
+
+    // Verify fileHash entries are gone
+    const remainingFileHashes = await db
+      .select({ fileHash: documents.fileHash })
+      .from(documents)
+      .where(sql`${documents.fileHash} IS NOT NULL`)
+      .limit(1);
+    
+    if (remainingFileHashes.length > 0) {
+      console.warn("\n⚠️  Warning: Some fileHash entries still exist!");
+    } else {
+      console.log("✓ Verified: All fileHash entries removed");
+    }
+
     console.log("\n✅ Database reset completed successfully!");
   } catch (error) {
     console.error("❌ Error during database reset:", error);

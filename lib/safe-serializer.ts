@@ -84,7 +84,7 @@ export function safeSerialize(
       return {
         name: val.name,
         message: val.message,
-        stack: val.stack?.substring(0, maxStringLength),
+        // Stack traces omitted - too verbose
       };
     }
 

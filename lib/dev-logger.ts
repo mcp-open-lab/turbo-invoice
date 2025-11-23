@@ -118,7 +118,7 @@ class DevLogger {
       entry.error = {
         name: error.name,
         message: error.message,
-        stack: error.stack,
+        // Omit stack trace - too verbose
       };
     }
 

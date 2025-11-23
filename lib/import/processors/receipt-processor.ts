@@ -181,9 +181,6 @@ export class ReceiptProcessor extends BaseDocumentProcessor {
     // Build Zod schema for structured output
     const receiptSchema = this.buildReceiptSchema(fieldsToExtract);
 
-    // Build tax instructions
-    const taxInstructions = this.buildTaxInstructions(fieldsToExtract);
-
     // Convert Zod schema to JSON Schema for prompt
     const jsonSchema = zodToJsonSchema(receiptSchema, "ReceiptData");
 

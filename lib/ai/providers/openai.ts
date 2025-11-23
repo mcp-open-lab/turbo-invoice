@@ -6,6 +6,7 @@ import type {
   LLMResponse,
   CompletionOptions,
 } from "../types";
+import { devLogger } from "@/lib/dev-logger";
 
 export class OpenAIProvider implements LLMProviderInterface {
   private client: OpenAI;
@@ -63,6 +64,10 @@ export class OpenAIProvider implements LLMProviderInterface {
       const content = completion.choices[0]?.message?.content;
 
       if (!content) {
+        devLogger.error("OpenAI returned empty content", {
+          choicesLength: completion.choices.length,
+          finishReason: completion.choices[0]?.finish_reason,
+        });
         return {
           success: false,
           error: "OpenAI returned no content",
@@ -71,8 +76,49 @@ export class OpenAIProvider implements LLMProviderInterface {
       }
 
       // Parse and validate with Zod schema
-      const parsed = JSON.parse(content);
-      const validated = schema.parse(parsed);
+      let parsed: any;
+      try {
+        parsed = JSON.parse(content);
+      } catch (parseError) {
+        devLogger.error("OpenAI JSON parse failed", {
+          contentPreview: content.substring(0, 500),
+          error:
+            parseError instanceof Error
+              ? parseError.message
+              : String(parseError),
+        });
+        return {
+          success: false,
+          error: `OpenAI returned invalid JSON: ${
+            parseError instanceof Error
+              ? parseError.message
+              : String(parseError)
+          }`,
+          provider: "openai",
+        };
+      }
+
+      let validated: T;
+      try {
+        validated = schema.parse(parsed);
+      } catch (validationError) {
+        devLogger.error("OpenAI schema validation failed", {
+          parsedPreview: JSON.stringify(parsed).substring(0, 500),
+          error:
+            validationError instanceof Error
+              ? validationError.message
+              : String(validationError),
+        });
+        return {
+          success: false,
+          error: `Schema validation failed: ${
+            validationError instanceof Error
+              ? validationError.message
+              : String(validationError)
+          }`,
+          provider: "openai",
+        };
+      }
 
       return {
         success: true,
@@ -83,6 +129,9 @@ export class OpenAIProvider implements LLMProviderInterface {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
+      devLogger.error("OpenAI exception", {
+        error: errorMessage,
+      });
       return {
         success: false,
         error: `OpenAI error: ${errorMessage}`,

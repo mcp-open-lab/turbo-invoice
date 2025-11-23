@@ -59,10 +59,16 @@ export async function importSpreadsheet(
     const mappingConfig = await detectColumnMapping(spreadsheetData, userId, statementType);
     
     if (!mappingConfig) {
+      devLogger.error("Column mapping detection failed", {
+        fileName,
+        previewRowsCount: spreadsheetData.previewRows.length,
+        totalRows: spreadsheetData.totalRows,
+        statementType,
+      });
       return {
         success: false,
         transactions: [],
-        error: "Failed to detect column mapping. AI analysis returned no mapping configuration.",
+        error: "Failed to detect column mapping. AI analysis returned no mapping configuration. Please check the file format and try again.",
       };
     }
 
@@ -114,7 +120,7 @@ export async function importSpreadsheet(
       metadata: {
         totalRows: transactions.length,
         validRows: validTransactions.length,
-        currency: mappingConfig.currency,
+        currency: mappingConfig.currency ?? undefined,
         mappingConfidence: mappingConfig.confidence,
       },
     };

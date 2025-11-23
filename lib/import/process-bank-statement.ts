@@ -207,19 +207,14 @@ export async function processBankStatement(
       transactionCount: transactionRecords.length,
     };
   } catch (error) {
-    // Update document to failed status
-    await db
-      .update(documents)
-      .set({
-        status: "failed",
-        extractionErrors: JSON.stringify([
-          {
-            error: error instanceof Error ? error.message : String(error),
-            timestamp: new Date().toISOString(),
-          },
-        ]),
-      })
-      .where(eq(documents.id, documentId));
+    // If processing failed, delete the document so it can be retried
+    // Otherwise duplicate detection will block re-uploads
+    try {
+      await db.delete(documents).where(eq(documents.id, documentId));
+      devLogger.info("Cleaned up failed document", { documentId, reason: "processing_failed" });
+    } catch (cleanupError) {
+      devLogger.error("Failed to cleanup failed document", { documentId, error: cleanupError });
+    }
 
     throw error;
   }
