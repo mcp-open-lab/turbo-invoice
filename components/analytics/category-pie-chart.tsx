@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartConfig,
   ChartContainer,
@@ -11,6 +10,7 @@ import {
 } from "@/components/ui/chart";
 import { Pie, PieChart } from "recharts";
 import type { CategoryBreakdown } from "@/app/actions/analytics";
+import { ExpandableChartCard } from "./expandable-chart-card";
 
 interface CategoryPieChartProps {
   data: CategoryBreakdown[];
@@ -47,14 +47,15 @@ export function CategoryPieChart({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Category Breakdown</CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1 pb-0">
+    <ExpandableChartCard title="Category Breakdown">
+      {(isExpanded) => (
         <ChartContainer
           config={chartConfig}
-          className="mx-auto aspect-square max-h-[350px]"
+          className={
+            isExpanded
+              ? "mx-auto aspect-square max-h-[500px]"
+              : "mx-auto aspect-square max-h-[250px]"
+          }
         >
           <PieChart>
             <ChartTooltip
@@ -70,17 +71,19 @@ export function CategoryPieChart({
               data={chartData}
               dataKey="value"
               nameKey="category"
-              innerRadius={60}
+              innerRadius={isExpanded ? 80 : 50}
               strokeWidth={5}
             />
-            <ChartLegend
-              content={<ChartLegendContent nameKey="category" />}
-              className="-translate-y-2 flex-wrap gap-2 [&>*]:basis-1/4 [&>*]:justify-center"
-            />
+            {isExpanded && (
+              <ChartLegend
+                content={<ChartLegendContent nameKey="category" />}
+                className="-translate-y-2 flex-wrap gap-2 [&>*]:basis-1/4 [&>*]:justify-center"
+              />
+            )}
           </PieChart>
         </ChartContainer>
-      </CardContent>
-    </Card>
+      )}
+    </ExpandableChartCard>
   );
 }
 

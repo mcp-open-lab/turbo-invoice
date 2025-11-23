@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartConfig,
   ChartContainer,
@@ -9,6 +8,7 @@ import {
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import type { BusinessSplit } from "@/app/actions/analytics";
+import { ExpandableChartCard } from "./expandable-chart-card";
 
 interface BusinessSplitBarProps {
   data: BusinessSplit[];
@@ -48,18 +48,19 @@ export function BusinessSplitBar({
   }));
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Personal vs Business</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig}>
+    <ExpandableChartCard title="Personal vs Business">
+      {(isExpanded) => (
+        <ChartContainer
+          config={chartConfig}
+          className={isExpanded ? "h-[300px]" : "h-[150px]"}
+        >
           <BarChart
             accessibilityLayer
             data={chartData}
             layout="vertical"
             margin={{
-              left: 0,
+              left: isExpanded ? 0 : -20,
+              right: 12,
             }}
           >
             <CartesianGrid horizontal={false} />
@@ -69,7 +70,8 @@ export function BusinessSplitBar({
               tickLine={false}
               tickMargin={10}
               axisLine={false}
-              width={100}
+              width={isExpanded ? 100 : 80}
+              tick={{ fontSize: isExpanded ? 12 : 10 }}
             />
             <XAxis type="number" hide />
             <ChartTooltip
@@ -93,8 +95,8 @@ export function BusinessSplitBar({
             <Bar dataKey="value" radius={5} />
           </BarChart>
         </ChartContainer>
-      </CardContent>
-    </Card>
+      )}
+    </ExpandableChartCard>
   );
 }
 

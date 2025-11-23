@@ -1,14 +1,14 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import type { SpendingTrend } from "@/app/actions/analytics";
+import { ExpandableChartCard } from "./expandable-chart-card";
 
 interface SpendingTrendChartProps {
   data: SpendingTrend[];
@@ -42,18 +42,20 @@ export function SpendingTrendChart({
   }));
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Spending Trends</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig}>
+    <ExpandableChartCard title="Spending Trends">
+      {(isExpanded) => (
+        <ChartContainer
+          config={chartConfig}
+          className={isExpanded ? "h-[400px]" : "h-[200px]"}
+        >
           <AreaChart
             accessibilityLayer
             data={chartData}
             margin={{
-              left: 12,
+              left: isExpanded ? 12 : 0,
               right: 12,
+              top: 12,
+              bottom: 0,
             }}
           >
             <CartesianGrid vertical={false} />
@@ -62,7 +64,16 @@ export function SpendingTrendChart({
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+              tick={{ fontSize: 12 }}
             />
+            {isExpanded && (
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tick={{ fontSize: 12 }}
+              />
+            )}
             <ChartTooltip
               cursor={false}
               content={<ChartTooltipContent indicator="dot" />}
@@ -85,8 +96,8 @@ export function SpendingTrendChart({
             />
           </AreaChart>
         </ChartContainer>
-      </CardContent>
-    </Card>
+      )}
+    </ExpandableChartCard>
   );
 }
 

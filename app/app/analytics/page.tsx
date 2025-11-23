@@ -37,14 +37,12 @@ export default async function AnalyticsPage() {
           currency={currency}
         />
 
-        {/* Spending Trends */}
-        <SpendingTrendChart
-          data={analyticsData.spendingTrends}
-          currency={currency}
-        />
-
-        {/* Category Breakdown and Business Split */}
-        <div className="grid gap-6 md:grid-cols-2">
+        {/* Charts Grid - Compact by default, expandable to full width */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <SpendingTrendChart
+            data={analyticsData.spendingTrends}
+            currency={currency}
+          />
           <CategoryPieChart
             data={analyticsData.categoryBreakdown}
             currency={currency}
