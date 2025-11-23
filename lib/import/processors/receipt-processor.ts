@@ -86,7 +86,8 @@ export class ReceiptProcessor extends BaseDocumentProcessor {
     const extractedData = await this.extractWithAI(
       base64Image,
       fileUrl,
-      fieldsToExtract
+      fieldsToExtract,
+      fileName
     );
 
     // Validate minimum requirements - throw error if missing required fields
@@ -178,7 +179,8 @@ export class ReceiptProcessor extends BaseDocumentProcessor {
   private async extractWithAI(
     base64Image: string,
     imageUrl: string,
-    fieldsToExtract: Set<string>
+    fieldsToExtract: Set<string>,
+    fileName?: string
   ): Promise<Record<string, any>> {
     // Build Zod schema for structured output
     const receiptSchema = this.buildReceiptSchema(fieldsToExtract);
@@ -225,6 +227,18 @@ export class ReceiptProcessor extends BaseDocumentProcessor {
     const result = await generateObject(prompt, receiptSchema, {
       image: { data: base64Image, mimeType: imageMimeType },
       temperature: AI_TEMPERATURES.STRUCTURED_OUTPUT,
+      loggingContext: {
+        userId: this.userId,
+        entityId: null, // Will be set after receipt is created
+        entityType: "receipt",
+        promptType: "extraction",
+        inputData: {
+          fileName,
+          country: this.country,
+          currency: this.currency,
+          fieldsToExtract: Array.from(fieldsToExtract),
+        },
+      },
     });
 
     if (!result.success || !result.data) {

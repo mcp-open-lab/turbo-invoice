@@ -13,6 +13,8 @@ const CategorizationSchema = z.object({
 
 export interface AICategorizeOptions {
   availableCategories: Array<{ id: string; name: string }>;
+  userId?: string; // For logging
+  transactionId?: string; // For logging
   userPreferences?: {
     country?: string | null;
     usageType?: string | null;
@@ -39,6 +41,20 @@ export async function aiCategorizeTransaction(
   try {
     const result = await generateObject(prompt, CategorizationSchema, {
       temperature: AI_TEMPERATURES.STRUCTURED_OUTPUT,
+      loggingContext: options.userId
+        ? {
+            userId: options.userId,
+            entityId: options.transactionId || null,
+            entityType: "transaction",
+            promptType: "categorization",
+            inputData: {
+              merchantName: transaction.merchantName,
+              description: transaction.description,
+              amount: transaction.amount,
+              categoryCount: availableCategories.length,
+            },
+          }
+        : undefined,
     });
 
     if (!result.success || !result.data) {

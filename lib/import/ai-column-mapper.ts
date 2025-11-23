@@ -160,6 +160,19 @@ CRITICAL INSTRUCTION: NO STATEMENT TYPE SELECTED - ANALYZE PATTERNS
 
     const result = await generateObject(prompt, MappingConfigSchema, {
       temperature: AI_TEMPERATURES.STRUCTURED_OUTPUT,
+      loggingContext: userId
+        ? {
+            userId,
+            entityId: null, // Batch/document ID not available here
+            entityType: "batch",
+            promptType: "mapping",
+            inputData: {
+              rowCount: totalRows,
+              previewRowCount: previewRows.length,
+              statementType,
+            },
+          }
+        : undefined,
     });
 
     devLogger.debug("AI column mapping response received", {
