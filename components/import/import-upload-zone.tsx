@@ -29,7 +29,6 @@ import { CurrencySelect } from "@/components/ui/currency-select";
 import { ALLOWED_MIME_TYPES } from "@/lib/constants";
 
 type ImportType = "receipts" | "bank_statements" | "mixed";
-type SourceFormat = "pdf" | "csv" | "xlsx" | "images";
 
 function validateFilesForImportType(
   files: FileWithPreview[],
@@ -73,9 +72,6 @@ export function ImportUploadZone({
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [importType, setImportType] = useState<ImportType>("receipts");
   const [statementType, setStatementType] = useState<"bank_account" | "credit_card">("bank_account");
-  const [sourceFormat, setSourceFormat] = useState<SourceFormat | undefined>(
-    undefined
-  );
   const [currency, setCurrency] = useState<string>(defaultCurrency || "USD");
   const [isUploading, setIsUploading] = useState(false);
   const [batchCreated, setBatchCreated] = useState(false);
@@ -128,7 +124,6 @@ export function ImportUploadZone({
       // Step 2: Create batch and enqueue jobs
       const result = await batchImport({
         importType,
-        sourceFormat,
         statementType: importType === "bank_statements" ? statementType : undefined,
         currency,
         files: successfulUploads.map((file) => ({
@@ -170,14 +165,7 @@ export function ImportUploadZone({
   };
 
   const getAcceptedTypes = (): string[] => {
-    if (sourceFormat === "pdf") return ["application/pdf"];
-    if (sourceFormat === "csv") return ["text/csv", "application/vnd.ms-excel"];
-    if (sourceFormat === "xlsx")
-      return [
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "application/vnd.ms-excel",
-      ];
-    // Default: all supported types
+    // Auto-detect from all supported types
     return Object.keys(ALLOWED_MIME_TYPES);
   };
 
@@ -239,29 +227,6 @@ export function ImportUploadZone({
               </RadioGroup>
             </div>
           )}
-
-          <div className="space-y-2">
-            <Label htmlFor="source-format">Source Format (Optional)</Label>
-            <Select
-              value={sourceFormat || "auto"}
-              onValueChange={(value) =>
-                setSourceFormat(
-                  value === "auto" ? undefined : (value as SourceFormat)
-                )
-              }
-            >
-              <SelectTrigger id="source-format">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="auto">Auto-detect</SelectItem>
-                <SelectItem value="images">Images (JPG, PNG, etc.)</SelectItem>
-                <SelectItem value="pdf">PDF</SelectItem>
-                <SelectItem value="csv">CSV</SelectItem>
-                <SelectItem value="xlsx">Excel (XLSX)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
           <div className="space-y-2">
             <Label htmlFor="currency">Currency</Label>

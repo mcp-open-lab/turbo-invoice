@@ -24,16 +24,13 @@ export function BatchActivityLog({ batchId, initialLogs = [] }: BatchActivityLog
       try {
         setIsLoading(true);
         const newLogs = await getBatchActivityLogs(batchId);
-        if (isMounted) {
+        if (isMounted && newLogs.length > 0) {
+          // Only update if we got logs back (don't replace with empty array)
           setLogs(newLogs);
         }
       } catch (error) {
         console.error("Failed to fetch activity logs:", error);
-        // Don't show error to user, just stop polling if batch is invalid
-        if (isMounted && error instanceof Error && error.message.includes("unauthorized")) {
-          // Stop polling by not setting up interval
-          return;
-        }
+        // Keep existing logs on error - don't clear them
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -41,7 +38,7 @@ export function BatchActivityLog({ batchId, initialLogs = [] }: BatchActivityLog
       }
     };
 
-    // Initial fetch
+    // Initial fetch if no initial logs provided
     if (initialLogs.length === 0) {
       fetchLogs();
     }

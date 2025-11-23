@@ -22,7 +22,10 @@ export async function getBatchActivityLogs(
 ): Promise<BatchActivityLog[]> {
   try {
     const { userId } = await auth();
-    if (!userId) return [];
+    if (!userId) {
+      console.log("[Activity Log] No userId found");
+      return [];
+    }
 
     // Verify batch belongs to user
     const batch = await db
@@ -32,6 +35,7 @@ export async function getBatchActivityLogs(
       .limit(1);
 
     if (batch.length === 0) {
+      console.log("[Activity Log] Batch not found:", batchId, "for user:", userId);
       // Return empty array instead of throwing - batch might not exist yet
       return [];
     }
@@ -43,6 +47,8 @@ export async function getBatchActivityLogs(
       .where(eq(batchActivityLogs.batchId, batchId))
       .orderBy(desc(batchActivityLogs.createdAt))
       .limit(100); // Limit to last 100 activities
+
+    console.log("[Activity Log] Found", logs.length, "logs for batch:", batchId);
 
     return logs.map((log) => ({
       id: log.id,
@@ -57,7 +63,7 @@ export async function getBatchActivityLogs(
     }));
   } catch (error) {
     // Log error but don't fail the page load
-    console.error("Failed to fetch batch activity logs:", error);
+    console.error("[Activity Log] Error fetching logs:", error);
     return [];
   }
 }
