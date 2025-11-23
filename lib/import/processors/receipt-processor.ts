@@ -14,7 +14,7 @@ import {
   type ProcessedDocument,
   type DocumentProcessorConfig,
 } from "./base-document-processor";
-import { generateObjectForExtraction, generateObject } from "@/lib/ai/client";
+import { generateObjectForExtraction } from "@/lib/ai/client";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { devLogger } from "@/lib/dev-logger";
