@@ -12,6 +12,7 @@ import { PageContainer } from "@/components/layouts/page-container";
 import { BankTransactionDetailView } from "@/components/bank-transactions/transaction-detail-view";
 import { getUserSettings } from "@/app/actions/user-settings";
 import { getUserCategories } from "@/app/actions/financial-categories";
+import { getUserBusinesses } from "@/app/actions/businesses";
 
 export default async function BankTransactionDetailPage({
   params,
@@ -38,6 +39,7 @@ export default async function BankTransactionDetailPage({
       currency: bankStatementTransactions.currency,
       category: bankStatementTransactions.category,
       categoryId: bankStatementTransactions.categoryId,
+      businessId: bankStatementTransactions.businessId,
       paymentMethod: bankStatementTransactions.paymentMethod,
       createdAt: bankStatementTransactions.createdAt,
       updatedAt: bankStatementTransactions.updatedAt,
@@ -57,9 +59,10 @@ export default async function BankTransactionDetailPage({
     notFound();
   }
 
-  const [userSettings, categories] = await Promise.all([
+  const [userSettings, categories, businesses] = await Promise.all([
     getUserSettings(),
     getUserCategories(),
+    getUserBusinesses(),
   ]);
 
   return (
@@ -68,6 +71,7 @@ export default async function BankTransactionDetailPage({
       <BankTransactionDetailView
         transaction={transaction[0]}
         categories={categories}
+        businesses={businesses}
         userSettings={userSettings}
       />
     </PageContainer>

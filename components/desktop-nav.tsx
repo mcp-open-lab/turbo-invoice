@@ -15,6 +15,7 @@ import {
   Brain,
   Receipt,
   BarChart3,
+  AlertCircle,
 } from "lucide-react";
 
 const navItems = [
@@ -22,6 +23,12 @@ const navItems = [
     label: "Timeline",
     href: "/app",
     icon: Clock,
+    showAiIcon: false,
+  },
+  {
+    label: "Review",
+    href: "/app/review",
+    icon: AlertCircle,
     showAiIcon: false,
   },
   {

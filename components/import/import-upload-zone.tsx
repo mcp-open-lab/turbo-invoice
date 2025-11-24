@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FileUploadZone, type FileWithPreview } from "@/components/import/file-upload-zone";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,16 +19,28 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Input } from "@/components/ui/input";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { toast } from "sonner";
 import { future_genUploader } from "uploadthing/client-future";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
 import { batchImport } from "@/app/actions/batch-import";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Settings2 } from "lucide-react";
 import { CurrencySelect } from "@/components/ui/currency-select";
 import { ALLOWED_MIME_TYPES } from "@/lib/constants";
 
 type ImportType = "receipts" | "bank_statements" | "mixed";
+
+type Business = {
+  id: string;
+  name: string;
+};
 
 function validateFilesForImportType(
   files: FileWithPreview[],
@@ -76,6 +88,26 @@ export function ImportUploadZone({
   const [isUploading, setIsUploading] = useState(false);
   const [batchCreated, setBatchCreated] = useState(false);
   const [itemsCount, setItemsCount] = useState(0);
+
+  // Processing options
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [defaultBusinessId, setDefaultBusinessId] = useState<string | null>(null);
+  const [dateRangeStart, setDateRangeStart] = useState<string>("");
+  const [dateRangeEnd, setDateRangeEnd] = useState<string>("");
+
+  // Fetch user businesses on mount
+  useEffect(() => {
+    async function fetchBusinesses() {
+      try {
+        const { getUserBusinesses } = await import("@/app/actions/businesses");
+        const userBusinesses = await getUserBusinesses();
+        setBusinesses(userBusinesses);
+      } catch (error) {
+        console.error("Failed to fetch businesses:", error);
+      }
+    }
+    fetchBusinesses();
+  }, []);
 
   const handleFilesChange = (newFiles: FileWithPreview[]) => {
     setFiles(newFiles);
@@ -131,6 +163,9 @@ export function ImportUploadZone({
           fileUrl: file.url,
           fileSizeBytes: file.size,
         })),
+        defaultBusinessId,
+        dateRangeStart: dateRangeStart || undefined,
+        dateRangeEnd: dateRangeEnd || undefined,
       });
 
       if (!result.success || !result.batchId) {
@@ -239,6 +274,72 @@ export function ImportUploadZone({
               Defaults to your profile currency setting
             </p>
           </div>
+
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="processing-options" className="border-none">
+              <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <Settings2 className="h-4 w-4" />
+                  Processing Options
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="space-y-4 pt-4">
+                {/* Default Business */}
+                <div className="space-y-2">
+                  <Label htmlFor="default-business">Default Business (Optional)</Label>
+                  <Select
+                    value={defaultBusinessId || "personal"}
+                    onValueChange={(value) => setDefaultBusinessId(value === "personal" ? null : value)}
+                  >
+                    <SelectTrigger id="default-business">
+                      <SelectValue placeholder="Personal (No Business)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="personal">Personal (No Business)</SelectItem>
+                      {businesses.map((business) => (
+                        <SelectItem key={business.id} value={business.id}>
+                          {business.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Assign all imported transactions to this business by default. Can be changed later.
+                  </p>
+                </div>
+
+                {/* Date Range Filter (for bank statements) */}
+                {importType === "bank_statements" && (
+                  <div className="space-y-3 pt-2 border-t">
+                    <Label className="text-sm font-medium">Date Range Filter (Optional)</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Only import transactions within this date range
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="date-start" className="text-xs">Start Date</Label>
+                        <Input
+                          id="date-start"
+                          type="date"
+                          value={dateRangeStart}
+                          onChange={(e) => setDateRangeStart(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="date-end" className="text-xs">End Date</Label>
+                        <Input
+                          id="date-end"
+                          type="date"
+                          value={dateRangeEnd}
+                          onChange={(e) => setDateRangeEnd(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </CardContent>
       </Card>
 

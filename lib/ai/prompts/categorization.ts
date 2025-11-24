@@ -12,6 +12,7 @@ export interface CategorizationConfig {
     country?: string | null;
     usageType?: string | null;
   };
+  userBusinesses?: Array<{ id: string; name: string }>; // User's businesses for classification
 }
 
 export class CategorizationPrompt {
@@ -22,11 +23,12 @@ export class CategorizationPrompt {
       amount,
       availableCategories,
       userPreferences,
+      userBusinesses,
     } = config;
 
     const categoryList = availableCategories.map((c) => c.name).join(", ");
 
-    const userContext = this.buildUserContext(userPreferences);
+    const userContext = this.buildUserContext(userPreferences, userBusinesses);
 
     return `You are a financial categorization assistant. Categorize the following transaction into one of the available categories.
 
@@ -49,29 +51,39 @@ Instructions:
 1. Select the BEST matching category from the available list.
 2. If none of the categories fit well, suggest a new category name and set isNewCategory to true.
 3. Provide a confidence score (0.0 to 1.0).
+4. Determine if this is a personal or business expense.
+5. If business expense, match to the most appropriate business from the user's list (if available).
 
 Return your response as JSON matching this schema:
 {
   "categoryName": "string",
   "confidence": number,
-  "isNewCategory": boolean
+  "isNewCategory": boolean,
+  "isBusinessExpense": boolean,
+  "businessId": "string | null",
+  "businessName": "string | null"
 }`;
   }
 
   private static buildUserContext(
-    userPreferences?: CategorizationConfig["userPreferences"]
+    userPreferences?: CategorizationConfig["userPreferences"],
+    userBusinesses?: Array<{ id: string; name: string }>
   ): string {
-    if (!userPreferences) return "";
-
     const parts: string[] = [];
 
-    if (userPreferences.country) {
+    if (userPreferences?.country) {
       parts.push(`User Location: ${userPreferences.country}`);
     }
 
-    if (userPreferences.usageType) {
+    if (userPreferences?.usageType) {
       const usageTypeContext = this.getUsageTypeContext(userPreferences.usageType);
       parts.push(`Usage Type: ${userPreferences.usageType}${usageTypeContext}`);
+    }
+
+    if (userBusinesses && userBusinesses.length > 0) {
+      const businessList = userBusinesses.map((b) => `${b.name} (ID: ${b.id})`).join(", ");
+      parts.push(`User's Businesses: ${businessList}`);
+      parts.push(`When identifying a business expense, match it to the most appropriate business by ID.`);
     }
 
     return parts.length > 0 ? parts.join("\n") + "\n" : "";

@@ -170,6 +170,7 @@ export async function processBankStatement(
       currency: tx.currency,
       category: tx.category,
       categoryId: tx.categoryId,
+      businessId: tx.businessId,
       paymentMethod: tx.paymentMethod,
       order: tx.order,
     }));

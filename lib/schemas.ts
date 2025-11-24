@@ -34,6 +34,9 @@ export function createEditReceiptSchema(
     categoryId: requiredFields.category
       ? z.string().min(1, "Category is required").nullable()
       : z.string().optional().nullable(),
+    businessId: requiredFields.businessId
+      ? z.string().min(1, "Business is required").nullable()
+      : z.string().optional().nullable(),
     status: z.enum(["needs_review", "approved"]),
   });
 }

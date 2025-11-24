@@ -11,6 +11,7 @@ export interface CategorizationContext {
     country?: string | null;
     usageType?: string | null;
   };
+  userBusinesses?: Array<{ id: string; name: string }>; // User's businesses for context
 }
 
 /**
@@ -47,4 +48,3 @@ export interface CategorizationStrategy {
     context: CategorizationContext
   ): Promise<CategorizationResult>;
 }
-

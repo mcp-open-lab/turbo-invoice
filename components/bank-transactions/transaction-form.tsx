@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -24,15 +24,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SimilarTransactionsPanel } from "@/components/transactions/similar-transactions-panel";
+import { CreateRuleDialog } from "@/components/transactions/create-rule-dialog";
+import { TransactionCategorization } from "@/components/transactions/transaction-categorization";
 
-import type { categories } from "@/lib/db/schema";
+import type { categories, businesses as businessesSchema } from "@/lib/db/schema";
 
 type Category = typeof categories.$inferSelect;
+type Business = typeof businessesSchema.$inferSelect;
 
 const bankTransactionSchema = z.object({
   id: z.string(),
   merchantName: z.string().optional(),
   categoryId: z.string().optional(),
+  businessId: z.string().optional().nullable(),
   paymentMethod: z.enum(["cash", "card", "check", "other"]).optional(),
   notes: z.string().optional(),
 });
@@ -43,12 +48,15 @@ type BankTransaction = {
   id: string;
   merchantName: string | null;
   categoryId: string | null;
+  businessId: string | null;
   paymentMethod: string | null;
 };
 
 type BankTransactionFormProps = {
   transaction: BankTransaction;
   categories: Category[];
+  businesses: Business[];
+  currency?: string;
   transactionType: "income" | "expense";
   userSettings?: {
     country?: string | null;
@@ -59,17 +67,15 @@ type BankTransactionFormProps = {
 export function BankTransactionForm({
   transaction,
   categories,
+  businesses,
+  currency = "USD",
   transactionType,
   userSettings,
 }: BankTransactionFormProps) {
   const [isPending, startTransition] = useTransition();
-
-  // Filter categories by transaction type
-  const availableCategories = categories.filter(
-    (cat) =>
-      cat.transactionType === transactionType ||
-      cat.transactionType === "expense" // Default to expense if not specified
-  );
+  const [createRuleOpen, setCreateRuleOpen] = useState(false);
+  const [ruleSuggestedCategory, setRuleSuggestedCategory] = useState<string>("");
+  const [ruleSuggestedBusiness, setRuleSuggestedBusiness] = useState<string | null>(null);
 
   const form = useForm<BankTransactionFormValues>({
     resolver: zodResolver(bankTransactionSchema),
@@ -77,6 +83,7 @@ export function BankTransactionForm({
       id: transaction.id,
       merchantName: transaction.merchantName ?? "",
       categoryId: transaction.categoryId ?? "",
+      businessId: transaction.businessId ?? null,
       paymentMethod: (transaction.paymentMethod as "cash" | "card" | "check" | "other") || undefined,
       notes: "",
     },
@@ -92,6 +99,25 @@ export function BankTransactionForm({
         toast.error("Failed to update transaction");
       }
     });
+  };
+
+  const handleRuleSuggestion = (categoryId: string, businessId: string | null) => {
+    setRuleSuggestedCategory(categoryId);
+    setRuleSuggestedBusiness(businessId);
+    form.setValue("categoryId", categoryId);
+    setCreateRuleOpen(true);
+  };
+
+  const handleOpenCreateRule = () => {
+    const currentMerchant = form.getValues("merchantName");
+    const currentCategory = form.getValues("categoryId");
+    if (!currentMerchant || !currentCategory) {
+      toast.error("Please enter a merchant name and select a category first");
+      return;
+    }
+    setRuleSuggestedCategory(currentCategory);
+    setRuleSuggestedBusiness(null);
+    setCreateRuleOpen(true);
   };
 
   return (
@@ -115,29 +141,28 @@ export function BankTransactionForm({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="categoryId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Category</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value ?? ""}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {availableCategories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name} {cat.type === "user" ? "(Custom)" : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
+        <TransactionCategorization
+          form={form}
+          categories={categories}
+          businesses={businesses}
+          transactionType={transactionType}
+          onCreateRule={handleOpenCreateRule}
+        />
+
+        {/* Similar Transactions Panel */}
+        <SimilarTransactionsPanel
+          merchantName={form.watch("merchantName") || ""}
+          transactionId={transaction.id}
+          entityType="bank_transaction"
+          currency={currency}
+          onRuleSuggestion={handleRuleSuggestion}
+          onCreateRuleForTransaction={(merchantName, categoryId, businessId) => {
+            if (categoryId) {
+              setRuleSuggestedCategory(categoryId);
+              setRuleSuggestedBusiness(businessId);
+              setCreateRuleOpen(true);
+            }
+          }}
         />
 
         <FormField
@@ -192,6 +217,20 @@ export function BankTransactionForm({
           </Button>
         </div>
       </form>
+
+      {/* Create Rule Dialog */}
+      <CreateRuleDialog
+        open={createRuleOpen}
+        onOpenChange={setCreateRuleOpen}
+        merchantName={form.watch("merchantName") || ""}
+        categoryId={ruleSuggestedCategory || form.watch("categoryId") || ""}
+        businessId={ruleSuggestedBusiness}
+        categories={categories}
+        businesses={businesses}
+        onRuleCreated={() => {
+          toast.success("Rule created! Future transactions will be auto-categorized.");
+        }}
+      />
     </Form>
   );
 }

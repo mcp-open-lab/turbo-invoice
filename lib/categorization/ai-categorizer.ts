@@ -9,6 +9,9 @@ const CategorizationSchema = z.object({
   categoryName: z.string(),
   confidence: z.number().min(0).max(1),
   isNewCategory: z.boolean(),
+  isBusinessExpense: z.boolean(),
+  businessId: z.string().nullable(),
+  businessName: z.string().nullable(),
 });
 
 export interface AICategorizeOptions {
@@ -19,6 +22,7 @@ export interface AICategorizeOptions {
     country?: string | null;
     usageType?: string | null;
   };
+  userBusinesses?: Array<{ id: string; name: string }>; // User's businesses for classification
 }
 
 /**
@@ -28,7 +32,7 @@ export async function aiCategorizeTransaction(
   transaction: TransactionToCategorize,
   options: AICategorizeOptions
 ): Promise<CategorizationResult> {
-  const { availableCategories, userPreferences } = options;
+  const { availableCategories, userPreferences, userBusinesses } = options;
 
   const prompt = CategorizationPrompt.build({
     merchantName: transaction.merchantName ?? null,
@@ -36,6 +40,7 @@ export async function aiCategorizeTransaction(
     amount: transaction.amount ?? null,
     availableCategories,
     userPreferences,
+    userBusinesses,
   });
 
   try {
@@ -67,13 +72,16 @@ export async function aiCategorizeTransaction(
       };
     }
 
-    const { categoryName, confidence, isNewCategory } = result.data;
+    const { categoryName, confidence, isNewCategory, isBusinessExpense, businessId, businessName } = result.data;
 
     devLogger.info("AI categorization completed", {
       merchantName: transaction.merchantName,
       categoryName,
       confidence,
       isNewCategory,
+      isBusinessExpense,
+      businessId,
+      businessName,
     });
 
     // Find the category ID if it exists
@@ -85,12 +93,33 @@ export async function aiCategorizeTransaction(
       categoryId = matchedCategory?.id || null;
     }
 
+    // Validate businessId if provided
+    let validatedBusinessId: string | null = null;
+    if (isBusinessExpense && businessId && userBusinesses) {
+      const matchedBusiness = userBusinesses.find((b) => b.id === businessId);
+      if (matchedBusiness) {
+        validatedBusinessId = businessId;
+        devLogger.debug("AI matched business", {
+          businessId,
+          businessName: matchedBusiness.name,
+        });
+      } else {
+        devLogger.warn("AI returned invalid businessId", {
+          businessId,
+          businessName,
+          availableBusinesses: userBusinesses.map((b) => b.id),
+        });
+      }
+    }
+
     return {
       categoryId,
       categoryName,
       confidence,
       method: "ai",
       suggestedCategory: isNewCategory ? categoryName : undefined,
+      isBusinessExpense,
+      businessId: validatedBusinessId,
     };
   } catch (error) {
     devLogger.error("AI categorization error", {

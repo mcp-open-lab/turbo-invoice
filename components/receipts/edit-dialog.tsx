@@ -15,9 +15,10 @@ import {
   type EditReceiptFormValues,
 } from "@/lib/schemas";
 import { DEFAULT_REQUIRED_FIELDS } from "@/lib/consts";
-import type { receipts, categories } from "@/lib/db/schema";
+import type { receipts, categories, businesses as businessesSchema } from "@/lib/db/schema";
 
 type Receipt = typeof receipts.$inferSelect;
+type Business = typeof businessesSchema.$inferSelect;
 
 type UserSettings = {
   visibleFields?: Record<string, boolean> | null;
@@ -38,6 +39,7 @@ type EditReceiptDialogProps = {
   onOpenChange: (open: boolean) => void;
   receipt: Receipt | null;
   categories: Category[];
+  businesses: Business[];
   userSettings?: UserSettings | null;
 };
 
@@ -57,6 +59,7 @@ function getDefaultValues(
       tipAmount: "",
       discountAmount: "",
       categoryId: "",
+      businessId: "",
       status: "needs_review",
     };
   }
@@ -77,6 +80,7 @@ function getDefaultValues(
     tipAmount: receipt.tipAmount ?? "",
     discountAmount: receipt.discountAmount ?? "",
     categoryId: receipt.categoryId ?? "",
+    businessId: receipt.businessId ?? "",
     status: (receipt.status as "needs_review" | "approved") ?? "needs_review",
   };
 }
@@ -86,6 +90,7 @@ export function EditReceiptDialog({
   onOpenChange,
   receipt,
   categories,
+  businesses,
   userSettings,
 }: EditReceiptDialogProps) {
   const requiredFields =
@@ -148,6 +153,7 @@ export function EditReceiptDialog({
                   requiredFields={requiredFields}
                   visibleFields={visibleFields}
                   categories={categories}
+                  businesses={businesses}
                   onOpenChange={onOpenChange}
                 />
               </div>

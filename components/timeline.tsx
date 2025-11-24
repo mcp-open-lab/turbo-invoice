@@ -19,6 +19,7 @@ import Link from "next/link";
 import type { TimelineItem, TimelineFilters } from "@/lib/api/timeline";
 import { fetchTimelineItems, getTimelineMerchants, getTimelineBusinesses } from "@/app/actions/timeline";
 import type { categories as categoriesSchema, businesses as businessesSchema } from "@/lib/db/schema";
+import { TimelineTable } from "./timeline/timeline-table";
 
 type UserSettings = {
   visibleFields?: Record<string, boolean> | null;
@@ -390,59 +391,60 @@ export function Timeline({ initialItems, userSettings, categories, merchants, bu
             <h3 className="text-sm font-medium text-muted-foreground mb-4 sticky top-14 bg-background/95 backdrop-blur py-2 z-0 px-1">
               {group.monthLabel}
             </h3>
-            <div className="space-y-3 pl-4 border-l-2 border-muted ml-2">
+            {/* Mobile: Compact List View */}
+            <div className="space-y-1.5 md:hidden pl-3 border-l-2 border-muted ml-1">
               {group.items.map((item) => {
                 const href =
                   item.type === "transaction"
                     ? `/app/transactions/${item.id}`
                     : `/app/receipts/${item.id}`;
+                const amount = parseFloat(item.amount);
+                const isIncome = item.type === "transaction" ? amount >= 0 : false;
 
                 return (
                   <Link key={item.id} href={href}>
-                    <Card className="p-4 flex justify-between items-center cursor-pointer hover:bg-accent/50 transition-colors border-none shadow-sm relative -ml-[21px] group">
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-primary border-2 border-background"></div>
-                      <div className="flex-1 ml-4">
-                        <p className="font-semibold text-sm md:text-base">
-                          {item.merchantName || "Unknown Vendor"}
+                    <Card className="p-2 flex justify-between items-center cursor-pointer hover:bg-accent/50 transition-colors border-none shadow-sm relative -ml-[17px] group">
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-primary border-2 border-background"></div>
+                      <div className="flex-1 ml-3 min-w-0">
+                        <p className="font-medium text-xs truncate">
+                          {item.merchantName || "Unknown"}
                         </p>
-                        <div className="flex gap-2 text-xs text-muted-foreground">
+                        <div className="flex gap-1.5 text-[10px] text-muted-foreground mt-0.5">
                           <span>
                             {item.date
                               ? new Date(item.date).toLocaleDateString(undefined, {
                                   day: "numeric",
-                                  weekday: "short",
+                                  month: "short",
                                 })
                               : "No Date"}
                           </span>
                           {item.category && (
                             <>
                               <span>•</span>
-                              <span>{item.category}</span>
+                              <span className="truncate">{item.category}</span>
                             </>
                           )}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-sm md:text-base">
-                          {item.type === "receipt" ? "-" : ""}
-                          {item.currency || "$"}
-                          {item.amount}
+                      <div className="text-right shrink-0 ml-2">
+                        <p className={`font-semibold text-xs ${isIncome ? "text-green-600" : "text-red-600"}`}>
+                          {isIncome ? "+" : "-"}{item.currency || "$"}{Math.abs(amount).toFixed(2)}
                         </p>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                            item.status === "approved" || item.status === "completed"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-yellow-100 text-yellow-700"
-                          }`}
-                        >
-                          {item.status === "needs_review" ? "Review" : "Done"}
-                        </span>
                       </div>
-                      <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors ml-1 shrink-0" />
                     </Card>
                   </Link>
                 );
               })}
+            </div>
+
+            {/* Desktop: Table View */}
+            <div className="hidden md:block">
+              <TimelineTable
+                items={group.items}
+                categories={categories}
+                businesses={businesses}
+              />
             </div>
           </div>
         ))}

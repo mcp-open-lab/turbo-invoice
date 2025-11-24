@@ -40,6 +40,7 @@ export class AiMatcher implements CategorizationStrategy {
         {
           availableCategories: context.availableCategories,
           userPreferences: context.userPreferences,
+          userBusinesses: context.userBusinesses,
           userId: context.userId,
           transactionId: input.entityId,
         }

@@ -52,7 +52,7 @@ export class BankAccountProcessor extends BaseStatementProcessor {
       const paymentMethod = await this.detectPaymentMethod(fullDescription);
 
       // Categorize
-      const { categoryId, categoryName } = await this.categorizeTransaction(
+      const { categoryId, categoryName, businessId } = await this.categorizeTransaction(
         tx.merchantName || null,
         tx.description || "",
         amount.toString()
@@ -68,6 +68,7 @@ export class BankAccountProcessor extends BaseStatementProcessor {
         currency,
         category: categoryName,
         categoryId,
+        businessId,
         paymentMethod,
         order: index,
       });

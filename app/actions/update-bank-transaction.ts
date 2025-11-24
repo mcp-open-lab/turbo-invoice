@@ -11,6 +11,7 @@ const updateBankTransactionSchema = z.object({
   id: z.string(),
   merchantName: z.string().optional(),
   categoryId: z.string().optional(),
+  businessId: z.string().optional().nullable(),
   paymentMethod: z.enum(["cash", "card", "check", "other"]).optional(),
   notes: z.string().optional(),
 });
@@ -63,6 +64,7 @@ export async function updateBankTransaction(data: unknown) {
       merchantName: validated.merchantName || null,
       categoryId: validated.categoryId || null,
       category: categoryName, // Denormalized for display/fallback
+      businessId: validated.businessId !== undefined ? validated.businessId : undefined,
       paymentMethod: validated.paymentMethod || null,
       // Note: We don't have a notes field in the schema yet, so we'll skip it for now
       updatedAt: new Date(),

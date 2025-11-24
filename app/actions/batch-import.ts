@@ -22,6 +22,10 @@ const batchImportSchema = z.object({
       fileSizeBytes: z.number().int().optional(),
     })
   ),
+  // Critical processing options
+  defaultBusinessId: z.string().nullable().optional(),
+  dateRangeStart: z.string().optional(), // ISO date string
+  dateRangeEnd: z.string().optional(),   // ISO date string
 });
 
 /**

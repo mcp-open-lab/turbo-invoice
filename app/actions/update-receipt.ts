@@ -31,6 +31,7 @@ export async function updateReceipt(data: unknown) {
     merchantName: validated.merchantName ?? null,
     categoryId: validated.categoryId ?? null,
     category: categoryName, // Denormalized for display/fallback
+    businessId: validated.businessId ?? null,
     description: validated.description ?? null,
     paymentMethod: validated.paymentMethod ?? null,
     status: validated.status ?? "needs_review",

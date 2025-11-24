@@ -15,6 +15,7 @@ export interface ProcessedTransaction {
   currency: string;
   category: string | null;
   categoryId: string | null;
+  businessId: string | null;
   paymentMethod: string | null;
   order: number;
 }
@@ -109,9 +110,9 @@ export abstract class BaseStatementProcessor {
     merchantName: string | null,
     description: string,
     amount: string
-  ): Promise<{ categoryId: string | null; categoryName: string | null }> {
+  ): Promise<{ categoryId: string | null; categoryName: string | null; businessId: string | null }> {
     if (!merchantName && !description) {
-      return { categoryId: null, categoryName: null };
+      return { categoryId: null, categoryName: null, businessId: null };
     }
 
     const { CategoryEngine } = await import("@/lib/categorization/engine");
@@ -123,6 +124,7 @@ export abstract class BaseStatementProcessor {
     return {
       categoryId: result.categoryId || null,
       categoryName: result.categoryName || result.suggestedCategory || null,
+      businessId: result.businessId || null,
     };
   }
 }

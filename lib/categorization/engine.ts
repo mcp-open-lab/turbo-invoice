@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { userSettings } from "@/lib/db/schema";
+import { userSettings, businesses } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { devLogger } from "@/lib/dev-logger";
 import { CategoryFilterService } from "./category-filter";
@@ -101,11 +101,17 @@ export class CategoryEngine {
     // Get available categories and user preferences for AI context
     const availableCategories = await this.categoryRepository.getCategoriesForAI(userId);
 
-    const userPrefs = await db
-      .select()
-      .from(userSettings)
-      .where(eq(userSettings.userId, userId))
-      .limit(1);
+    const [userPrefs, userBusinessesData] = await Promise.all([
+      db
+        .select()
+        .from(userSettings)
+        .where(eq(userSettings.userId, userId))
+        .limit(1),
+      db
+        .select({ id: businesses.id, name: businesses.name })
+        .from(businesses)
+        .where(eq(businesses.userId, userId)),
+    ]);
 
     const userPreferences =
       userPrefs.length > 0
@@ -114,6 +120,10 @@ export class CategoryEngine {
             usageType: userPrefs[0].usageType,
           }
         : undefined;
+
+    const userBusinesses = userBusinessesData.length > 0
+      ? userBusinessesData.map((b) => ({ id: b.id, name: b.name }))
+      : undefined;
 
     const result = await manager.categorize(
       {
@@ -126,6 +136,7 @@ export class CategoryEngine {
         minConfidence,
         availableCategories,
         userPreferences,
+        userBusinesses,
       }
     );
 
