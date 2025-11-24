@@ -102,7 +102,10 @@ export function DesktopNav() {
     return (
       <nav className="hidden md:flex fixed top-0 left-0 right-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center justify-between px-4 mx-auto">
-          <Link href="/app" className="flex items-center space-x-2 flex-shrink-0">
+          <Link
+            href="/app"
+            className="flex items-center space-x-2 flex-shrink-0"
+          >
             <Receipt className="h-6 w-6" />
             <span className="font-bold text-lg">Turbo Invoice</span>
           </Link>
