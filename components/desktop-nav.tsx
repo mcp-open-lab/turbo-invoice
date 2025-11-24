@@ -129,7 +129,9 @@ export function DesktopNav() {
 
             {/* Insights Dropdown */}
             <NavigationMenuItem>
-              <NavigationMenuTrigger className={isActiveGroup(insightsItems) ? "bg-accent" : ""}>
+              <NavigationMenuTrigger
+                className={isActiveGroup(insightsItems) ? "bg-accent" : ""}
+              >
                 <Sparkles className="h-4 w-4 mr-2" />
                 Insights
               </NavigationMenuTrigger>
@@ -168,7 +170,9 @@ export function DesktopNav() {
 
             {/* Data Dropdown */}
             <NavigationMenuItem>
-              <NavigationMenuTrigger className={isActiveGroup(dataItems) ? "bg-accent" : ""}>
+              <NavigationMenuTrigger
+                className={isActiveGroup(dataItems) ? "bg-accent" : ""}
+              >
                 <Database className="h-4 w-4 mr-2" />
                 Data
               </NavigationMenuTrigger>
