@@ -14,6 +14,7 @@ import {
   Settings,
   Brain,
   Receipt,
+  BarChart3,
 } from "lucide-react";
 
 const navItems = [
@@ -22,6 +23,12 @@ const navItems = [
     href: "/app",
     icon: Clock,
     showAiIcon: false,
+  },
+  {
+    label: "Analytics",
+    href: "/app/analytics",
+    icon: BarChart3,
+    showAiIcon: true,
   },
   {
     label: "Budgets",
