@@ -351,9 +351,11 @@ export class TransactionRepository {
    */
   async getMerchantTransactions(
     merchantName: string,
-    userId: string
-  ): Promise<
-    Array<{
+    userId: string,
+    page: number = 1,
+    pageSize: number = 25
+  ): Promise<{
+    transactions: Array<{
       id: string;
       merchantName: string;
       date: Date | null;
@@ -363,8 +365,11 @@ export class TransactionRepository {
       description: string | null;
       entityType: EntityType;
       source: "receipt" | "bank_transaction";
-    }>
-  > {
+    }>;
+    totalCount: number;
+    totalPages: number;
+    currentPage: number;
+  }> {
     try {
       const transactions: Array<{
         id: string;
@@ -494,13 +499,29 @@ export class TransactionRepository {
         return b.date.getTime() - a.date.getTime();
       });
 
-      return transactions;
+      // Calculate pagination
+      const totalCount = transactions.length;
+      const totalPages = Math.ceil(totalCount / pageSize);
+      const offset = (page - 1) * pageSize;
+      const paginatedTransactions = transactions.slice(offset, offset + pageSize);
+
+      return {
+        transactions: paginatedTransactions,
+        totalCount,
+        totalPages,
+        currentPage: page,
+      };
     } catch (error) {
       devLogger.error(
         "TransactionRepository: Error getting merchant transactions",
         { error, merchantName }
       );
-      return [];
+      return {
+        transactions: [],
+        totalCount: 0,
+        totalPages: 0,
+        currentPage: page,
+      };
     }
   }
 }

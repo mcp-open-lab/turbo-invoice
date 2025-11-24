@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { categories, categoryRules } from "@/lib/db/schema";
-import { eq, and, or } from "drizzle-orm";
+import { categories, categoryRules, receipts, bankStatementTransactions } from "@/lib/db/schema";
+import { eq, and, or, inArray } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { createId } from "@paralleldrive/cuid2";
@@ -551,15 +551,99 @@ export const updateRuleDisplayName = createSafeAction(
 );
 
 // Get all transactions for a specific merchant
-export async function getMerchantTransactions(merchantName: string) {
+export async function getMerchantTransactions(
+  merchantName: string,
+  page: number = 1,
+  pageSize: number = 25
+) {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
   const repository = new TransactionRepository();
-  const transactions = await repository.getMerchantTransactions(
+  const result = await repository.getMerchantTransactions(
     merchantName,
-    userId
+    userId,
+    page,
+    pageSize
   );
 
-  return transactions;
+  return result;
+}
+
+export async function bulkUpdateMerchantCategory(
+  merchantName: string,
+  categoryId: string,
+  businessId?: string | null
+) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  try {
+    // Get all transactions for this merchant (without pagination)
+    const repository = new TransactionRepository();
+    const { transactions } = await repository.getMerchantTransactions(
+      merchantName,
+      userId,
+      1,
+      10000 // Large number to get all
+    );
+
+    // Get category name for denormalization
+    const categoryResult = await db
+      .select()
+      .from(categories)
+      .where(eq(categories.id, categoryId))
+      .limit(1);
+    const categoryName = categoryResult[0]?.name ?? null;
+
+    // Update receipts
+    const receiptIds = transactions
+      .filter((t) => t.source === "receipt")
+      .map((t) => t.id);
+
+    if (receiptIds.length > 0) {
+      await db
+        .update(receipts)
+        .set({
+          categoryId,
+          category: categoryName,
+          businessId: businessId || null,
+          status: "approved",
+          updatedAt: new Date(),
+        })
+        .where(and(
+          inArray(receipts.id, receiptIds),
+          eq(receipts.userId, userId)
+        ));
+    }
+
+    // Update bank transactions
+    const bankTxIds = transactions
+      .filter((t) => t.source === "bank_transaction")
+      .map((t) => t.id);
+
+    if (bankTxIds.length > 0) {
+      await db
+        .update(bankStatementTransactions)
+        .set({
+          categoryId,
+          category: categoryName,
+          businessId: businessId || null,
+          updatedAt: new Date(),
+        })
+        .where(inArray(bankStatementTransactions.id, bankTxIds));
+    }
+
+    return {
+      success: true,
+      updatedCount: transactions.length,
+    };
+  } catch (error) {
+    devLogger.error("Error bulk updating merchant category", {
+      error,
+      merchantName,
+      userId,
+    });
+    throw new Error("Failed to update merchant transactions");
+  }
 }
