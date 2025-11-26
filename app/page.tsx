@@ -7,113 +7,257 @@ import {
   SignUpButton,
   UserButton,
 } from "@clerk/nextjs";
+import {
+  Receipt,
+  Brain,
+  Sparkles,
+  History,
+  ArrowRight,
+  CheckCircle2,
+  Zap,
+  Building2,
+  ShieldCheck,
+  ListTodo,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function MarketingPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <nav className="border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="text-xl font-bold">Turbo Invoice</div>
-            <div className="flex items-center gap-4">
-              <SignedOut>
-                <SignInButton mode="modal">
-                  <Button variant="ghost">Sign In</Button>
-                </SignInButton>
-                <SignUpButton mode="modal">
-                  <Button>Get Started</Button>
-                </SignUpButton>
-              </SignedOut>
-              <SignedIn>
-                <Link href="/app">
-                  <Button>Go to App</Button>
-                </Link>
-                <UserButton />
-              </SignedIn>
-            </div>
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
+      {/* Navigation */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container px-4 md:px-6 flex h-14 items-center justify-between mx-auto max-w-7xl">
+          <div className="flex items-center gap-2">
+            <Receipt className="h-6 w-6" />
+            <span className="font-bold text-xl tracking-tight">
+              Turbo Invoice
+            </span>
           </div>
-        </div>
-      </nav>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-        <div className="text-center">
-          <h1 className="text-5xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-            <span className="text-primary">Tax Season, Solved.</span>
-          </h1>
-          <p className="mt-6 text-xl leading-8 text-gray-600 max-w-2xl mx-auto">
-            Stop wrestling with complex accounting software. Turbo Invoice uses
-            AI to instantly process receipts and generate invoices. It’s
-            automagic bookkeeping for the modern pro.
-          </p>
-          <div className="mt-10 flex items-center justify-center gap-x-6">
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
             <SignedOut>
-              <SignUpButton mode="modal">
-                <Button size="lg" className="px-8 text-lg h-12 rounded-full">
-                  Start for Free
+              <SignInButton mode="modal">
+                <Button variant="ghost" size="sm">
+                  Log in
                 </Button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <Button size="sm">Get Started</Button>
               </SignUpButton>
             </SignedOut>
             <SignedIn>
               <Link href="/app">
-                <Button size="lg" className="px-8 text-lg h-12 rounded-full">
-                  Go to Dashboard
+                <Button size="sm" variant="outline">
+                  Dashboard
                 </Button>
               </Link>
+              <UserButton afterSignOutUrl="/" />
             </SignedIn>
           </div>
         </div>
+      </header>
 
-        <div className="mt-32 grid grid-cols-1 gap-12 sm:grid-cols-3">
-          <div className="p-8 bg-white border rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
-              <span className="text-2xl">⚡️</span>
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 px-4 md:px-6">
+          <div className="container mx-auto max-w-7xl">
+            <div className="flex flex-col items-center text-center space-y-8">
+              <div className="space-y-4 max-w-3xl">
+                <Badge
+                  variant="secondary"
+                  className="px-3 py-1 text-sm rounded-full mb-4"
+                >
+                  <Sparkles className="w-3 h-3 mr-1 inline text-primary" />
+                  New: Smart Review Queue & Merchant Rules
+                </Badge>
+                <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
+                  Bookkeeping on <span className="text-primary">Autopilot</span>
+                  .
+                </h1>
+                <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl lg:text-2xl">
+                  Stop manually categorizing transactions. Let AI handle the
+                  boring stuff while you focus on growing your business.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4 min-w-[200px]">
+                <SignedOut>
+                  <SignUpButton mode="modal">
+                    <Button size="lg" className="h-12 px-8 text-base">
+                      Start for Free <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </SignUpButton>
+                </SignedOut>
+                <SignedIn>
+                  <Link href="/app">
+                    <Button size="lg" className="h-12 px-8 text-base">
+                      Go to App <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </SignedIn>
+                <Link href="#features">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="h-12 px-8 text-base"
+                  >
+                    See How It Works
+                  </Button>
+                </Link>
+              </div>
             </div>
-            <h3 className="text-xl font-bold mb-3">Instant Receipt Capture</h3>
-            <p className="text-gray-600 leading-relaxed">
-              Snap a photo, and our AI extracts every detail (merchant, date,
-              totals) in seconds. No manual entry, ever.
-            </p>
           </div>
-          <div className="p-8 bg-white border rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-6">
-              <span className="text-2xl">🧠</span>
-            </div>
-            <h3 className="text-xl font-bold mb-3">AI Invoice Creation</h3>
-            <p className="text-gray-600 leading-relaxed">
-              Describe your work in plain English, and let AI generate a
-              professional, itemized invoice ready to send.
-            </p>
-          </div>
-          <div className="p-8 bg-white border rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-6">
-              <span className="text-2xl">😌</span>
-            </div>
-            <h3 className="text-xl font-bold mb-3">Stress-Free Taxes</h3>
-            <p className="text-gray-600 leading-relaxed">
-              Everything is categorized and exportable. Hand your accountant a
-              perfect CSV, or file it yourself with confidence.
-            </p>
-          </div>
-        </div>
+        </section>
 
-        <div className="mt-32 bg-slate-50 rounded-3xl p-12 text-center">
-          <h2 className="text-3xl font-bold mb-6">
-            Too simple to be true? That’s the point.
-          </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
-            Traditional software is built for accountants, not you. We stripped
-            away the bloat and added intelligence to give you exactly what you
-            need: <strong>speed and clarity</strong>.
-          </p>
-          <SignedOut>
-            <SignUpButton mode="modal">
-              <Button variant="outline" size="lg">
-                Try the Simplicity
-              </Button>
-            </SignUpButton>
-          </SignedOut>
-        </div>
+        {/* Feature Grid */}
+        <section id="features" className="w-full py-12 md:py-24 bg-muted/50">
+          <div className="container px-4 md:px-6 mx-auto max-w-7xl">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
+                Smarter Financial Management
+              </h2>
+              <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                Powerful features designed to save you hours every month.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <Card className="border-none shadow-md">
+                <CardContent className="p-6 space-y-4">
+                  <div className="p-3 bg-primary/10 w-fit rounded-xl">
+                    <ListTodo className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold">Review Queue</h3>
+                  <p className="text-muted-foreground">
+                    A dedicated workflow to quickly approve or fix
+                    low-confidence transactions. Bulk edit and clear your
+                    backlog in seconds.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-none shadow-md">
+                <CardContent className="p-6 space-y-4">
+                  <div className="p-3 bg-primary/10 w-fit rounded-xl">
+                    <Brain className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold">Smart Rules</h3>
+                  <p className="text-muted-foreground">
+                    Teach the AI once, and it remembers forever. Create rules
+                    based on merchant history to automate future
+                    categorizations.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-none shadow-md">
+                <CardContent className="p-6 space-y-4">
+                  <div className="p-3 bg-primary/10 w-fit rounded-xl">
+                    <History className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold">Merchant Insights</h3>
+                  <p className="text-muted-foreground">
+                    Drill down into any merchant. See your total spend, visit
+                    history, and apply bulk changes to past transactions
+                    instantly.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-none shadow-md">
+                <CardContent className="p-6 space-y-4">
+                  <div className="p-3 bg-primary/10 w-fit rounded-xl">
+                    <Zap className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold">Instant Capture</h3>
+                  <p className="text-muted-foreground">
+                    Snap a receipt or upload a bank statement. Our advanced AI
+                    extracts vendors, dates, and totals with near-perfect
+                    accuracy.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-none shadow-md">
+                <CardContent className="p-6 space-y-4">
+                  <div className="p-3 bg-primary/10 w-fit rounded-xl">
+                    <Building2 className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold">Business Context</h3>
+                  <p className="text-muted-foreground">
+                    Seamlessly toggle between Personal and Business modes. Keep
+                    your finances separate without needing multiple accounts.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-none shadow-md">
+                <CardContent className="p-6 space-y-4">
+                  <div className="p-3 bg-primary/10 w-fit rounded-xl">
+                    <ShieldCheck className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold">Tax Ready</h3>
+                  <p className="text-muted-foreground">
+                    Export clean, categorized data to CSV or Excel. Your
+                    accountant will love you (or be slightly less annoyed).
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="w-full py-12 md:py-24 lg:py-32 border-t">
+          <div className="container px-4 md:px-6 mx-auto max-w-7xl">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
+                  Ready to regain your sanity?
+                </h2>
+                <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed mx-auto">
+                  Join thousands of freelancers and small business owners who
+                  trust Turbo Invoice.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 min-w-[200px]">
+                <SignedOut>
+                  <SignUpButton mode="modal">
+                    <Button size="lg" className="w-full">
+                      Get Started Now
+                    </Button>
+                  </SignUpButton>
+                </SignedOut>
+                <SignedIn>
+                  <Link href="/app">
+                    <Button size="lg" className="w-full">
+                      Go to Dashboard
+                    </Button>
+                  </Link>
+                </SignedIn>
+                <p className="text-xs text-muted-foreground">
+                  No credit card required for trial.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
+
+      {/* Footer */}
+      <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
+        <p className="text-xs text-muted-foreground">
+          © 2024 Turbo Invoice. All rights reserved.
+        </p>
+        <nav className="sm:ml-auto flex gap-4 sm:gap-6">
+          <Link className="text-xs hover:underline underline-offset-4" href="#">
+            Terms of Service
+          </Link>
+          <Link className="text-xs hover:underline underline-offset-4" href="#">
+            Privacy
+          </Link>
+        </nav>
+      </footer>
     </div>
   );
 }
