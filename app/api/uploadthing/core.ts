@@ -1,6 +1,6 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuth } from "@clerk/nextjs/server";
 import { devLogger } from "@/lib/dev-logger";
 import {
   MAX_FILE_SIZE,
@@ -16,8 +16,8 @@ export const ourFileRouter = {
     image: { maxFileSize: MAX_FILE_SIZE, maxFileCount: MAX_FILE_COUNT_SINGLE },
     pdf: { maxFileSize: MAX_FILE_SIZE, maxFileCount: MAX_FILE_COUNT_SINGLE },
   })
-    .middleware(async () => {
-      const { userId } = await auth();
+    .middleware(async ({ req }) => {
+      const { userId } = getAuth(req);
       if (!userId) {
         devLogger.error("UploadThing unauthorized", { 
           action: "receiptUploader" 
@@ -45,8 +45,8 @@ export const ourFileRouter = {
     text: { maxFileSize: MAX_FILE_SIZE, maxFileCount: MAX_FILE_COUNT_BATCH }, // CSV files
     blob: { maxFileSize: MAX_FILE_SIZE, maxFileCount: MAX_FILE_COUNT_BATCH }, // XLSX/XLS files
   })
-    .middleware(async () => {
-      const { userId } = await auth();
+    .middleware(async ({ req }) => {
+      const { userId } = getAuth(req);
       if (!userId) {
         devLogger.error("UploadThing unauthorized", { 
           action: "batchUploader" 
