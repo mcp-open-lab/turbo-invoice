@@ -87,7 +87,7 @@ export async function processBatchItem(
     } else {
       // Mixed - try to detect type from file
       // For now, treat as receipt
-      await scanReceiptHandler(fileUrl, batchId, userId);
+      await scanReceiptHandler(fileUrl, batchId, userId, payload.fileName);
 
       const createdDoc = await db
         .select()
