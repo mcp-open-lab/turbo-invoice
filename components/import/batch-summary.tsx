@@ -67,12 +67,40 @@ export function BatchSummary({ batchId, onClose }: BatchSummaryProps) {
 
   useEffect(() => {
     loadBatchData();
-    // Poll for updates while batch is processing
-    const interval = setInterval(() => {
-      loadBatchData();
+    
+    let interval: NodeJS.Timeout | null = null;
+    
+    interval = setInterval(async () => {
+      const [itemsResult, progressResult] = await Promise.all([
+        getBatchItems({ batchId }),
+        getBatchProgressAction({ batchId }),
+      ]);
+
+      if (itemsResult.success) {
+        setItems(itemsResult.items);
+      }
+
+      if (progressResult.success && progressResult.progress) {
+        setProgress({
+          total: progressResult.progress.total,
+          successful: progressResult.progress.successful,
+          failed: progressResult.progress.failed,
+          duplicates: progressResult.progress.duplicates,
+          percentage: progressResult.progress.percentage,
+        });
+
+        if (progressResult.progress.isComplete && interval) {
+          clearInterval(interval);
+          interval = null;
+        }
+      }
     }, 3000);
 
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
   }, [batchId]);
 
   const failedItems = items.filter((item) => item.status === "failed");

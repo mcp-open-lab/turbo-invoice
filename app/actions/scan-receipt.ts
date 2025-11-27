@@ -278,8 +278,16 @@ async function scanReceiptHandler(
           })
           .where(eq(importBatchItems.id, batchItem.id));
         
+        // Get fileName for logging
+        const item = await db
+          .select({ fileName: importBatchItems.fileName })
+          .from(importBatchItems)
+          .where(eq(importBatchItems.id, batchItem.id))
+          .limit(1);
+        const errorFileName = item[0]?.fileName || getFileName(imageUrl) || "receipt.jpg";
+        
         // Log failure
-        await ActivityLogger.itemFailed(batchId, batchItem.id, fileName, errorMessage);
+        await ActivityLogger.itemFailed(batchId, batchItem.id, errorFileName, errorMessage);
       } catch (batchError) {
         devLogger.error("Failed to update batch item on error", {
           batchError,

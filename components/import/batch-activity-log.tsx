@@ -7,6 +7,7 @@ import {
   getBatchActivityLogs,
   type BatchActivityLog,
 } from "@/app/actions/batch-activity";
+import { getBatchProgressAction } from "@/app/actions/import-batch";
 import { formatDistanceToNow } from "date-fns";
 import { Activity, Loader2, Brain } from "lucide-react";
 
@@ -25,14 +26,24 @@ export function BatchActivityLog({
   // Poll for new activity logs every 2 seconds
   useEffect(() => {
     let isMounted = true;
+    let interval: NodeJS.Timeout | null = null;
 
     const fetchLogs = async () => {
       try {
         setIsLoading(true);
-        const newLogs = await getBatchActivityLogs(batchId);
+        const [newLogs, progressResult] = await Promise.all([
+          getBatchActivityLogs(batchId),
+          getBatchProgressAction({ batchId }),
+        ]);
+        
         if (isMounted && newLogs.length > 0) {
           // Only update if we got logs back (don't replace with empty array)
           setLogs(newLogs);
+        }
+
+        if (progressResult.success && progressResult.progress?.isComplete && interval) {
+          clearInterval(interval);
+          interval = null;
         }
       } catch (error) {
         console.error("Failed to fetch activity logs:", error);
@@ -50,11 +61,13 @@ export function BatchActivityLog({
     }
 
     // Poll every 2 seconds for updates
-    const interval = setInterval(fetchLogs, 2000);
+    interval = setInterval(fetchLogs, 2000);
 
     return () => {
       isMounted = false;
-      clearInterval(interval);
+      if (interval) {
+        clearInterval(interval);
+      }
     };
   }, [batchId, initialLogs.length]);
 
