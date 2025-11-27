@@ -46,7 +46,7 @@ export const getBatchActivityLogs = createAuthenticatedAction(
         batchItemId: log.batchItemId,
         activityType: log.activityType,
         message: log.message,
-        details: log.details ? JSON.parse(log.details) : null,
+        details: log.details && log.details !== "undefined" ? JSON.parse(log.details) : null,
         fileName: log.fileName,
         duration: log.duration,
         createdAt: log.createdAt,

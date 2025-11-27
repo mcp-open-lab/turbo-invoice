@@ -9,7 +9,7 @@ import {
   categories,
   businesses,
 } from "@/lib/db/schema";
-import { sql, eq, and, gte, lte, inArray } from "drizzle-orm";
+import { sql, eq, and, gte, lte, inArray, or, isNull } from "drizzle-orm";
 import { startOfMonth, subMonths } from "date-fns";
 import { createAuthenticatedAction } from "@/lib/safe-action";
 
@@ -120,7 +120,8 @@ async function getSpendingTrends(
       and(
         eq(receipts.userId, userId),
         gte(receipts.date, startDate),
-        lte(receipts.date, endDate)
+        lte(receipts.date, endDate),
+        sql`(${receipts.transactionFlags} IS NULL OR (${receipts.transactionFlags}->>'isExcludedFromAnalytics')::boolean IS NOT TRUE)`
       )
     )
     .groupBy(sql`TO_CHAR(${receipts.date}, 'YYYY-MM')`)
@@ -142,7 +143,8 @@ async function getSpendingTrends(
       and(
         eq(documents.userId, userId),
         gte(bankStatementTransactions.transactionDate, startDate),
-        lte(bankStatementTransactions.transactionDate, endDate)
+        lte(bankStatementTransactions.transactionDate, endDate),
+        sql`(${bankStatementTransactions.transactionFlags} IS NULL OR (${bankStatementTransactions.transactionFlags}->>'isExcludedFromAnalytics')::boolean IS NOT TRUE)`
       )
     )
     .groupBy(
@@ -209,7 +211,8 @@ async function getCategoryBreakdown(
         eq(receipts.userId, userId),
         gte(receipts.date, startDate),
         lte(receipts.date, endDate),
-        sql`${receipts.categoryId} IS NOT NULL`
+        sql`${receipts.categoryId} IS NOT NULL`,
+        sql`(${receipts.transactionFlags} IS NULL OR (${receipts.transactionFlags}->>'isExcludedFromAnalytics')::boolean IS NOT TRUE)`
       )
     )
     .groupBy(receipts.categoryId);
@@ -232,7 +235,8 @@ async function getCategoryBreakdown(
         eq(documents.userId, userId),
         gte(bankStatementTransactions.transactionDate, startDate),
         lte(bankStatementTransactions.transactionDate, endDate),
-        sql`${bankStatementTransactions.categoryId} IS NOT NULL`
+        sql`${bankStatementTransactions.categoryId} IS NOT NULL`,
+        sql`(${bankStatementTransactions.transactionFlags} IS NULL OR (${bankStatementTransactions.transactionFlags}->>'isExcludedFromAnalytics')::boolean IS NOT TRUE)`
       )
     )
     .groupBy(bankStatementTransactions.categoryId);
@@ -313,7 +317,8 @@ async function getBusinessSplit(
       and(
         eq(receipts.userId, userId),
         gte(receipts.date, startDate),
-        lte(receipts.date, endDate)
+        lte(receipts.date, endDate),
+        sql`(${receipts.transactionFlags} IS NULL OR (${receipts.transactionFlags}->>'isExcludedFromAnalytics')::boolean IS NOT TRUE)`
       )
     )
     .groupBy(receipts.businessId);
@@ -335,7 +340,8 @@ async function getBusinessSplit(
       and(
         eq(documents.userId, userId),
         gte(bankStatementTransactions.transactionDate, startDate),
-        lte(bankStatementTransactions.transactionDate, endDate)
+        lte(bankStatementTransactions.transactionDate, endDate),
+        sql`(${bankStatementTransactions.transactionFlags} IS NULL OR (${bankStatementTransactions.transactionFlags}->>'isExcludedFromAnalytics')::boolean IS NOT TRUE)`
       )
     )
     .groupBy(bankStatementTransactions.businessId);
@@ -442,7 +448,8 @@ async function getTopMerchants(
         eq(receipts.userId, userId),
         gte(receipts.date, startDate),
         lte(receipts.date, endDate),
-        sql`${receipts.merchantName} IS NOT NULL`
+        sql`${receipts.merchantName} IS NOT NULL`,
+        sql`(${receipts.transactionFlags} IS NULL OR (${receipts.transactionFlags}->>'isExcludedFromAnalytics')::boolean IS NOT TRUE)`
       )
     )
     .groupBy(receipts.merchantName, receipts.categoryId);
@@ -466,7 +473,8 @@ async function getTopMerchants(
         eq(documents.userId, userId),
         gte(bankStatementTransactions.transactionDate, startDate),
         lte(bankStatementTransactions.transactionDate, endDate),
-        sql`${bankStatementTransactions.merchantName} IS NOT NULL`
+        sql`${bankStatementTransactions.merchantName} IS NOT NULL`,
+        sql`(${bankStatementTransactions.transactionFlags} IS NULL OR (${bankStatementTransactions.transactionFlags}->>'isExcludedFromAnalytics')::boolean IS NOT TRUE)`
       )
     )
     .groupBy(
@@ -562,7 +570,8 @@ async function getAnalyticsSummary(
       and(
         eq(receipts.userId, userId),
         gte(receipts.date, startDate),
-        lte(receipts.date, endDate)
+        lte(receipts.date, endDate),
+        sql`(${receipts.transactionFlags} IS NULL OR (${receipts.transactionFlags}->>'isExcludedFromAnalytics')::boolean IS NOT TRUE)`
       )
     );
 
@@ -583,7 +592,8 @@ async function getAnalyticsSummary(
       and(
         eq(documents.userId, userId),
         gte(bankStatementTransactions.transactionDate, startDate),
-        lte(bankStatementTransactions.transactionDate, endDate)
+        lte(bankStatementTransactions.transactionDate, endDate),
+        sql`(${bankStatementTransactions.transactionFlags} IS NULL OR (${bankStatementTransactions.transactionFlags}->>'isExcludedFromAnalytics')::boolean IS NOT TRUE)`
       )
     );
 

@@ -132,13 +132,13 @@ export const getUserSettings = createAuthenticatedAction(
     return {
       ...setting,
       visibleFields: setting.visibleFields
-        ? JSON.parse(setting.visibleFields)
+        ? (setting.visibleFields ? JSON.parse(setting.visibleFields) : null)
         : {},
       requiredFields: setting.requiredFields
-        ? JSON.parse(setting.requiredFields)
+        ? (setting.requiredFields ? JSON.parse(setting.requiredFields) : null)
         : {},
       defaultValues: setting.defaultValues
-        ? JSON.parse(setting.defaultValues)
+        ? (setting.defaultValues ? JSON.parse(setting.defaultValues) : null)
         : {
             isBusinessExpense: null,
             businessPurpose: null,
