@@ -2,10 +2,10 @@
  * Safe Action Wrapper - Usage Examples
  *
  * Use createAuthenticatedAction for actions that require auth (most actions).
- * Use createSafeAction for public actions that don't require auth.
+ * Use createPublicAction for public actions that don't require auth.
  */
 
-import { createAuthenticatedAction, createSafeAction } from "@/lib/safe-action";
+import { createAuthenticatedAction, createPublicAction } from "@/lib/safe-action";
 
 // ============================================================================
 // RECOMMENDED: createAuthenticatedAction
@@ -54,12 +54,12 @@ export const bulkUpdate = createAuthenticatedAction(
 );
 
 // ============================================================================
-// LEGACY: createSafeAction (for public actions only)
+// PUBLIC ACTIONS: createPublicAction
 // - Use when you need a public action that doesn't require authentication
 // ============================================================================
 
 // Example: Public action (no auth required)
-export const publicAction = createSafeAction(
+export const publicAction = createPublicAction(
   "publicAction",
   async () => {
     return { data: "public" };

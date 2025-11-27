@@ -11,7 +11,7 @@ import { eq, and } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { getUserSettings } from "@/app/actions/user-settings";
-import { createSafeAction } from "@/lib/safe-action";
+import { createPublicAction } from "@/lib/safe-action";
 import { devLogger } from "@/lib/dev-logger";
 import { ReceiptProcessor } from "@/lib/import/processors/receipt-processor";
 import { calculateFileHash } from "@/lib/utils/file-hash";
@@ -272,7 +272,10 @@ async function scanReceiptHandler(
 }
 
 // Wrap with automatic logging
-export const scanReceipt = createSafeAction("scanReceipt", scanReceiptHandler);
+// Note: This action accepts optional userId for server-side calls from queue processors
+export const scanReceipt = createPublicAction("scanReceipt", scanReceiptHandler, {
+  requireAuth: true, // Still requires auth, but allows optional userId parameter
+});
 
 // Export handler for direct server-side calls (e.g., from queue processors)
 // This bypasses the Server Action wrapper which requires Next.js request context

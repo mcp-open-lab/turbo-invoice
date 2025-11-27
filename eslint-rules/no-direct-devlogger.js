@@ -4,7 +4,7 @@
  * Prevents direct imports of devLogger in app/actions/* files
  * to enforce wrapper-first logging pattern.
  *
- * Use createSafeAction wrapper instead for automatic logging.
+ * Use createAuthenticatedAction or createPublicAction wrapper instead for automatic logging.
  */
 
 const rule = {
@@ -12,7 +12,7 @@ const rule = {
     type: "problem",
     docs: {
       description:
-        "Prevent direct devLogger imports in action files. Use createSafeAction wrapper instead.",
+        "Prevent direct devLogger imports in action files. Use createAuthenticatedAction or createPublicAction wrapper instead.",
       category: "Best Practices",
       recommended: true,
     },
@@ -20,7 +20,7 @@ const rule = {
     schema: [],
     messages: {
       noDirectDevLogger:
-        "Direct devLogger imports are discouraged in action files. Use createSafeAction wrapper for automatic logging instead. If you need domain-specific logging, use helper utilities.",
+        "Direct devLogger imports are discouraged in action files. Use createAuthenticatedAction or createPublicAction wrapper for automatic logging instead. If you need domain-specific logging, use helper utilities.",
     },
   },
   create(context) {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createSafeAction } from "@/lib/safe-action";
+import { createPublicAction } from "@/lib/safe-action";
 import { devLogger } from "@/lib/dev-logger";
 import { logger } from "@/lib/logger";
 
@@ -16,14 +16,14 @@ vi.mock("@/lib/logger", () => ({
   },
 }));
 
-describe("createSafeAction", () => {
+describe("createPublicAction", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("should log action start", async () => {
     // TODO: Implement test
-    // - Create a test action with createSafeAction
+    // - Create a test action with createPublicAction
     // - Call the action
     // - Assert devLogger.action was called with status: "started"
     expect(true).toBe(true);

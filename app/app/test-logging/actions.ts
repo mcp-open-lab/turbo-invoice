@@ -1,6 +1,6 @@
 "use server";
 
-import { createSafeAction } from "@/lib/safe-action";
+import { createPublicAction } from "@/lib/safe-action";
 import { devLogger } from "@/lib/dev-logger";
 
 async function testLoggingHandler(param1: string, param2: number) {
@@ -36,14 +36,17 @@ async function testPublicHandler() {
   };
 }
 
-export const testLoggingAction = createSafeAction(
+export const testLoggingAction = createPublicAction(
   "testLogging",
-  testLoggingHandler
+  testLoggingHandler,
+  { requireAuth: true }
 );
 
-export const testErrorAction = createSafeAction("testError", testErrorHandler);
+export const testErrorAction = createPublicAction("testError", testErrorHandler, {
+  requireAuth: true,
+});
 
-export const testPublicAction = createSafeAction("testPublic", testPublicHandler, {
+export const testPublicAction = createPublicAction("testPublic", testPublicHandler, {
   requireAuth: false,
 });
 

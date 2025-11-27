@@ -13,15 +13,15 @@ type AuthenticatedHandler<TArgs extends any[], TResult> = (
   ...args: TArgs
 ) => Promise<TResult>;
 
-interface SafeActionOptions {
+interface PublicActionOptions {
   /**
    * Whether to require authentication. If false, skips auth() call entirely.
-   * Default: true (tries auth but doesn't fail if it throws)
+   * Default: false (public action, no auth required)
    */
   requireAuth?: boolean;
   /**
    * Optional function to get userId. If provided, skips auth() call.
-   * Useful for public actions or when userId is already available.
+   * Useful for public actions that optionally log userId if available.
    */
   getUserId?: () => Promise<string | undefined>;
 }
@@ -102,13 +102,22 @@ export function createAuthenticatedAction<TArgs extends any[], TResult>(
 }
 
 /**
- * @deprecated Use createAuthenticatedAction instead for actions that require auth.
- * This function is kept for backwards compatibility with public actions.
+ * Creates a public server action that doesn't require authentication.
+ * Use this for actions that should be accessible without login.
+ * 
+ * @example
+ * export const getPublicData = createPublicAction(
+ *   "getPublicData",
+ *   async () => {
+ *     return { data: "public" };
+ *   },
+ *   { requireAuth: false }
+ * );
  */
-export function createSafeAction<TArgs extends any[], TResult>(
+export function createPublicAction<TArgs extends any[], TResult>(
   actionName: string,
   handler: ActionHandler<TArgs, TResult>,
-  options: SafeActionOptions = {}
+  options: PublicActionOptions = {}
 ): ActionHandler<TArgs, TResult> {
   return async (...args: TArgs): Promise<TResult> => {
     const correlationId = createId();

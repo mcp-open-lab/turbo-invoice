@@ -17,7 +17,7 @@
 
 import { devLogger } from "@/lib/dev-logger";
 import { logger } from "@/lib/logger";
-import { createSafeAction } from "@/lib/safe-action";
+import { createPublicAction } from "@/lib/safe-action";
 import { safeSerialize, shouldUseJsonFormat } from "@/lib/safe-serializer";
 
 console.log("=".repeat(60));
@@ -124,8 +124,12 @@ async function failingActionHandler() {
   throw new Error("Test action error");
 }
 
-const testAction = createSafeAction("testAction", testActionHandler);
-const failingAction = createSafeAction("failingAction", failingActionHandler);
+const testAction = createPublicAction("testAction", testActionHandler, {
+  requireAuth: true,
+});
+const failingAction = createPublicAction("failingAction", failingActionHandler, {
+  requireAuth: true,
+});
 
 async function runAsyncTests() {
   // Test successful action
@@ -150,7 +154,7 @@ async function runAsyncTests() {
   console.log("Test 7: Public Action (no auth)");
   console.log("-".repeat(60));
 
-  const publicAction = createSafeAction(
+  const publicAction = createPublicAction(
     "publicAction",
     async () => ({ public: true }),
     { requireAuth: false }
