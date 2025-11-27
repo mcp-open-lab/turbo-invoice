@@ -115,35 +115,43 @@ export const saveUserSettings = createAuthenticatedAction(
   }
 );
 
+/**
+ * Direct function to get user settings by userId
+ * Use this for server-side/background jobs where auth() isn't available
+ */
+export async function getUserSettingsByUserId(userId: string) {
+  const settings = await db
+    .select()
+    .from(userSettings)
+    .where(eq(userSettings.userId, userId))
+    .limit(1);
+
+  if (settings.length === 0) {
+    return null;
+  }
+
+  const setting = settings[0];
+  return {
+    ...setting,
+    visibleFields: setting.visibleFields
+      ? JSON.parse(setting.visibleFields)
+      : {},
+    requiredFields: setting.requiredFields
+      ? JSON.parse(setting.requiredFields)
+      : {},
+    defaultValues: setting.defaultValues
+      ? JSON.parse(setting.defaultValues)
+      : {
+          isBusinessExpense: null,
+          businessPurpose: null,
+          paymentMethod: null,
+        },
+  };
+}
+
 export const getUserSettings = createAuthenticatedAction(
   "getUserSettings",
   async (userId) => {
-    const settings = await db
-      .select()
-      .from(userSettings)
-      .where(eq(userSettings.userId, userId))
-      .limit(1);
-
-    if (settings.length === 0) {
-      return null;
-    }
-
-    const setting = settings[0];
-    return {
-      ...setting,
-      visibleFields: setting.visibleFields
-        ? (setting.visibleFields ? JSON.parse(setting.visibleFields) : null)
-        : {},
-      requiredFields: setting.requiredFields
-        ? (setting.requiredFields ? JSON.parse(setting.requiredFields) : null)
-        : {},
-      defaultValues: setting.defaultValues
-        ? (setting.defaultValues ? JSON.parse(setting.defaultValues) : null)
-        : {
-            isBusinessExpense: null,
-            businessPurpose: null,
-            paymentMethod: null,
-          },
-    };
+    return getUserSettingsByUserId(userId);
   }
 );

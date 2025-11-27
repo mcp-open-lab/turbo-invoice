@@ -10,7 +10,7 @@ import {
 import { eq, and } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
-import { getUserSettings } from "@/app/actions/user-settings";
+import { getUserSettings, getUserSettingsByUserId } from "@/app/actions/user-settings";
 import { createPublicAction } from "@/lib/safe-action";
 import { devLogger } from "@/lib/dev-logger";
 import { ReceiptProcessor } from "@/lib/import/processors/receipt-processor";
@@ -39,7 +39,10 @@ async function scanReceiptHandler(
   if (!finalUserId) throw new Error("Unauthorized");
 
   // Get user settings for location context
-  const settings = await getUserSettings();
+  // Use direct function when userId is provided (background jobs), otherwise use authenticated action
+  const settings = userId 
+    ? await getUserSettingsByUserId(finalUserId)
+    : await getUserSettings();
   const country = settings?.country || "US";
   const currency = settings?.currency || (country === "CA" ? "CAD" : "USD");
   const province = settings?.province || null;
