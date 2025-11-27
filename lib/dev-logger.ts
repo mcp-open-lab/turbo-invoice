@@ -61,7 +61,16 @@ class DevLogger {
         : "debug";
   }
 
+  private isTestEnvironment(): boolean {
+    return process.env.NODE_ENV === "test";
+  }
+
   private shouldLog(level: LogLevel): boolean {
+    // Suppress all logging in test environments
+    if (this.isTestEnvironment()) {
+      return false;
+    }
+
     if (!this.isDevelopment) {
       return false;
     }

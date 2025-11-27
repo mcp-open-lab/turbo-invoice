@@ -28,6 +28,10 @@ interface LogEntry {
 }
 
 class ProductionLogger {
+  private isTestEnvironment(): boolean {
+    return process.env.NODE_ENV === "test";
+  }
+
   private createLogEntry(
     message: string,
     context?: LogContext,
@@ -55,8 +59,14 @@ class ProductionLogger {
 
   /**
    * Log an error in production
+   * Suppresses logging in test environments to avoid noise from expected errors
    */
   error(message: string, error?: Error | unknown, context?: LogContext): void {
+    // Skip logging in test environments
+    if (this.isTestEnvironment()) {
+      return;
+    }
+
     const err = error instanceof Error ? error : new Error(String(error));
     const entry = this.createLogEntry(message, context, err);
     console.error(JSON.stringify(entry, null, 2));
