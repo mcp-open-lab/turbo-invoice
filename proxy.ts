@@ -14,13 +14,9 @@ const isUploadThingRoute = createRouteMatcher(["/api/uploadthing(.*)"]);
 const isInngestRoute = createRouteMatcher(["/api/inngest(.*)"]);
 
 export default clerkMiddleware(async (auth, request) => {
-  // For UploadThing routes, still run auth but don't consume body
-  // This ensures Clerk auth context is available in UploadThing middleware
+  // Don't bypass UploadThing routes - let them handle auth in their own middleware
+  // UploadThing needs the request body intact, and its middleware runs before body consumption
   if (isUploadThingRoute(request)) {
-    const { userId } = await auth();
-    if (!userId) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
     return NextResponse.next();
   }
 
