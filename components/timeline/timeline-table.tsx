@@ -306,11 +306,11 @@ export function TimelineTable({ items, categories, businesses }: TimelineTablePr
                   }}
                 />
               </TableHead>
-              <TableHead className="min-w-[180px]">Merchant</TableHead>
+              <TableHead className="w-[180px]">Merchant</TableHead>
               <TableHead className="w-24">Date</TableHead>
               <TableHead className="w-32 text-right">Amount</TableHead>
-              <TableHead className="min-w-[150px]">Category</TableHead>
-              <TableHead className="min-w-[120px]">Business</TableHead>
+              <TableHead className="w-[150px]">Category</TableHead>
+              <TableHead className="w-[120px]">Business</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
@@ -326,7 +326,7 @@ export function TimelineTable({ items, categories, businesses }: TimelineTablePr
               return (
                 <TableRow key={item.id} className={selectedIds.has(item.id) ? "bg-muted/50" : ""}>
                   {/* Checkbox */}
-                  <TableCell className="py-1.5">
+                  <TableCell className="w-12 py-1.5">
                     <Checkbox
                       checked={selectedIds.has(item.id)}
                       onCheckedChange={() => handleToggleItem(item.id)}
@@ -334,26 +334,26 @@ export function TimelineTable({ items, categories, businesses }: TimelineTablePr
                   </TableCell>
 
                   {/* Merchant */}
-                  <TableCell className="py-1.5">
-                    <Link href={href} className="font-medium text-sm hover:text-primary hover:underline">
+                  <TableCell className="w-[180px] py-1.5">
+                    <Link href={href} className="font-medium text-sm hover:text-primary hover:underline truncate block">
                       {item.merchantName || "Unknown"}
                     </Link>
                   </TableCell>
 
                   {/* Date */}
-                  <TableCell className="py-1.5 text-xs text-muted-foreground">
+                  <TableCell className="w-24 py-1.5 text-xs text-muted-foreground">
                     {item.date ? format(new Date(item.date), "MMM d") : "N/A"}
                   </TableCell>
 
                   {/* Amount */}
-                  <TableCell className="py-1.5 text-right font-mono text-sm">
+                  <TableCell className="w-32 py-1.5 text-right font-mono text-sm">
                     <span className={isIncome ? "text-green-600" : "text-red-600"}>
                       {isIncome ? "+" : "-"}{item.currency || "$"}{Math.abs(amount).toFixed(2)}
                     </span>
                   </TableCell>
 
                   {/* Category */}
-                  <TableCell className="py-1.5">
+                  <TableCell className="w-[150px] py-1.5">
                     {isEditing ? (
                       <Select value={editCategoryId} onValueChange={setEditCategoryId}>
                         <SelectTrigger className="h-7 text-xs">
@@ -375,7 +375,7 @@ export function TimelineTable({ items, categories, businesses }: TimelineTablePr
                   </TableCell>
 
                   {/* Business */}
-                  <TableCell className="py-1.5">
+                  <TableCell className="w-[120px] py-1.5">
                     {isEditing && businesses.length > 0 ? (
                       <Select
                         value={editBusinessId || "personal"}
@@ -394,14 +394,14 @@ export function TimelineTable({ items, categories, businesses }: TimelineTablePr
                         </SelectContent>
                       </Select>
                     ) : (
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-muted-foreground truncate block">
                         {item.businessName || "Personal"}
                       </span>
                     )}
                   </TableCell>
 
                   {/* Actions */}
-                  <TableCell className="py-1.5">
+                  <TableCell className="w-12 py-1.5">
                     {isEditing ? (
                       <div className="flex gap-1">
                         <Button
