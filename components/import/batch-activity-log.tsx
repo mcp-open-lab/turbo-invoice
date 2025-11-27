@@ -8,7 +8,7 @@ import {
   type BatchActivityLog,
 } from "@/app/actions/batch-activity";
 import { formatDistanceToNow } from "date-fns";
-import { Activity, Loader2 } from "lucide-react";
+import { Activity, Loader2, Brain } from "lucide-react";
 
 interface BatchActivityLogProps {
   batchId: string;
@@ -64,14 +64,31 @@ export function BatchActivityLog({
       file_uploaded: "📁",
       ai_extraction_start: "🤖",
       ai_extraction_complete: "✅",
-      ai_categorization_start: "🧠",
-      ai_categorization_complete: "🏷️",
+      categorization_start: "🧠",
+      categorization_complete: "🏷️",
       duplicate_detected: "⚠️",
       item_completed: "✅",
       item_failed: "❌",
       batch_completed: "🎉",
     };
     return icons[activityType] || "•";
+  };
+
+  const isAiActivity = (activityType: string) => {
+    return [
+      "ai_extraction_start",
+      "ai_extraction_complete",
+      "categorization_start",
+      "categorization_complete",
+    ].includes(activityType);
+  };
+
+  const cleanMessage = (message: string) => {
+    // Remove emoji from start of message (they're shown as icons)
+    let cleaned = message.replace(/^[\u{1F300}-\u{1F9FF}]+\s*/u, "");
+    // Remove "(ai)" text - will be shown as brain icon instead
+    cleaned = cleaned.replace(/\s*\(ai\)/gi, "");
+    return cleaned.trim();
   };
 
   const formatDuration = (ms: number | null) => {
@@ -117,7 +134,7 @@ export function BatchActivityLog({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium leading-relaxed break-words">
-                      {log.message}
+                      {cleanMessage(log.message)}
                     </p>
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                       <span>
@@ -133,6 +150,11 @@ export function BatchActivityLog({
                       )}
                     </div>
                   </div>
+                  {isAiActivity(log.activityType) && (
+                    <div className="flex-shrink-0">
+                      <Brain className="h-4 w-4 text-primary" />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

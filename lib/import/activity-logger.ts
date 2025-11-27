@@ -57,7 +57,7 @@ export const ActivityLogger = {
       batchId,
       batchItemId,
       activityType: "file_uploaded",
-      message: `📁 File uploaded: ${fileName}`,
+      message: `File uploaded: ${fileName}`,
       fileName,
       details: { fileSizeBytes: fileSize },
     }),
@@ -67,7 +67,7 @@ export const ActivityLogger = {
       batchId,
       batchItemId,
       activityType: "ai_extraction_start",
-      message: `🤖 AI extracting data from ${fileName}...`,
+      message: `Extracting data from ${fileName}...`,
       fileName,
     }),
 
@@ -82,7 +82,7 @@ export const ActivityLogger = {
       batchId,
       batchItemId,
       activityType: "ai_extraction_complete",
-      message: `✅ AI extraction complete: ${extractedData.merchantName || "Unknown merchant"}${
+      message: `Extraction complete: ${extractedData.merchantName || "Unknown merchant"}${
         extractedData.amount ? ` - $${extractedData.amount}` : ""
       }`,
       fileName,
@@ -95,7 +95,7 @@ export const ActivityLogger = {
       batchId,
       batchItemId,
       activityType: "categorization_start",
-      message: `🧠 AI categorizing transaction...`,
+      message: `Categorizing transaction...`,
       fileName,
     }),
 
@@ -111,7 +111,7 @@ export const ActivityLogger = {
       batchId,
       batchItemId,
       activityType: "categorization_complete",
-      message: `🏷️ Categorized as "${category}" (${method})${
+      message: `Categorized as "${category}"${
         businessName ? ` for ${businessName}` : ""
       }`,
       fileName,
@@ -123,7 +123,7 @@ export const ActivityLogger = {
       batchId,
       batchItemId,
       activityType: "duplicate_detected",
-      message: `⚠️ Duplicate detected: ${fileName} (${matchType})`,
+      message: `Duplicate detected: ${fileName} (${matchType})`,
       fileName,
       details: { matchType },
     }),
@@ -133,7 +133,7 @@ export const ActivityLogger = {
       batchId,
       batchItemId,
       activityType: "item_completed",
-      message: `✅ Successfully processed ${fileName}`,
+      message: `Successfully processed ${fileName}`,
       fileName,
       duration,
     }),
@@ -143,7 +143,7 @@ export const ActivityLogger = {
       batchId,
       batchItemId,
       activityType: "item_failed",
-      message: `❌ Failed to process ${fileName}: ${error}`,
+      message: `Failed to process ${fileName}: ${error}`,
       fileName,
       details: { error },
     }),
@@ -152,7 +152,7 @@ export const ActivityLogger = {
     logBatchActivity({
       batchId,
       activityType: "batch_completed",
-      message: `🎉 Batch complete! ${successCount} successful, ${failedCount} failed`,
+      message: `Batch complete! ${successCount} successful, ${failedCount} failed`,
       duration,
       details: { successCount, failedCount },
     }),
