@@ -21,7 +21,6 @@ import {
   Fuel,
   ParkingCircle,
   Train,
-  Taxi,
   Plane,
   Hotel,
   CarTaxiFront,
@@ -40,7 +39,7 @@ import {
   ShoppingBag,
   Shirt,
   Smartphone,
-  Baseball,
+  Activity,
   Wrench,
   Laptop,
   Paperclip,
@@ -90,7 +89,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   "Gas Stations": Fuel,
   Parking: ParkingCircle,
   "Public Transportation": Train,
-  "Rideshare & Taxi": Taxi,
+  "Rideshare & Taxi": CarTaxiFront,
   "Auto & Transport": Car,
   "Other Transportation": Car,
 
@@ -128,7 +127,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Entertainment: Film,
   Movies: Film,
   Music: Music,
-  Sports: Baseball,
+  Sports: Activity,
   "Other Entertainment": Gamepad2,
 
   // Shopping
@@ -136,7 +135,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   "General Merchandise": ShoppingBag,
   Clothing: Shirt,
   Electronics: Smartphone,
-  "Sporting Goods": Baseball,
+  "Sporting Goods": Activity,
   "Other Shopping": ShoppingBag,
 
   // Services

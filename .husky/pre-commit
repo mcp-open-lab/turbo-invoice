@@ -6,3 +6,8 @@ npm test -- --run || exit 1
 
 # Run linting (continue on error for now)
 npm run lint || true
+
+# Build check - ensure code compiles before committing
+echo "Building project..."
+npm run build || exit 1
+echo "Build successful ✓"
