@@ -6,6 +6,8 @@ import {
   getLatestTransactionMonth,
 } from "@/app/actions/budgets";
 import { getUserSettings } from "@/app/actions/user-settings";
+import { getUserCategories } from "@/app/actions/financial-categories";
+import { getUserBusinesses } from "@/app/actions/businesses";
 import { BudgetPageClient } from "@/components/budgets/budget-page-client";
 
 interface BudgetsPageProps {
@@ -27,10 +29,13 @@ export default async function BudgetsPage({ searchParams }: BudgetsPageProps) {
     month = latestMonth || new Date().toISOString().slice(0, 7);
   }
 
-  const [budgetResult, settings] = await Promise.all([
-    getBudgetOverview(month),
-    getUserSettings(),
-  ]);
+  const [budgetResult, settings, categoriesResult, businessesResult] =
+    await Promise.all([
+      getBudgetOverview(month),
+      getUserSettings(),
+      getUserCategories(),
+      getUserBusinesses(),
+    ]);
 
   if (!budgetResult.success || !budgetResult.data) {
     return (
@@ -43,10 +48,17 @@ export default async function BudgetsPage({ searchParams }: BudgetsPageProps) {
   }
 
   const currency = settings?.currency || "USD";
+  const categories = categoriesResult ?? [];
+  const businesses = businessesResult ?? [];
 
   return (
     <PageContainer size="standard">
-      <BudgetPageClient initialData={budgetResult.data} currency={currency} />
+      <BudgetPageClient
+        initialData={budgetResult.data}
+        currency={currency}
+        categories={categories}
+        businesses={businesses}
+      />
     </PageContainer>
   );
 }

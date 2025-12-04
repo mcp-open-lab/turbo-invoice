@@ -100,6 +100,8 @@ export async function getCategoryReceiptsForMonth(
       description: receipts.description,
       totalAmount: receipts.totalAmount,
       currency: receipts.currency,
+      categoryId: receipts.categoryId,
+      businessId: receipts.businessId,
     })
     .from(receipts)
     .where(
@@ -128,6 +130,8 @@ export async function getCategoryBankTransactionsForMonth(
       description: bankStatementTransactions.description,
       amount: bankStatementTransactions.amount,
       currency: bankStatementTransactions.currency,
+      categoryId: bankStatementTransactions.categoryId,
+      businessId: bankStatementTransactions.businessId,
     })
     .from(bankStatementTransactions)
     .innerJoin(

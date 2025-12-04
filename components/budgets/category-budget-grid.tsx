@@ -5,12 +5,21 @@ import { CategoryBudgetRow } from "./category-budget-row";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Plus } from "lucide-react";
 import type { CategoryBudgetItem } from "@/app/actions/budgets";
+import type {
+  categories as categoriesSchema,
+  businesses as businessesSchema,
+} from "@/lib/db/schema";
+
+type Category = typeof categoriesSchema.$inferSelect;
+type Business = typeof businessesSchema.$inferSelect;
 
 interface CategoryBudgetGridProps {
   categories: CategoryBudgetItem[];
   currency?: string;
   month: string;
   onBudgetChange: (categoryId: string, amount: number) => void;
+  allCategories: Category[];
+  businesses: Business[];
 }
 
 export function CategoryBudgetGrid({
@@ -18,6 +27,8 @@ export function CategoryBudgetGrid({
   currency = "USD",
   month,
   onBudgetChange,
+  allCategories,
+  businesses,
 }: CategoryBudgetGridProps) {
   const [showInactive, setShowInactive] = useState(false);
 
@@ -77,6 +88,8 @@ export function CategoryBudgetGrid({
               currency={currency}
               month={month}
               onBudgetChange={onBudgetChange}
+              allCategories={allCategories}
+              businesses={businesses}
             />
           ))}
         </div>
@@ -120,6 +133,8 @@ export function CategoryBudgetGrid({
                   currency={currency}
                   month={month}
                   onBudgetChange={onBudgetChange}
+                  allCategories={allCategories}
+                  businesses={businesses}
                   compact
                 />
               ))}

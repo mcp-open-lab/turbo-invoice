@@ -11,15 +11,26 @@ import {
   setBudgetAmount,
   type BudgetOverview,
 } from "@/app/actions/budgets";
+import type {
+  categories as categoriesSchema,
+  businesses as businessesSchema,
+} from "@/lib/db/schema";
+
+type Category = typeof categoriesSchema.$inferSelect;
+type Business = typeof businessesSchema.$inferSelect;
 
 interface BudgetPageClientProps {
   initialData: BudgetOverview;
   currency?: string;
+  categories: Category[];
+  businesses: Business[];
 }
 
 export function BudgetPageClient({
   initialData,
   currency = "USD",
+  categories,
+  businesses,
 }: BudgetPageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -128,6 +139,8 @@ export function BudgetPageClient({
             currency={currency}
             month={data.month}
             onBudgetChange={handleBudgetChange}
+            allCategories={categories}
+            businesses={businesses}
           />
         </div>
 
@@ -144,6 +157,8 @@ export function BudgetPageClient({
           currency={currency}
           month={data.month}
           onBudgetChange={handleBudgetChange}
+          allCategories={categories}
+          businesses={businesses}
         />
       </div>
 

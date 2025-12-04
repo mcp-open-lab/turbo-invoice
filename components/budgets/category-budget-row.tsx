@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -9,6 +10,13 @@ import type { BudgetStatus } from "@/app/actions/budgets";
 import { BUDGET_STATUS_CONFIG } from "@/lib/budget/constants";
 import { formatBudgetCurrency } from "@/lib/budget/utils";
 import { TransactionList } from "./transaction-list";
+import type {
+  categories as categoriesSchema,
+  businesses as businessesSchema,
+} from "@/lib/db/schema";
+
+type Category = typeof categoriesSchema.$inferSelect;
+type Business = typeof businessesSchema.$inferSelect;
 
 interface CategoryBudgetRowProps {
   categoryId: string;
@@ -22,6 +30,8 @@ interface CategoryBudgetRowProps {
   currency?: string;
   month: string;
   onBudgetChange: (categoryId: string, amount: number) => void;
+  allCategories: Category[];
+  businesses: Business[];
   compact?: boolean;
 }
 
@@ -37,8 +47,11 @@ export function CategoryBudgetRow({
   currency = "USD",
   month,
   onBudgetChange,
+  allCategories,
+  businesses,
   compact = false,
 }: CategoryBudgetRowProps) {
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(budgeted.toString());
   const [isExpanded, setIsExpanded] = useState(false);
@@ -178,6 +191,10 @@ export function CategoryBudgetRow({
             isLoading={isLoadingTransactions}
             currency={currency}
             variant="mobile"
+            editable
+            categories={allCategories}
+            businesses={businesses}
+            onTransactionUpdated={() => router.refresh()}
           />
         </div>
       )}
@@ -248,6 +265,10 @@ export function CategoryBudgetRow({
             isLoading={isLoadingTransactions}
             currency={currency}
             variant="desktop"
+            editable
+            categories={allCategories}
+            businesses={businesses}
+            onTransactionUpdated={() => router.refresh()}
           />
         </div>
       )}

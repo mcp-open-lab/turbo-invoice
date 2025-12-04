@@ -47,6 +47,8 @@ export interface CategoryTransaction {
   amount: number;
   currency: string;
   entityType: "receipt" | "bank_transaction";
+  categoryId: string | null;
+  businessId: string | null;
 }
 
 async function getLatestBudgetsForCategories(
@@ -367,6 +369,8 @@ export async function getCategoryTransactions(
         amount: Math.abs(Number(r.totalAmount)),
         currency: r.currency || "USD",
         entityType: "receipt" as const,
+        categoryId: r.categoryId,
+        businessId: r.businessId,
       })),
       ...txData.map((t) => ({
         id: t.id,
@@ -376,6 +380,8 @@ export async function getCategoryTransactions(
         amount: Math.abs(Number(t.amount)),
         currency: t.currency || "USD",
         entityType: "bank_transaction" as const,
+        categoryId: t.categoryId,
+        businessId: t.businessId,
       })),
     ].sort((a, b) => {
       if (!a.date && !b.date) return 0;
