@@ -14,10 +14,12 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   createLinkToken,
+  createUpdateLinkToken,
   exchangePublicToken,
   getLinkedAccounts,
   unlinkAccount,
   syncAccount,
+  handleReconnectSuccess,
 } from "@/app/actions/plaid";
 import {
   Building2,
@@ -28,6 +30,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
+  Link2,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -100,6 +103,13 @@ function getSyncStatusBadge(status: string | null, errorMessage: string | null) 
           Error
         </Badge>
       );
+    case "pending_expiration":
+      return (
+        <Badge variant="outline" className="text-orange-600 border-orange-600" title={errorMessage || undefined}>
+          <AlertCircle className="h-3 w-3 mr-1" />
+          Expiring Soon
+        </Badge>
+      );
     case "disconnected":
       return (
         <Badge variant="outline" className="text-yellow-600 border-yellow-600">
@@ -112,10 +122,15 @@ function getSyncStatusBadge(status: string | null, errorMessage: string | null) 
   }
 }
 
+function needsReconnect(status: string | null): boolean {
+  return status === "error" || status === "pending_expiration" || status === "disconnected";
+}
+
 export function LinkedAccounts() {
   const [accounts, setAccounts] = useState<LinkedAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [linkToken, setLinkToken] = useState<string | null>(null);
+  const [reconnectingAccountId, setReconnectingAccountId] = useState<string | null>(null);
   const [syncingAccountId, setSyncingAccountId] = useState<string | null>(null);
   const [unlinkingAccountId, setUnlinkingAccountId] = useState<string | null>(null);
   const [accountToUnlink, setAccountToUnlink] = useState<LinkedAccount | null>(null);
@@ -148,9 +163,26 @@ export function LinkedAccounts() {
     }
   }, []);
 
-  // Handle successful Plaid Link
+  // Handle successful Plaid Link (new connection or reconnection)
   const onPlaidSuccess = useCallback(
     async (publicToken: string, metadata: any) => {
+      // Check if this is a reconnection (update mode doesn't provide public_token for exchange)
+      if (reconnectingAccountId) {
+        toast.loading("Reconnecting your account...", { id: "plaid-link" });
+        const result = await handleReconnectSuccess(reconnectingAccountId);
+        
+        if (result.success) {
+          toast.success("Bank account reconnected!", { id: "plaid-link" });
+          fetchAccounts();
+        } else {
+          toast.error(result.error || "Failed to reconnect", { id: "plaid-link" });
+        }
+        setReconnectingAccountId(null);
+        setLinkToken(null);
+        return;
+      }
+
+      // New connection flow
       toast.loading("Linking your account...", { id: "plaid-link" });
 
       const result = await exchangePublicToken(publicToken, {
@@ -166,13 +198,28 @@ export function LinkedAccounts() {
         toast.error(result.error || "Failed to link account", { id: "plaid-link" });
       }
     },
-    [fetchAccounts]
+    [fetchAccounts, reconnectingAccountId]
   );
+
+  // Handle reconnect for expired/error accounts
+  const handleReconnect = async (accountId: string) => {
+    setReconnectingAccountId(accountId);
+    const result = await createUpdateLinkToken(accountId);
+    if (result.success && result.linkToken) {
+      setLinkToken(result.linkToken);
+    } else {
+      toast.error(result.error || "Failed to start reconnection");
+      setReconnectingAccountId(null);
+    }
+  };
 
   const { open: openPlaidLink, ready: plaidReady } = usePlaidLink({
     token: linkToken,
     onSuccess: onPlaidSuccess,
-    onExit: () => setLinkToken(null),
+    onExit: () => {
+      setLinkToken(null);
+      setReconnectingAccountId(null);
+    },
   });
 
   // Open Plaid Link when token is ready
@@ -274,19 +321,35 @@ export function LinkedAccounts() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleSync(account.id)}
-                          disabled={syncingAccountId === account.id}
-                        >
-                          {syncingAccountId === account.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <RefreshCw className="h-4 w-4" />
-                          )}
-                          <span className="ml-1 hidden sm:inline">Sync</span>
-                        </Button>
+                        {needsReconnect(account.syncStatus) ? (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleReconnect(account.id)}
+                            disabled={reconnectingAccountId === account.id}
+                          >
+                            {reconnectingAccountId === account.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Link2 className="h-4 w-4" />
+                            )}
+                            <span className="ml-1">Reconnect</span>
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSync(account.id)}
+                            disabled={syncingAccountId === account.id}
+                          >
+                            {syncingAccountId === account.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <RefreshCw className="h-4 w-4" />
+                            )}
+                            <span className="ml-1 hidden sm:inline">Sync</span>
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"

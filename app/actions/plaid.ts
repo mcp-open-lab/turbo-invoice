@@ -15,6 +15,19 @@ import { CountryCode, Products } from "plaid";
 import { syncPlaidTransactions } from "@/lib/plaid/sync";
 
 /**
+ * Get the webhook URL for Plaid
+ */
+function getWebhookUrl(): string | undefined {
+  // Use VERCEL_URL in production, or explicit PLAID_WEBHOOK_URL
+  const baseUrl = process.env.PLAID_WEBHOOK_URL 
+    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+    || process.env.NEXT_PUBLIC_APP_URL;
+  
+  if (!baseUrl) return undefined;
+  return `${baseUrl}/api/plaid/webhook`;
+}
+
+/**
  * Create a Plaid Link token for initializing the Link modal
  */
 export async function createLinkToken() {
@@ -28,12 +41,15 @@ export async function createLinkToken() {
   }
 
   try {
+    const webhookUrl = getWebhookUrl();
+    
     const response = await plaidClient.linkTokenCreate({
       user: { client_user_id: userId },
       client_name: "Turbo Invoice",
       products: PLAID_PRODUCTS as unknown as Products[],
       country_codes: PLAID_COUNTRY_CODES as unknown as CountryCode[],
       language: "en",
+      webhook: webhookUrl,
     });
 
     return {
@@ -46,6 +62,96 @@ export async function createLinkToken() {
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to create link token",
+    };
+  }
+}
+
+/**
+ * Create an update mode Link token for reconnecting an expired bank connection
+ */
+export async function createUpdateLinkToken(accountId: string) {
+  const { userId } = await auth();
+  if (!userId) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  if (!isPlaidConfigured()) {
+    return { success: false, error: "Plaid is not configured" };
+  }
+
+  try {
+    // Get the account to get the access token
+    const [account] = await db
+      .select()
+      .from(linkedBankAccounts)
+      .where(
+        and(
+          eq(linkedBankAccounts.id, accountId),
+          eq(linkedBankAccounts.userId, userId)
+        )
+      )
+      .limit(1);
+
+    if (!account) {
+      return { success: false, error: "Account not found" };
+    }
+
+    const webhookUrl = getWebhookUrl();
+
+    // Create update mode link token
+    const response = await plaidClient.linkTokenCreate({
+      user: { client_user_id: userId },
+      client_name: "Turbo Invoice",
+      country_codes: PLAID_COUNTRY_CODES as unknown as CountryCode[],
+      language: "en",
+      webhook: webhookUrl,
+      access_token: account.plaidAccessToken,
+    });
+
+    return {
+      success: true,
+      linkToken: response.data.link_token,
+      expiration: response.data.expiration,
+    };
+  } catch (error) {
+    console.error("Failed to create update link token:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to create update link token",
+    };
+  }
+}
+
+/**
+ * Handle successful reconnection - reset error state
+ */
+export async function handleReconnectSuccess(accountId: string) {
+  const { userId } = await auth();
+  if (!userId) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  try {
+    await db
+      .update(linkedBankAccounts)
+      .set({
+        syncStatus: "active",
+        syncErrorMessage: null,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(linkedBankAccounts.id, accountId),
+          eq(linkedBankAccounts.userId, userId)
+        )
+      );
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update reconnect status:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update status",
     };
   }
 }
