@@ -33,6 +33,14 @@ async function verifyPlaidWebhook(
 ): Promise<boolean> {
   const plaidVerificationHeader = request.headers.get("plaid-verification");
 
+  // In sandbox mode, allow webhooks without verification for easier testing
+  if (process.env.PLAID_ENV === "sandbox") {
+    if (!plaidVerificationHeader) {
+      devLogger.info("Plaid webhook in sandbox mode - skipping verification");
+    }
+    return true;
+  }
+
   if (!plaidVerificationHeader) {
     devLogger.warn("Plaid webhook missing verification header");
     return false;
@@ -55,10 +63,6 @@ async function verifyPlaidWebhook(
     return true;
   } catch (error) {
     devLogger.error("Failed to verify Plaid webhook", { error });
-    // In development/sandbox, allow unverified webhooks
-    if (process.env.PLAID_ENV === "sandbox") {
-      return true;
-    }
     return false;
   }
 }
