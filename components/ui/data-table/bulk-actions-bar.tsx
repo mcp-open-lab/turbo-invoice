@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CategoryCombobox } from "@/components/ui/category-combobox";
 import { Check, X, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -93,18 +94,14 @@ export function BulkActionsBar({
 
               <div className="space-y-2">
                 <label className="text-xs font-medium">Category</label>
-                <Select value={categoryId} onValueChange={setCategoryId}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredCategories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CategoryCombobox
+                  value={categoryId}
+                  onChange={setCategoryId}
+                  categories={categories}
+                  transactionType={transactionType}
+                  placeholder="Select category..."
+                  size="default"
+                />
               </div>
 
               {businesses.length > 0 && (

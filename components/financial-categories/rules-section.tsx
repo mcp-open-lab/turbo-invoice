@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CategoryCombobox } from "@/components/ui/category-combobox";
 import {
   Dialog,
   DialogContent,
@@ -106,21 +107,12 @@ export function RulesSection({
             <div className="space-y-4 py-4">
               <div>
                 <label className="text-sm font-medium">Category</label>
-                <Select
+                <CategoryCombobox
                   value={newRuleCategoryId}
-                  onValueChange={setNewRuleCategoryId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name} {cat.type === "system" ? "(System)" : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={setNewRuleCategoryId}
+                  categories={categories}
+                  placeholder="Select category..."
+                />
               </div>
 
               <div>
@@ -246,21 +238,12 @@ export function RulesSection({
             <div className="space-y-4 py-4">
               <div>
                 <label className="text-sm font-medium">Category</label>
-                <Select
+                <CategoryCombobox
                   value={newRuleCategoryId}
-                  onValueChange={setNewRuleCategoryId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name} {cat.type === "system" ? "(System)" : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={setNewRuleCategoryId}
+                  categories={categories}
+                  placeholder="Select category..."
+                />
               </div>
 
               <div>

@@ -7,31 +7,8 @@ import {
 } from "@/lib/db/schema";
 import { eq, and, sql, gte, lte, desc } from "drizzle-orm";
 
-const EXCLUDED_FROM_ANALYTICS_FILTER = sql`(transaction_flags IS NULL OR (transaction_flags->>'isExcludedFromAnalytics')::boolean IS NOT TRUE)`;
-
-export async function getReceiptSpending(
-  userId: string,
-  start: Date,
-  end: Date
-) {
-  return db
-    .select({
-      categoryId: receipts.categoryId,
-      total: sql<number>`COALESCE(SUM(ABS(CAST(${receipts.totalAmount} AS NUMERIC))), 0)`,
-      count: sql<number>`COUNT(*)`,
-    })
-    .from(receipts)
-    .where(
-      and(
-        eq(receipts.userId, userId),
-        gte(receipts.date, start),
-        lte(receipts.date, end),
-        sql`${receipts.categoryId} IS NOT NULL`,
-        sql`(${receipts.transactionFlags} IS NULL OR (${receipts.transactionFlags}->>'isExcludedFromAnalytics')::boolean IS NOT TRUE)`
-      )
-    )
-    .groupBy(receipts.categoryId);
-}
+// Only bank transactions count against budget totals
+// Receipts are for record-keeping only (to avoid double-counting with bank transactions)
 
 export async function getBankTransactionSpending(
   userId: string,

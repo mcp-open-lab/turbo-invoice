@@ -31,16 +31,7 @@ export type ReviewQueueItem = {
 export const getReviewQueueItems = createAuthenticatedAction(
   "getReviewQueueItems",
   async (userId): Promise<{ items: ReviewQueueItem[]; totalCount: number }> => {
-
-  // Check if user has businesses
-  const userBusinesses = await db
-    .select()
-    .from(businesses)
-    .where(eq(businesses.userId, userId));
-  
-  const hasBusinesses = userBusinesses.length > 0;
-
-  // Query receipts that need review
+  // Query receipts that need review (only truly uncategorized or needs_review status)
   const receiptsQuery = sql`
     SELECT 
       ${receipts.id} as id,
@@ -56,24 +47,20 @@ export const getReviewQueueItems = createAuthenticatedAction(
       ${receipts.status} as status,
       CASE 
         WHEN ${receipts.categoryId} IS NULL THEN 'uncategorized'
-        WHEN ${receipts.category} IN ('Other Expense', 'Other Income') THEN 'other_category'
         WHEN ${receipts.status} = 'needs_review' THEN 'needs_review'
-        WHEN ${receipts.businessId} IS NULL AND ${hasBusinesses} THEN 'no_business'
         ELSE 'uncategorized'
       END as reason
     FROM ${receipts}
     WHERE ${receipts.userId} = ${userId}
       AND (
         ${receipts.categoryId} IS NULL
-        OR ${receipts.category} IN ('Other Expense', 'Other Income')
         OR ${receipts.status} = 'needs_review'
-        ${hasBusinesses ? sql`OR ${receipts.businessId} IS NULL` : sql``}
       )
     ORDER BY ${receipts.date} DESC NULLS LAST
     LIMIT 100
   `;
 
-  // Query bank transactions that need review
+  // Query bank transactions that need review (only truly uncategorized)
   const bankTxQuery = sql`
     SELECT 
       ${bankStatementTransactions.id} as id,
@@ -87,21 +74,12 @@ export const getReviewQueueItems = createAuthenticatedAction(
       ${bankStatementTransactions.category} as category_name,
       ${bankStatementTransactions.businessId} as business_id,
       'completed' as status,
-      CASE 
-        WHEN ${bankStatementTransactions.categoryId} IS NULL THEN 'uncategorized'
-        WHEN ${bankStatementTransactions.category} IN ('Other Expense', 'Other Income') THEN 'other_category'
-        WHEN ${bankStatementTransactions.businessId} IS NULL AND ${hasBusinesses} THEN 'no_business'
-        ELSE 'uncategorized'
-      END as reason
+      'uncategorized' as reason
     FROM ${bankStatementTransactions}
     INNER JOIN ${bankStatements} ON ${bankStatementTransactions.bankStatementId} = ${bankStatements.id}
     INNER JOIN ${documents} ON ${bankStatements.documentId} = ${documents.id}
     WHERE ${documents.userId} = ${userId}
-      AND (
-        ${bankStatementTransactions.categoryId} IS NULL
-        OR ${bankStatementTransactions.category} IN ('Other Expense', 'Other Income')
-        ${hasBusinesses ? sql`OR ${bankStatementTransactions.businessId} IS NULL` : sql``}
-      )
+      AND ${bankStatementTransactions.categoryId} IS NULL
     ORDER BY ${bankStatementTransactions.transactionDate} DESC NULLS LAST
     LIMIT 100
   `;

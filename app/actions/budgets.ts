@@ -9,7 +9,6 @@ import { revalidatePath } from "next/cache";
 import { getMonthDateRange, getBudgetStatus } from "@/lib/budget/utils";
 import { EXCLUDED_BUDGET_CATEGORIES } from "@/lib/budget/constants";
 import {
-  getReceiptSpending,
   getBankTransactionSpending,
   getTotalIncome,
   getCategoryReceiptsForMonth,
@@ -93,36 +92,19 @@ async function getLatestBudgetsForCategories(
   );
 }
 
-function mergeSpendingData(
-  receiptSpending: Array<{
-    categoryId: string | null;
-    total: number;
-    count: number;
-  }>,
+// Only bank transactions count against budget totals
+// Receipts are for record-keeping only (to avoid double-counting)
+function buildSpendingMap(
   txSpending: Array<{ categoryId: string | null; total: number; count: number }>
 ): Map<string, { total: number; count: number }> {
   const spendingMap = new Map<string, { total: number; count: number }>();
 
-  receiptSpending.forEach((r) => {
-    if (r.categoryId) {
-      spendingMap.set(r.categoryId, {
-        total: Number(r.total) || 0,
-        count: Number(r.count) || 0,
-      });
-    }
-  });
-
   txSpending.forEach((t) => {
     if (t.categoryId) {
-      const existing = spendingMap.get(t.categoryId);
-      const txTotal = Number(t.total) || 0;
-      const txCount = Number(t.count) || 0;
-      if (existing) {
-        existing.total += txTotal;
-        existing.count += txCount;
-      } else {
-        spendingMap.set(t.categoryId, { total: txTotal, count: txCount });
-      }
+      spendingMap.set(t.categoryId, {
+        total: Number(t.total) || 0,
+        count: Number(t.count) || 0,
+      });
     }
   });
 
@@ -161,7 +143,9 @@ export async function getBudgetOverview(
 
   try {
     // Fetch all data in parallel
-    const [userCategories, budgets, receiptSpending, txSpending, totalIncome] =
+    // Note: Only bank transactions count against budget totals
+    // Receipts are for record-keeping only (to avoid double-counting)
+    const [userCategories, budgets, txSpending, totalIncome] =
       await Promise.all([
         db
           .select()
@@ -178,7 +162,6 @@ export async function getBudgetOverview(
               eq(categoryBudgets.month, targetMonth)
             )
           ),
-        getReceiptSpending(userId, start, end),
         getBankTransactionSpending(userId, start, end),
         getTotalIncome(userId, start, end),
       ]);
@@ -202,8 +185,8 @@ export async function getBudgetOverview(
       budgetMap.set(categoryId, budgeted);
     });
 
-    // Merge spending data
-    const spendingMap = mergeSpendingData(receiptSpending, txSpending);
+    // Build spending map from bank transactions only
+    const spendingMap = buildSpendingMap(txSpending);
 
     // Build category items (exclude transfer categories)
     const categoryItems: CategoryBudgetItem[] = userCategories

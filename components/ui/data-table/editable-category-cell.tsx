@@ -1,13 +1,6 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { CategoryCombobox, CategoryComboboxDisplay } from "@/components/ui/category-combobox";
 import { cn } from "@/lib/utils";
 
 interface Category {
@@ -37,36 +30,23 @@ export function EditableCategoryCell({
   className,
   size = "default",
 }: EditableCategoryCellProps) {
-  const filteredCategories = transactionType
-    ? categories.filter((cat) => cat.transactionType === transactionType)
-    : categories;
-
   if (isEditing) {
     return (
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger
-          className={cn(
-            size === "sm" ? "h-7 text-xs" : "h-8 text-xs",
-            className
-          )}
-        >
-          <SelectValue placeholder="Select category" />
-        </SelectTrigger>
-        <SelectContent>
-          {filteredCategories.map((cat) => (
-            <SelectItem key={cat.id} value={cat.id} className="text-xs">
-              {cat.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <CategoryCombobox
+        value={value}
+        displayValue={displayValue}
+        onChange={onChange}
+        categories={categories}
+        transactionType={transactionType}
+        placeholder="Select category..."
+        className={className}
+        size={size}
+      />
     );
   }
 
   return (
-    <Badge variant="outline" className={cn("text-xs", className)}>
-      {displayValue || "Uncategorized"}
-    </Badge>
+    <CategoryComboboxDisplay displayValue={displayValue} className={className} />
   );
 }
 

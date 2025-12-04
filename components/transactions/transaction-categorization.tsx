@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CategoryCombobox } from "@/components/ui/category-combobox";
 import {
   FormControl,
   FormField,
@@ -184,25 +185,20 @@ export function TransactionCategorization({
                 </Button>
               )}
             </div>
-            <Select onValueChange={field.onChange} value={field.value || ""}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {filteredCategories.length === 0 && (
-                  <div className="p-2 text-sm text-muted-foreground text-center">
-                    No {transactionType} categories available for {contextMode} use
-                  </div>
-                )}
-                {filteredCategories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    {cat.name} {cat.type === "user" ? "(Custom)" : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <FormControl>
+              <CategoryCombobox
+                value={field.value || ""}
+                onChange={field.onChange}
+                categories={filteredCategories}
+                transactionType={transactionType}
+                placeholder={
+                  filteredCategories.length === 0
+                    ? `No ${transactionType} categories available for ${contextMode} use`
+                    : "Select category..."
+                }
+                disabled={filteredCategories.length === 0}
+              />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}

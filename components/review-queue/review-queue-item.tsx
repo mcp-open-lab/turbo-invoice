@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import Link from "next/link";
 import { TableCell, TableRow } from "@/components/ui/table";
@@ -13,6 +14,7 @@ import {
   RowActions,
 } from "@/components/ui/data-table";
 import { updateTransaction } from "@/lib/transactions/update";
+import { Check } from "lucide-react";
 import type { ReviewQueueItem as ReviewQueueItemType } from "@/app/actions/review-queue";
 import type {
   categories as categoriesSchema,
@@ -60,12 +62,30 @@ export function ReviewQueueItem({
   const [businessId, setBusinessId] = useState<string | null>(
     item.businessId || null
   );
+  const [localCategoryName, setLocalCategoryName] = useState(
+    item.categoryName || null
+  );
+  const [localBusinessName, setLocalBusinessName] = useState(
+    item.businessName || null
+  );
+
+  // Update local state when item prop changes
+  useEffect(() => {
+    setCategoryId(item.categoryId || "");
+    setBusinessId(item.businessId || null);
+    setLocalCategoryName(item.categoryName || null);
+    setLocalBusinessName(item.businessName || null);
+  }, [item.categoryId, item.businessId, item.categoryName, item.businessName]);
 
   const amount = parseFloat(item.amount);
   const isIncome = item.type === "bank_transaction" ? amount >= 0 : false;
   const transactionType = isIncome ? "income" : "expense";
 
-  const handleSave = () => {
+  // Find category name from selected categoryId
+  const selectedCategory = categories.find((cat) => cat.id === categoryId);
+  const displayCategoryName = selectedCategory?.name || localCategoryName;
+
+  const handleSave = async () => {
     if (!categoryId) {
       toast.error("Please select a category");
       return;
@@ -81,6 +101,16 @@ export function ReviewQueueItem({
       });
 
       if (result.success) {
+        // Update local state immediately for instant UI feedback
+        const selectedCategory = categories.find(
+          (cat) => cat.id === categoryId
+        );
+        const selectedBusiness = businesses.find(
+          (biz) => biz.id === businessId
+        );
+        setLocalCategoryName(selectedCategory?.name || null);
+        setLocalBusinessName(selectedBusiness?.name || null);
+
         toast.success("Updated");
         setIsEditing(false);
         onSaved();
@@ -88,6 +118,14 @@ export function ReviewQueueItem({
         toast.error(result.error || "Failed to update");
       }
     });
+  };
+
+  const handleQuickApprove = () => {
+    if (!categoryId) {
+      toast.error("Please select a category first");
+      return;
+    }
+    handleSave();
   };
 
   const href = `/app/${item.type === "receipt" ? "receipts" : "transactions"}/${
@@ -143,10 +181,10 @@ export function ReviewQueueItem({
         ) : (
           <span
             className={`text-sm ${
-              !item.categoryName ? getReasonColor(item.reason) : ""
+              !displayCategoryName ? getReasonColor(item.reason) : ""
             }`}
           >
-            {item.categoryName || "Uncategorized"}
+            {displayCategoryName || "Uncategorized"}
           </span>
         )}
       </TableCell>
@@ -162,21 +200,40 @@ export function ReviewQueueItem({
           />
         ) : (
           <span className="text-sm text-muted-foreground">
-            {item.businessName || "Personal"}
+            {localBusinessName || "Personal"}
           </span>
         )}
       </TableCell>
 
       <TableCell className="py-2 text-right">
-        <RowActions
-          isEditing={isEditing}
-          onEdit={() => setIsEditing(true)}
-          onSave={handleSave}
-          onCancel={() => setIsEditing(false)}
-          isPending={isPending}
-          canSave={!!categoryId}
-          size="sm"
-        />
+        <div className="flex items-center justify-end gap-1">
+          {!isEditing && categoryId && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              onClick={handleQuickApprove}
+              disabled={isPending}
+              title="Quick approve"
+            >
+              <Check className="h-4 w-4 text-green-600" />
+            </Button>
+          )}
+          <RowActions
+            isEditing={isEditing}
+            onEdit={() => setIsEditing(true)}
+            onSave={handleSave}
+            onCancel={() => {
+              setIsEditing(false);
+              // Reset to original values on cancel
+              setCategoryId(item.categoryId || "");
+              setBusinessId(item.businessId || null);
+            }}
+            isPending={isPending}
+            canSave={!!categoryId}
+            size="sm"
+          />
+        </div>
       </TableCell>
     </TableRow>
   );

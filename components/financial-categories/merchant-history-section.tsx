@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CategoryCombobox } from "@/components/ui/category-combobox";
 import {
   Dialog,
   DialogContent,
@@ -180,21 +181,12 @@ export function MerchantHistorySection({
 
               <div>
                 <label className="text-sm font-medium">Category</label>
-                <Select
+                <CategoryCombobox
                   value={newMerchantCategoryId}
-                  onValueChange={setNewMerchantCategoryId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name} {cat.type === "system" ? "(System)" : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={setNewMerchantCategoryId}
+                  categories={categories}
+                  placeholder="Select category..."
+                />
               </div>
             </div>
             <DialogFooter>
@@ -274,21 +266,12 @@ export function MerchantHistorySection({
 
                 <div>
                   <label className="text-sm font-medium">Category</label>
-                  <Select
+                  <CategoryCombobox
                     value={newMerchantCategoryId}
-                    onValueChange={setNewMerchantCategoryId}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.name} {cat.type === "system" ? "(System)" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={setNewMerchantCategoryId}
+                    categories={categories}
+                    placeholder="Select category..."
+                  />
                 </div>
               </div>
             )}

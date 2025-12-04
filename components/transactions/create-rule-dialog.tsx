@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CategoryCombobox } from "@/components/ui/category-combobox";
 import { toast } from "sonner";
 import { Loader2, Sparkles } from "lucide-react";
 
@@ -189,24 +190,14 @@ export function CreateRuleDialog({
           {/* Category */}
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
-            <Select
+            <CategoryCombobox
               value={formData.categoryId}
-              onValueChange={(value) =>
+              onChange={(value) =>
                 setFormData({ ...formData, categoryId: value })
               }
-              required
-            >
-              <SelectTrigger id="category">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              categories={categories}
+              placeholder="Select category..."
+            />
           </div>
 
           {/* Business */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ReviewQueueItem } from "./review-queue-item";
 import {
@@ -45,6 +45,11 @@ export function ReviewQueueList({
   const router = useRouter();
   const [items, setItems] = useState(initialItems);
   const [isPending, startTransition] = useTransition();
+
+  // Sync items when initialItems changes (after router.refresh())
+  useEffect(() => {
+    setItems(initialItems);
+  }, [initialItems]);
 
   const {
     selectedIds,
@@ -111,11 +116,11 @@ export function ReviewQueueList({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-amber-600" />
-            Review Queue
+            Uncategorized Transactions
           </CardTitle>
           <CardDescription>
-            {items.length} transaction{items.length !== 1 ? "s" : ""} need your
-            attention
+            {items.length} transaction{items.length !== 1 ? "s" : ""} need to be
+            categorized
           </CardDescription>
         </CardHeader>
       </Card>
