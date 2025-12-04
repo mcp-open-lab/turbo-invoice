@@ -123,6 +123,55 @@ export async function createUpdateLinkToken(accountId: string) {
 }
 
 /**
+ * Update webhook URL for an existing linked account/item
+ */
+export async function updateItemWebhook(accountId: string) {
+  const { userId } = await auth();
+  if (!userId) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  if (!isPlaidConfigured()) {
+    return { success: false, error: "Plaid is not configured" };
+  }
+
+  try {
+    const [account] = await db
+      .select()
+      .from(linkedBankAccounts)
+      .where(
+        and(
+          eq(linkedBankAccounts.id, accountId),
+          eq(linkedBankAccounts.userId, userId)
+        )
+      )
+      .limit(1);
+
+    if (!account) {
+      return { success: false, error: "Account not found" };
+    }
+
+    const webhookUrl = getWebhookUrl();
+    if (!webhookUrl) {
+      return { success: false, error: "Webhook URL not configured" };
+    }
+
+    await plaidClient.itemWebhookUpdate({
+      access_token: account.plaidAccessToken,
+      webhook: webhookUrl,
+    });
+
+    return { success: true, webhookUrl };
+  } catch (error) {
+    console.error("Failed to update webhook:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update webhook",
+    };
+  }
+}
+
+/**
  * Handle successful reconnection - reset error state
  */
 export async function handleReconnectSuccess(accountId: string) {
