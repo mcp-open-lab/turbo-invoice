@@ -22,7 +22,7 @@ export default async function SettingsPage() {
       <PageHeader title="Settings" />
       <div className="space-y-6">
         <LinkedAccounts />
-        <SettingsFormV2 initialSettings={settings} />
+      <SettingsFormV2 initialSettings={settings} />
       </div>
     </PageContainer>
   );

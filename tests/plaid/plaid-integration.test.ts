@@ -12,6 +12,7 @@ import {
   PlaidEnvironments,
   Products,
   CountryCode,
+  SandboxItemFireWebhookRequestWebhookCodeEnum,
 } from "plaid";
 
 // Skip DB-dependent tests if no real DB connection
@@ -195,7 +196,8 @@ describe("Plaid Sandbox Integration", () => {
         try {
           await plaidClient.sandboxItemFireWebhook({
             access_token: accessToken,
-            webhook_code: "SYNC_UPDATES_AVAILABLE",
+            webhook_code:
+              SandboxItemFireWebhookRequestWebhookCodeEnum.SyncUpdatesAvailable,
           });
           // Wait for transactions to populate
           await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -239,7 +241,9 @@ describe("Plaid Sandbox Integration", () => {
           expect(firstTx.amount).toBeDefined();
           expect(typeof firstTx.amount).toBe("number");
         } else {
-          console.log("No transactions returned (expected for fresh sandbox item)");
+          console.log(
+            "No transactions returned (expected for fresh sandbox item)"
+          );
         }
       },
       API_TIMEOUT
