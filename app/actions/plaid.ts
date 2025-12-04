@@ -13,6 +13,7 @@ import {
 } from "@/lib/plaid/client";
 import { CountryCode, Products } from "plaid";
 import { syncPlaidTransactions } from "@/lib/plaid/sync";
+import { inngest } from "@/lib/inngest/client";
 
 /**
  * Get the webhook URL for Plaid
@@ -258,6 +259,14 @@ export async function exchangePublicToken(publicToken: string, metadata: {
         .returning();
 
       savedAccounts.push(linkedAccount[0]);
+    }
+
+    // Trigger initial sync for each account via Inngest
+    for (const account of savedAccounts) {
+      await inngest.send({
+        name: "plaid/sync.account",
+        data: { accountId: account.id },
+      });
     }
 
     return {

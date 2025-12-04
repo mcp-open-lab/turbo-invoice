@@ -75,6 +75,45 @@ export const processImportJob = inngest.createFunction(
 );
 
 /**
+ * Sync a single Plaid account (triggered after account connection or manual sync)
+ */
+export const plaidSyncAccount = inngest.createFunction(
+  {
+    id: "plaid-sync-account",
+    name: "Plaid Sync Account",
+    retries: 2,
+  },
+  { event: "plaid/sync.account" },
+  async ({ event, step }) => {
+    const { accountId } = event.data as { accountId: string };
+
+    devLogger.info("Syncing Plaid account", { accountId });
+
+    const result = await step.run("sync-account", async () => {
+      const [account] = await db
+        .select()
+        .from(linkedBankAccounts)
+        .where(eq(linkedBankAccounts.id, accountId))
+        .limit(1);
+
+      if (!account) {
+        return { success: false, error: "Account not found" };
+      }
+
+      return await syncPlaidTransactions(account);
+    });
+
+    devLogger.info("Plaid account sync completed", {
+      accountId,
+      success: result.success,
+      transactionCount: result.transactionCount,
+    });
+
+    return result;
+  }
+);
+
+/**
  * Daily Plaid sync cron job
  * Runs once per day at 6 AM UTC to sync all linked bank accounts
  */
@@ -153,7 +192,7 @@ export const plaidDailySync = inngest.createFunction(
 // Make sure INNGEST_SERVE_URL is set in Inngest dashboard to https://turboinvoice.ai/api/inngest
 const handlers = serve({
   client: inngest,
-  functions: [processImportJob, plaidDailySync],
+  functions: [processImportJob, plaidSyncAccount, plaidDailySync],
 });
 
 // Wrap handlers to catch and log errors gracefully
