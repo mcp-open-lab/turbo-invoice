@@ -36,12 +36,6 @@ const mainItems = [
     icon: Clock,
     description: "View all transactions",
   },
-  {
-    label: "Review",
-    href: "/app/review",
-    icon: AlertCircle,
-    description: "Categorize & organize",
-  },
 ];
 
 const insightsItems = [
@@ -60,6 +54,12 @@ const insightsItems = [
 ];
 
 const dataItems = [
+  {
+    label: "Review",
+    href: "/app/review",
+    icon: AlertCircle,
+    description: "Categorize & organize",
+  },
   {
     label: "Import",
     href: "/app/import",
@@ -198,7 +198,7 @@ export function DesktopNav() {
                 Data
               </NavigationMenuTrigger>
               <NavigationMenuContent>
-                <ul className="grid w-[400px] gap-3 p-4">
+                <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2">
                   {dataItems.map((item) => {
                     const Icon = item.icon;
                     return (
