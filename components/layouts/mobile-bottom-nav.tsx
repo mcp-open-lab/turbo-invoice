@@ -9,7 +9,7 @@ const navItems = [
   { href: "/app", icon: Home, label: "Timeline" },
   { href: "/app/budgets", icon: Wallet, label: "Budget" },
   { href: "/app/invoices", icon: FileText, label: "Invoices" },
-  { href: "/app/review", icon: Database, label: "Data" },
+  { href: "/app/data", icon: Database, label: "Data" },
   { href: "/app/settings", icon: Settings, label: "Settings" },
 ];
 
