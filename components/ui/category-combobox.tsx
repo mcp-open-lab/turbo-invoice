@@ -138,7 +138,11 @@ export function CategoryComboboxDisplay({
   className,
 }: CategoryComboboxDisplayProps) {
   return (
-    <Badge variant="outline" className={cn("text-xs", className)}>
+    <Badge 
+      variant="outline" 
+      className={cn("text-xs max-w-full truncate", className)}
+      title={displayValue || "Uncategorized"}
+    >
       {displayValue || "Uncategorized"}
     </Badge>
   );

@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FileUploadZone, type FileWithPreview } from "@/components/import/file-upload-zone";
+import {
+  FileUploadZone,
+  type FileWithPreview,
+} from "@/components/import/file-upload-zone";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -83,7 +86,9 @@ export function ImportUploadZone({
   const searchParams = useSearchParams();
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [importType, setImportType] = useState<ImportType>("receipts");
-  const [statementType, setStatementType] = useState<"bank_account" | "credit_card">("bank_account");
+  const [statementType, setStatementType] = useState<
+    "bank_account" | "credit_card"
+  >("bank_account");
   const [currency, setCurrency] = useState<string>(defaultCurrency || "USD");
   const [isUploading, setIsUploading] = useState(false);
   const [batchCreated, setBatchCreated] = useState(false);
@@ -91,7 +96,9 @@ export function ImportUploadZone({
 
   // Processing options
   const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [defaultBusinessId, setDefaultBusinessId] = useState<string | null>(null);
+  const [defaultBusinessId, setDefaultBusinessId] = useState<string | null>(
+    null
+  );
   const [dateRangeStart, setDateRangeStart] = useState<string>("");
   const [dateRangeEnd, setDateRangeEnd] = useState<string>("");
 
@@ -156,7 +163,8 @@ export function ImportUploadZone({
       // Step 2: Create batch and enqueue jobs
       const result = await batchImport({
         importType,
-        statementType: importType === "bank_statements" ? statementType : undefined,
+        statementType:
+          importType === "bank_statements" ? statementType : undefined,
         currency,
         files: successfulUploads.map((file) => ({
           fileName: file.name,
@@ -243,16 +251,23 @@ export function ImportUploadZone({
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="bank_account" id="bank_account" />
-                  <Label htmlFor="bank_account" className="font-normal cursor-pointer">
+                  <Label
+                    htmlFor="bank_account"
+                    className="font-normal cursor-pointer"
+                  >
                     Bank Account (Checking/Savings)
                     <span className="block text-xs text-muted-foreground">
-                      Expenses are negative (withdrawals), Income is positive (deposits)
+                      Expenses are negative (withdrawals), Income is positive
+                      (deposits)
                     </span>
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="credit_card" id="credit_card" />
-                  <Label htmlFor="credit_card" className="font-normal cursor-pointer">
+                  <Label
+                    htmlFor="credit_card"
+                    className="font-normal cursor-pointer"
+                  >
                     Credit Card
                     <span className="block text-xs text-muted-foreground">
                       Expenses are positive (purchases), Payments are negative
@@ -286,16 +301,22 @@ export function ImportUploadZone({
               <AccordionContent className="space-y-4 pt-4">
                 {/* Default Business */}
                 <div className="space-y-2">
-                  <Label htmlFor="default-business">Default Business (Optional)</Label>
+                  <Label htmlFor="default-business">
+                    Default Business (Optional)
+                  </Label>
                   <Select
                     value={defaultBusinessId || "personal"}
-                    onValueChange={(value) => setDefaultBusinessId(value === "personal" ? null : value)}
+                    onValueChange={(value) =>
+                      setDefaultBusinessId(value === "personal" ? null : value)
+                    }
                   >
                     <SelectTrigger id="default-business">
                       <SelectValue placeholder="Personal (No Business)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="personal">Personal (No Business)</SelectItem>
+                      <SelectItem value="personal">
+                        Personal (No Business)
+                      </SelectItem>
                       {businesses.map((business) => (
                         <SelectItem key={business.id} value={business.id}>
                           {business.name}
@@ -304,20 +325,25 @@ export function ImportUploadZone({
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    Assign all imported transactions to this business by default. Can be changed later.
+                    Assign all imported transactions to this business by
+                    default. Can be changed later.
                   </p>
                 </div>
 
                 {/* Date Range Filter (for bank statements) */}
                 {importType === "bank_statements" && (
                   <div className="space-y-3 pt-2 border-t">
-                    <Label className="text-sm font-medium">Date Range Filter (Optional)</Label>
+                    <Label className="text-sm font-medium">
+                      Date Range Filter (Optional)
+                    </Label>
                     <p className="text-xs text-muted-foreground">
                       Only import transactions within this date range
                     </p>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
-                        <Label htmlFor="date-start" className="text-xs">Start Date</Label>
+                        <Label htmlFor="date-start" className="text-xs">
+                          Start Date
+                        </Label>
                         <Input
                           id="date-start"
                           type="date"
@@ -326,7 +352,9 @@ export function ImportUploadZone({
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="date-end" className="text-xs">End Date</Label>
+                        <Label htmlFor="date-end" className="text-xs">
+                          End Date
+                        </Label>
                         <Input
                           id="date-end"
                           type="date"
@@ -380,7 +408,7 @@ export function ImportUploadZone({
                   onClick={handleViewJobs}
                   className="mt-2"
                 >
-                  View Jobs
+                  History
                 </Button>
               </div>
             </div>

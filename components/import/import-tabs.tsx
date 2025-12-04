@@ -48,15 +48,15 @@ export function ImportTabs({
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
       <TabsList>
         <TabsTrigger value="import">Import</TabsTrigger>
-        <TabsTrigger value="jobs">View Jobs</TabsTrigger>
+        <TabsTrigger value="jobs">History</TabsTrigger>
       </TabsList>
       <TabsContent value="import" className="mt-6 space-y-8">
         <ImportUploadZone defaultCurrency={defaultCurrency} />
-        
+
         {initialBatches.length > 0 && (
-          <RecentBatches 
-            batches={initialBatches} 
-            onViewAll={() => handleTabChange("jobs")} 
+          <RecentBatches
+            batches={initialBatches}
+            onViewAll={() => handleTabChange("jobs")}
           />
         )}
       </TabsContent>
@@ -70,4 +70,3 @@ export function ImportTabs({
     </Tabs>
   );
 }
-
