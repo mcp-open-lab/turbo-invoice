@@ -151,7 +151,7 @@ export async function getBudgetOverview(
           .select()
           .from(categories)
           .where(
-            sql`${categories.type} = 'system' OR ${categories.userId} = ${userId}`
+            sql`(${categories.type} = 'system' AND ${categories.description} LIKE 'Plaid:%') OR (${categories.type} = 'user' AND ${categories.userId} = ${userId})`
           ),
         db
           .select()

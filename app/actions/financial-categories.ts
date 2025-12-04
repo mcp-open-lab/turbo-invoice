@@ -24,10 +24,24 @@ import {
 export const getUserCategories = createAuthenticatedAction(
   "getUserCategories",
   async (userId) => {
+    // Only return Plaid system categories (those with "Plaid:" in description) and user categories
     return db
       .select()
       .from(categories)
-      .where(or(eq(categories.type, "system"), eq(categories.userId, userId)));
+      .where(
+        or(
+          // Plaid system categories
+          and(
+            eq(categories.type, "system"),
+            sql`${categories.description} LIKE 'Plaid:%'`
+          ),
+          // User-created categories
+          and(
+            eq(categories.type, "user"),
+            eq(categories.userId, userId)
+          )
+        )
+      );
   }
 );
 
