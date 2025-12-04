@@ -20,6 +20,7 @@ type DocTypeSelectorDialogProps = {
   setSelectedDocType: (type: "receipt" | "bank_statement") => void;
   onConfirm: () => void;
   onCancel: () => void;
+  disabled?: boolean;
 };
 
 export function DocTypeSelectorDialog({
@@ -29,6 +30,7 @@ export function DocTypeSelectorDialog({
   setSelectedDocType,
   onConfirm,
   onCancel,
+  disabled = false,
 }: DocTypeSelectorDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -79,10 +81,12 @@ export function DocTypeSelectorDialog({
           </RadioGroup>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel}>
+          <Button variant="outline" onClick={onCancel} disabled={disabled}>
             Cancel
           </Button>
-          <Button onClick={onConfirm}>Continue</Button>
+          <Button onClick={onConfirm} disabled={disabled}>
+            Continue
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

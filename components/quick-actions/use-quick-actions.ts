@@ -89,7 +89,7 @@ export function useQuickActions() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isFullscreenSupported, setIsFullscreenSupported] = useState(false);
   const [showDocTypeSelector, setShowDocTypeSelector] = useState(false);
-  const [pendingFiles, setPendingFiles] = useState<FileList | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
   const [selectedDocType, setSelectedDocType] = useState<
     "receipt" | "bank_statement"
   >("receipt");
@@ -242,13 +242,16 @@ export function useQuickActions() {
   };
 
   const handleFileSelect = async (
-    files: FileList | null,
+    files: FileList | File[] | null,
     docType?: "receipt" | "bank_statement"
   ) => {
     if (!files || files.length === 0) return;
 
+    // Convert FileList to array to avoid stale references
+    const filesArray = Array.isArray(files) ? files : Array.from(files);
+
     if (!docType) {
-      setPendingFiles(files);
+      setPendingFiles(filesArray);
       setShowDocTypeSelector(true);
       return;
     }
@@ -264,7 +267,7 @@ export function useQuickActions() {
       toast.info(`Uploading ${docTypeLabel}...`);
 
       const compressedFiles = await Promise.all(
-        Array.from(files).map((file) => compressImageFile(file))
+        filesArray.map((file) => compressImageFile(file))
       );
 
       const uploader = future_genUploader<OurFileRouter>({
@@ -310,9 +313,12 @@ export function useQuickActions() {
   };
 
   const handleDocTypeConfirm = () => {
-    if (pendingFiles) {
-      handleFileSelect(pendingFiles, selectedDocType);
+    if (!pendingFiles || pendingFiles.length === 0) {
+      toast.error("No files selected. Please try again.");
+      setShowDocTypeSelector(false);
+      return;
     }
+    handleFileSelect(pendingFiles, selectedDocType);
   };
 
   const handleCameraClick = () => {
@@ -324,14 +330,22 @@ export function useQuickActions() {
   };
 
   const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleFileSelect(e.target.files);
+    const files = e.target.files;
+    if (files) {
+      handleFileSelect(files);
+    }
+    // Reset input after handling files
     if (cameraInputRef.current) {
       cameraInputRef.current.value = "";
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleFileSelect(e.target.files);
+    const files = e.target.files;
+    if (files) {
+      handleFileSelect(files);
+    }
+    // Reset input after handling files
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }

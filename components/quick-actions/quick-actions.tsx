@@ -69,6 +69,7 @@ export function QuickActions() {
           hook.setShowDocTypeSelector(false);
           hook.setPendingFiles(null);
         }}
+        disabled={hook.isUploading || !hook.pendingFiles}
       />
 
       {/* Install on iOS Dialog */}
