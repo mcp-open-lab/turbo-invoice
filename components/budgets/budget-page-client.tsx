@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { BudgetHeader } from "./budget-header";
 import { CategoryBudgetGrid } from "./category-budget-grid";
-import { AccountBalances } from "./account-balances";
 import { SavingsOverview } from "./savings-overview";
 import {
   setBudgetAmount,
@@ -111,7 +110,6 @@ export function BudgetPageClient({
 
       {/* Mobile: Key metrics first */}
       <div className="lg:hidden space-y-4">
-        <AccountBalances currency={currency} />
         <SavingsOverview
           income={data.totalIncome}
           spent={data.totalSpent}
@@ -122,32 +120,24 @@ export function BudgetPageClient({
         />
       </div>
 
-      {/* Desktop: Two column layout */}
-      <div className="hidden lg:grid lg:grid-cols-[1fr,340px] gap-6">
-        {/* Left: Categories */}
-        <div className="space-y-6">
-          <SavingsOverview
-            income={data.totalIncome}
-            spent={data.totalSpent}
-            savingsRate={savingsRate}
-            budgeted={data.totalBudgeted}
-            available={data.totalAvailable}
-            currency={currency}
-          />
-          <CategoryBudgetGrid
-            categories={data.categories}
-            currency={currency}
-            month={data.month}
-            onBudgetChange={handleBudgetChange}
-            allCategories={categories}
-            businesses={businesses}
-          />
-        </div>
-
-        {/* Right: Account Balances */}
-        <div className="space-y-4">
-          <AccountBalances currency={currency} />
-        </div>
+      {/* Desktop: Single column layout */}
+      <div className="hidden lg:block space-y-6">
+        <SavingsOverview
+          income={data.totalIncome}
+          spent={data.totalSpent}
+          savingsRate={savingsRate}
+          budgeted={data.totalBudgeted}
+          available={data.totalAvailable}
+          currency={currency}
+        />
+        <CategoryBudgetGrid
+          categories={data.categories}
+          currency={currency}
+          month={data.month}
+          onBudgetChange={handleBudgetChange}
+          allCategories={categories}
+          businesses={businesses}
+        />
       </div>
 
       {/* Mobile: Categories below */}
