@@ -110,7 +110,7 @@ export function CategoryBudgetRow({
   };
 
   const config = BUDGET_STATUS_CONFIG[status];
-  const percentUsed = budgeted > 0 ? Math.min((spent / budgeted) * 100, 100) : 0;
+  const percentUsed = budgeted > 0 ? (spent / budgeted) * 100 : 0;
   const format = (amount: number) => formatBudgetCurrency(amount, currency);
 
   // Compact mode for inactive categories
@@ -247,12 +247,14 @@ export function CategoryBudgetRow({
       </div>
 
       {/* Desktop Progress Bar */}
-      <ProgressBar
-        show={budgeted > 0}
-        percent={percentUsed}
-        barClass={config.bar}
-        className="hidden md:block mt-2"
-      />
+      {budgeted > 0 && (
+        <ProgressBar
+          show={true}
+          percent={percentUsed}
+          barClass={config.bar}
+          className="hidden md:block mt-2"
+        />
+      )}
 
       {/* Desktop Transactions */}
       {isExpanded && transactionCount > 0 && (
@@ -362,11 +364,28 @@ interface ProgressBarProps {
 function ProgressBar({ show, percent, barClass, className }: ProgressBarProps) {
   if (!show) return null;
 
+  const isOverBudget = percent > 100;
+  const displayPercent = Math.min(percent, 100);
+
   return (
-    <div className={className}>
-      <div className="h-1 bg-muted rounded-full overflow-hidden">
-        <div className={cn("h-full transition-all", barClass)} style={{ width: `${percent}%` }} />
+    <div className={cn("space-y-1", className)}>
+      <div className="h-2 bg-muted rounded-full overflow-hidden relative">
+        <div
+          className={cn("h-full transition-all duration-300", barClass)}
+          style={{ width: `${displayPercent}%` }}
+        />
+        {isOverBudget && (
+          <div
+            className={cn("h-full absolute top-0 right-0 bg-red-500/20 transition-all duration-300")}
+            style={{ width: `${Math.min(percent - 100, 100)}%` }}
+          />
+        )}
       </div>
+      {isOverBudget && (
+        <div className="text-xs text-red-600 dark:text-red-400 font-medium">
+          {percent.toFixed(0)}% of budget
+        </div>
+      )}
     </div>
   );
 }
