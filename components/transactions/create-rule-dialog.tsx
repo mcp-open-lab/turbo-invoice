@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { createRuleFromTransaction, getSimilarTransactionStats } from "@/app/actions/transactions";
+import {
+  createRuleFromTransaction,
+  getSimilarTransactionStats,
+} from "@/app/actions/transactions";
 import {
   Dialog,
   DialogContent,
@@ -122,7 +125,8 @@ export function CreateRuleDialog({
             Create Auto-Categorization Rule
           </DialogTitle>
           <DialogDescription>
-            Create a rule to automatically categorize future transactions from this merchant.
+            Create a rule to automatically categorize future transactions from
+            this merchant.
           </DialogDescription>
         </DialogHeader>
 
@@ -134,7 +138,10 @@ export function CreateRuleDialog({
                 Impact Preview
               </p>
               <p className="text-xs text-muted-foreground">
-                This rule will apply to approximately <strong>{stats.totalCount}</strong> existing transaction{stats.totalCount === 1 ? "" : "s"} and all future transactions from this merchant.
+                This rule will apply to approximately{" "}
+                <strong>{stats.totalCount}</strong> existing transaction
+                {stats.totalCount === 1 ? "" : "s"} and all future transactions
+                from this merchant.
               </p>
             </div>
           )}
@@ -190,7 +197,8 @@ export function CreateRuleDialog({
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              "Contains" matches variations (e.g., "Starbucks #123", "Starbucks Downtown")
+              "Contains" matches variations (e.g., "Starbucks #123", "Starbucks
+              Downtown")
             </p>
           </div>
 
@@ -213,7 +221,10 @@ export function CreateRuleDialog({
             <Select
               value={formData.businessId || "none"}
               onValueChange={(value) =>
-                setFormData({ ...formData, businessId: value === "none" ? null : value })
+                setFormData({
+                  ...formData,
+                  businessId: value === "none" ? null : value,
+                })
               }
             >
               <SelectTrigger id="business">
@@ -243,7 +254,9 @@ export function CreateRuleDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {isSubmitting && (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              )}
               Create Rule
             </Button>
           </DialogFooter>
@@ -252,4 +265,3 @@ export function CreateRuleDialog({
     </Dialog>
   );
 }
-
