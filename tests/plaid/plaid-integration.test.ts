@@ -21,6 +21,10 @@ const SKIP_DB_TESTS = true;
 // Set longer timeout for API calls
 const API_TIMEOUT = 30000;
 
+// These tests require sandbox mode - skip if using development/production
+const IS_SANDBOX = process.env.PLAID_ENV === "sandbox" || !process.env.PLAID_ENV;
+const PLAID_SANDBOX_SECRET = process.env.PLAID_SANDBOX_SECRET || process.env.PLAID_SECRET;
+
 describe("Plaid Sandbox Integration", () => {
   let plaidClient: PlaidApi;
   let accessToken: string | null = null;
@@ -29,12 +33,21 @@ describe("Plaid Sandbox Integration", () => {
   beforeAll(() => {
     // Initialize Plaid client with sandbox credentials
     const clientId = process.env.PLAID_CLIENT_ID;
-    const secret = process.env.PLAID_SECRET;
+    const secret = PLAID_SANDBOX_SECRET;
 
     if (!clientId || !secret) {
       console.warn(
-        "Skipping Plaid tests: PLAID_CLIENT_ID or PLAID_SECRET not set"
+        "Skipping Plaid tests: PLAID_CLIENT_ID or PLAID_SANDBOX_SECRET not set"
       );
+      return;
+    }
+
+    if (!IS_SANDBOX && !process.env.PLAID_SANDBOX_SECRET) {
+      console.warn(
+        "Skipping Plaid sandbox tests: PLAID_ENV is not sandbox and PLAID_SANDBOX_SECRET not set. " +
+        "Set PLAID_SANDBOX_SECRET to your sandbox secret to run these tests."
+      );
+      // Don't initialize plaidClient - tests will skip
       return;
     }
 

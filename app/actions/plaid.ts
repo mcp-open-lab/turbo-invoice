@@ -20,10 +20,11 @@ import { inngest } from "@/lib/inngest/client";
  */
 function getWebhookUrl(): string | undefined {
   // Use VERCEL_URL in production, or explicit PLAID_WEBHOOK_URL
-  const baseUrl = process.env.PLAID_WEBHOOK_URL 
-    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
-    || process.env.NEXT_PUBLIC_APP_URL;
-  
+  const baseUrl =
+    process.env.PLAID_WEBHOOK_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+    process.env.NEXT_PUBLIC_APP_URL;
+
   if (!baseUrl) return undefined;
   return `${baseUrl}/api/plaid/webhook`;
 }
@@ -43,7 +44,7 @@ export async function createLinkToken() {
 
   try {
     const webhookUrl = getWebhookUrl();
-    
+
     const response = await plaidClient.linkTokenCreate({
       user: { client_user_id: userId },
       client_name: "Turbo Invoice",
@@ -62,7 +63,8 @@ export async function createLinkToken() {
     console.error("Failed to create link token:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to create link token",
+      error:
+        error instanceof Error ? error.message : "Failed to create link token",
     };
   }
 }
@@ -118,7 +120,10 @@ export async function createUpdateLinkToken(accountId: string) {
     console.error("Failed to create update link token:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to create update link token",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to create update link token",
     };
   }
 }
@@ -167,7 +172,8 @@ export async function updateItemWebhook(accountId: string) {
     console.error("Failed to update webhook:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to update webhook",
+      error:
+        error instanceof Error ? error.message : "Failed to update webhook",
     };
   }
 }
@@ -209,16 +215,19 @@ export async function handleReconnectSuccess(accountId: string) {
 /**
  * Exchange public token for access token and save linked account
  */
-export async function exchangePublicToken(publicToken: string, metadata: {
-  institution?: { institution_id: string; name: string } | null;
-  accounts?: Array<{
-    id: string;
-    name: string;
-    mask: string | null;
-    type: string;
-    subtype: string | null;
-  }>;
-}) {
+export async function exchangePublicToken(
+  publicToken: string,
+  metadata: {
+    institution?: { institution_id: string; name: string } | null;
+    accounts?: Array<{
+      id: string;
+      name: string;
+      mask: string | null;
+      type: string;
+      subtype: string | null;
+    }>;
+  }
+) {
   const { userId } = await auth();
   if (!userId) {
     return { success: false, error: "Unauthorized" };
@@ -379,7 +388,8 @@ export async function unlinkAccount(accountId: string) {
     console.error("Failed to unlink account:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to unlink account",
+      error:
+        error instanceof Error ? error.message : "Failed to unlink account",
     };
   }
 }
@@ -541,4 +551,3 @@ export async function getAccountBalances(): Promise<{
     };
   }
 }
-
