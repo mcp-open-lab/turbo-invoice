@@ -19,6 +19,7 @@ import {
   initializeCategoryCache,
 } from "./category-mapper";
 import type { linkedBankAccounts as LinkedBankAccountsTable } from "@/lib/db/schema";
+import type { TransactionFlags } from "@/lib/constants/transaction-flags";
 
 type LinkedBankAccount = typeof LinkedBankAccountsTable.$inferSelect;
 
@@ -128,6 +129,9 @@ export async function syncPlaidTransactions(
         tx.raw?.plaid_category_detailed as string | undefined
       );
 
+      const txFlags: TransactionFlags | null =
+        (tx as { flags?: TransactionFlags }).flags ?? null;
+
       await db.insert(bankStatementTransactions).values({
         id: createId(),
         bankStatementId,
@@ -139,6 +143,7 @@ export async function syncPlaidTransactions(
         amount: (tx.amount ?? 0).toString(),
         currency: tx.currency,
         categoryId,
+        transactionFlags: txFlags,
         order: order++,
       });
     }

@@ -5,9 +5,56 @@
 
 import type { Transaction as PlaidTransaction } from "plaid";
 import type { NormalizedTransaction } from "@/lib/import/spreadsheet-parser";
+import type { TransactionFlags } from "@/lib/constants/transaction-flags";
+import {
+  detectCreditCardPayment,
+  detectInternalTransfer,
+} from "@/lib/constants/transaction-flags";
 
 export interface PlaidNormalizedTransaction extends NormalizedTransaction {
   currency: string;
+  flags?: TransactionFlags;
+}
+
+function buildPlaidFlags(tx: PlaidTransaction, accountId: string): TransactionFlags {
+  return {
+    isPlaidImported: true,
+    plaidTransactionId: tx.transaction_id,
+    plaidAccountId: accountId,
+    plaidStatus: tx.pending ? "pending" : "posted",
+  };
+}
+
+function detectTransferFlags(tx: PlaidTransaction, accountId: string): TransactionFlags | undefined {
+  const description = tx.name || tx.original_description || "";
+  const primary = tx.personal_finance_category?.primary;
+  const detailed = tx.personal_finance_category?.detailed;
+
+  const isTransferCategory = primary === "TRANSFER_IN" || primary === "TRANSFER_OUT";
+  const isCreditCardPaymentCategory =
+    primary === "LOAN_PAYMENTS" && (detailed || "").includes("CREDIT_CARD_PAYMENT");
+
+  const isCreditCardPaymentByText = detectCreditCardPayment(description);
+  const isInternalTransferByText = detectInternalTransfer(description);
+
+  const isCreditCardPayment =
+    isCreditCardPaymentCategory || isCreditCardPaymentByText;
+  const isInternalTransfer = isTransferCategory || isInternalTransferByText;
+
+  if (!isCreditCardPayment && !isInternalTransfer) return undefined;
+
+  return {
+    ...buildPlaidFlags(tx, accountId),
+    isInternalTransfer: true,
+    isExcludedFromTotals: true,
+    exclusionReason: isCreditCardPayment
+      ? "credit_card_payment"
+      : "internal_transfer",
+    autoDetected: true,
+    detectionMethod: isCreditCardPaymentCategory || isTransferCategory
+      ? "plaid_category"
+      : "description_pattern",
+  };
 }
 
 /**
@@ -25,6 +72,7 @@ export function mapPlaidTransactions(
       // Plaid: positive = money out (debit), negative = money in (credit)
       // Our convention: negative = debit (expense), positive = credit (income)
       const amount = tx.amount * -1;
+      const transferFlags = detectTransferFlags(tx, accountId);
 
       return {
         transactionDate: tx.date ? new Date(tx.date) : null,
@@ -34,6 +82,7 @@ export function mapPlaidTransactions(
         amount,
         referenceNumber: tx.transaction_id,
         currency: tx.iso_currency_code || tx.unofficial_currency_code || "USD",
+        flags: transferFlags ?? buildPlaidFlags(tx, accountId),
         raw: {
           plaid_transaction_id: tx.transaction_id,
           plaid_category: tx.personal_finance_category?.primary,
