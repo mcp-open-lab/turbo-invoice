@@ -9,7 +9,7 @@ import {
   categories,
   businesses,
 } from "@/lib/db/schema";
-import { sql, and, eq, inArray } from "drizzle-orm";
+import { sql, eq, inArray } from "drizzle-orm";
 import { createAuthenticatedAction } from "@/lib/safe-action";
 
 export type ReviewQueueItem = {
@@ -132,87 +132,6 @@ export const getReviewQueueItems = createAuthenticatedAction(
       items,
       totalCount: items.length,
     };
-  }
-);
-
-type BulkUpdateInput = Array<{
-  id: string;
-  type: "receipt" | "bank_transaction";
-  categoryId: string;
-  businessId?: string | null;
-}>;
-
-export const bulkUpdateTransactions = createAuthenticatedAction(
-  "bulkUpdateTransactions",
-  async (
-    userId,
-    updates: BulkUpdateInput
-  ): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const receiptUpdates = updates.filter((u) => u.type === "receipt");
-      const bankTxUpdates = updates.filter((u) => u.type === "bank_transaction");
-
-      const categoryIds = [...new Set(updates.map((u) => u.categoryId))];
-      const categoryData = await db
-        .select()
-        .from(categories)
-        .where(inArray(categories.id, categoryIds));
-
-      const categoryMap = new Map(categoryData.map((c) => [c.id, c.name]));
-
-      for (const update of receiptUpdates) {
-        const categoryName = categoryMap.get(update.categoryId) || null;
-        await db
-          .update(receipts)
-          .set({
-            categoryId: update.categoryId,
-            category: categoryName,
-            businessId:
-              update.businessId !== undefined ? update.businessId : undefined,
-            status: "approved",
-            updatedAt: new Date(),
-          })
-          .where(and(eq(receipts.id, update.id), eq(receipts.userId, userId)));
-      }
-
-      for (const update of bankTxUpdates) {
-        const categoryName = categoryMap.get(update.categoryId) || null;
-
-        const txCheck = await db
-          .select({ id: bankStatementTransactions.id })
-          .from(bankStatementTransactions)
-          .innerJoin(
-            bankStatements,
-            eq(bankStatementTransactions.bankStatementId, bankStatements.id)
-          )
-          .innerJoin(documents, eq(bankStatements.documentId, documents.id))
-          .where(
-            and(
-              eq(bankStatementTransactions.id, update.id),
-              eq(documents.userId, userId)
-            )
-          )
-          .limit(1);
-
-        if (txCheck.length > 0) {
-          await db
-            .update(bankStatementTransactions)
-            .set({
-              categoryId: update.categoryId,
-              category: categoryName,
-              businessId:
-                update.businessId !== undefined ? update.businessId : undefined,
-              updatedAt: new Date(),
-            })
-            .where(eq(bankStatementTransactions.id, update.id));
-        }
-      }
-
-      return { success: true };
-    } catch (error) {
-      console.error("Bulk update error:", error);
-      return { success: false, error: "Failed to update transactions" };
-    }
   }
 );
 

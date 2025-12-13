@@ -18,6 +18,7 @@ import {
   mapPlaidCategoryAsync,
   initializeCategoryCache,
 } from "./category-mapper";
+import { CategoryEngine } from "@/lib/categorization/engine";
 import type { linkedBankAccounts as LinkedBankAccountsTable } from "@/lib/db/schema";
 import type { TransactionFlags } from "@/lib/constants/transaction-flags";
 
@@ -123,11 +124,22 @@ export async function syncPlaidTransactions(
 
     let order = 0;
     for (const tx of normalizedTransactions) {
-      // Auto-categorize using Plaid's category
-      const categoryId = await mapPlaidCategoryAsync(
-        tx.raw?.plaid_category as string | undefined,
-        tx.raw?.plaid_category_detailed as string | undefined
+      // Categorize using user rules/history first, then fall back to Plaid baseline category
+      const engineResult = await CategoryEngine.categorizeTransaction(
+        {
+          merchantName: tx.merchantName ?? null,
+          description: tx.description ?? null,
+          amount: tx.amount != null ? String(tx.amount) : null,
+        },
+        { userId: account.userId }
       );
+
+      const categoryId =
+        engineResult.categoryId ??
+        (await mapPlaidCategoryAsync(
+          tx.raw?.plaid_category as string | undefined,
+          tx.raw?.plaid_category_detailed as string | undefined
+        ));
 
       const txFlags: TransactionFlags | null =
         (tx as { flags?: TransactionFlags }).flags ?? null;

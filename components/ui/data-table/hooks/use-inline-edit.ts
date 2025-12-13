@@ -5,6 +5,7 @@ import { useState, useCallback } from "react";
 interface EditState {
   categoryId: string;
   businessId: string | null;
+  applyToFuture: boolean;
 }
 
 interface UseInlineEditOptions {
@@ -19,6 +20,7 @@ interface UseInlineEditReturn {
   isEditing: (id: string) => boolean;
   setCategoryId: (categoryId: string) => void;
   setBusinessId: (businessId: string | null) => void;
+  setApplyToFuture: (applyToFuture: boolean) => void;
   saveEdit: () => Promise<void>;
   isPending: boolean;
 }
@@ -30,6 +32,7 @@ export function useInlineEdit({
   const [editState, setEditState] = useState<EditState>({
     categoryId: "",
     businessId: null,
+    applyToFuture: true,
   });
   const [isPending, setIsPending] = useState(false);
 
@@ -40,7 +43,7 @@ export function useInlineEdit({
 
   const cancelEdit = useCallback(() => {
     setEditingId(null);
-    setEditState({ categoryId: "", businessId: null });
+    setEditState({ categoryId: "", businessId: null, applyToFuture: true });
   }, []);
 
   const isEditing = useCallback(
@@ -56,6 +59,10 @@ export function useInlineEdit({
     setEditState((prev) => ({ ...prev, businessId }));
   }, []);
 
+  const setApplyToFuture = useCallback((applyToFuture: boolean) => {
+    setEditState((prev) => ({ ...prev, applyToFuture }));
+  }, []);
+
   const saveEdit = useCallback(async () => {
     if (!editingId || !onSave) return;
 
@@ -63,7 +70,7 @@ export function useInlineEdit({
     try {
       await onSave(editingId, editState);
       setEditingId(null);
-      setEditState({ categoryId: "", businessId: null });
+      setEditState({ categoryId: "", businessId: null, applyToFuture: true });
     } finally {
       setIsPending(false);
     }
@@ -77,6 +84,7 @@ export function useInlineEdit({
     isEditing,
     setCategoryId,
     setBusinessId,
+    setApplyToFuture,
     saveEdit,
     isPending,
   };

@@ -245,9 +245,34 @@ export const createRuleFromTransaction = createAuthenticatedAction(
   async (
     userId,
     input: z.infer<typeof CreateRuleFromTransactionSchema>
-  ): Promise<{ success: boolean; ruleId?: string; error?: string }> => {
+  ): Promise<{
+    success: boolean;
+    ruleId?: string;
+    updated?: boolean;
+    error?: string;
+  }> => {
     try {
       const validatedInput = CreateRuleFromTransactionSchema.parse(input);
+
+      const categoryRow = await db
+        .select({
+          id: categories.id,
+          type: categories.type,
+          userId: categories.userId,
+          deletedAt: categories.deletedAt,
+        })
+        .from(categories)
+        .where(eq(categories.id, validatedInput.categoryId))
+        .limit(1);
+
+      const category = categoryRow[0];
+      if (!category || category.deletedAt) {
+        return { success: false, error: "Category not found" };
+      }
+
+      if (category.type === "user" && category.userId !== userId) {
+        return { success: false, error: "Unauthorized category" };
+      }
 
       const existingRules = await db
         .select()
@@ -262,10 +287,27 @@ export const createRuleFromTransaction = createAuthenticatedAction(
         .limit(1);
 
       if (existingRules.length > 0) {
-        return {
-          success: false,
-          error: "A rule for this merchant already exists",
-        };
+        const existing = existingRules[0];
+
+        await db
+          .update(categoryRules)
+          .set({
+            categoryId: validatedInput.categoryId,
+            businessId: validatedInput.businessId || null,
+            matchType: validatedInput.matchType,
+            displayName:
+              validatedInput.displayName?.trim() ||
+              validatedInput.merchantName.trim(),
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(categoryRules.id, existing.id),
+              eq(categoryRules.userId, userId)
+            )
+          );
+
+        return { success: true, ruleId: existing.id, updated: true };
       }
 
       const ruleId = createId();
@@ -284,7 +326,7 @@ export const createRuleFromTransaction = createAuthenticatedAction(
         updatedAt: new Date(),
       });
 
-      return { success: true, ruleId };
+      return { success: true, ruleId, updated: false };
     } catch (error) {
       if (error instanceof z.ZodError) {
         return { success: false, error: error.errors[0].message };

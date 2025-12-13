@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CategoryCombobox } from "@/components/ui/category-combobox";
+import { CategoryAssigner } from "@/components/categorization/category-assigner";
 import { Check, X, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +33,10 @@ interface BulkActionsBarProps {
   selectedCount: number;
   categories: Category[];
   businesses: Business[];
-  onBulkUpdate: (categoryId: string, businessId: string | null) => Promise<void>;
+  onBulkUpdate: (
+    categoryId: string,
+    businessId: string | null
+  ) => Promise<void>;
   onClear: () => void;
   isPending?: boolean;
   className?: string;
@@ -53,10 +56,6 @@ export function BulkActionsBar({
   const [isOpen, setIsOpen] = useState(false);
   const [categoryId, setCategoryId] = useState("");
   const [businessId, setBusinessId] = useState<string | null>(null);
-
-  const filteredCategories = transactionType
-    ? categories.filter((cat) => cat.transactionType === transactionType)
-    : categories;
 
   const handleApply = async () => {
     if (!categoryId) return;
@@ -88,28 +87,34 @@ export function BulkActionsBar({
             <div className="space-y-4">
               <div>
                 <h4 className="font-medium text-sm mb-3">
-                  Edit {selectedCount} Transaction{selectedCount !== 1 ? "s" : ""}
+                  Edit {selectedCount} Transaction
+                  {selectedCount !== 1 ? "s" : ""}
                 </h4>
               </div>
 
               <div className="space-y-2">
                 <label className="text-xs font-medium">Category</label>
-                <CategoryCombobox
+                <CategoryAssigner
                   value={categoryId}
                   onChange={setCategoryId}
                   categories={categories}
                   transactionType={transactionType}
-                  placeholder="Select category..."
                   size="default"
+                  showApplyToFuture={false}
+                  disabled={isPending}
                 />
               </div>
 
               {businesses.length > 0 && (
                 <div className="space-y-2">
-                  <label className="text-xs font-medium">Business (Optional)</label>
+                  <label className="text-xs font-medium">
+                    Business (Optional)
+                  </label>
                   <Select
                     value={businessId || "personal"}
-                    onValueChange={(v) => setBusinessId(v === "personal" ? null : v)}
+                    onValueChange={(v) =>
+                      setBusinessId(v === "personal" ? null : v)
+                    }
                   >
                     <SelectTrigger className="h-9">
                       <SelectValue />
@@ -156,4 +161,3 @@ export function BulkActionsBar({
     </div>
   );
 }
-

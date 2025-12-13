@@ -1,6 +1,7 @@
 "use client";
 
-import { CategoryCombobox, CategoryComboboxDisplay } from "@/components/ui/category-combobox";
+import { CategoryAssigner } from "@/components/categorization/category-assigner";
+import { CategoryComboboxDisplay } from "@/components/ui/category-combobox";
 import { cn } from "@/lib/utils";
 
 interface Category {
@@ -18,6 +19,9 @@ interface EditableCategoryCellProps {
   transactionType?: "income" | "expense";
   className?: string;
   size?: "sm" | "default";
+  merchantName?: string | null;
+  applyToFuture?: boolean;
+  onApplyToFutureChange?: (value: boolean) => void;
 }
 
 export function EditableCategoryCell({
@@ -29,24 +33,31 @@ export function EditableCategoryCell({
   transactionType,
   className,
   size = "default",
+  merchantName,
+  applyToFuture,
+  onApplyToFutureChange,
 }: EditableCategoryCellProps) {
   if (isEditing) {
     return (
-      <CategoryCombobox
+      <CategoryAssigner
         value={value}
         displayValue={displayValue}
         onChange={onChange}
         categories={categories}
         transactionType={transactionType}
-        placeholder="Select category..."
-        className={className}
         size={size}
+        className={className}
+        merchantName={merchantName}
+        applyToFuture={applyToFuture}
+        onApplyToFutureChange={onApplyToFutureChange}
       />
     );
   }
 
   return (
-    <CategoryComboboxDisplay displayValue={displayValue} className={className} />
+    <CategoryComboboxDisplay
+      displayValue={displayValue}
+      className={className}
+    />
   );
 }
-

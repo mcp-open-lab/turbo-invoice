@@ -52,6 +52,10 @@ export async function createLinkToken() {
       country_codes: PLAID_COUNTRY_CODES as unknown as CountryCode[],
       language: "en",
       webhook: webhookUrl,
+      transactions: {
+        // Request max history for initial connection (Plaid supports up to ~730 days)
+        days_requested: 730,
+      },
     });
 
     return {
@@ -245,6 +249,94 @@ export async function exchangePublicToken(
 
     const accessToken = exchangeResponse.data.access_token;
     const itemId = exchangeResponse.data.item_id;
+
+    // If the user re-links the same institution/account, proactively clean up old duplicates.
+    // This prevents duplicate imports (e.g., same card linked twice) and removes the stale Plaid Item.
+    const institutionId = metadata.institution?.institution_id ?? null;
+    const institutionName = metadata.institution?.name ?? null;
+    const incomingAccounts = metadata.accounts || [];
+
+    if (incomingAccounts.length > 0) {
+      const institutionWhere = institutionId
+        ? eq(linkedBankAccounts.institutionId, institutionId)
+        : institutionName
+        ? eq(linkedBankAccounts.institutionName, institutionName)
+        : null;
+
+      if (!institutionWhere) {
+        // Can't safely dedupe without institution identity
+      } else {
+        const masks = incomingAccounts
+          .map((a) => a.mask)
+          .filter((m): m is string => Boolean(m));
+        if (masks.length > 0) {
+          const possibleDuplicates = await db
+            .select({
+              id: linkedBankAccounts.id,
+              plaidItemId: linkedBankAccounts.plaidItemId,
+              plaidAccessToken: linkedBankAccounts.plaidAccessToken,
+              institutionId: linkedBankAccounts.institutionId,
+              institutionName: linkedBankAccounts.institutionName,
+              accountMask: linkedBankAccounts.accountMask,
+              accountName: linkedBankAccounts.accountName,
+              accountType: linkedBankAccounts.accountType,
+              accountSubtype: linkedBankAccounts.accountSubtype,
+            })
+            .from(linkedBankAccounts)
+            .where(
+              and(eq(linkedBankAccounts.userId, userId), institutionWhere)
+            );
+
+          const incomingKeySet = new Set(
+            incomingAccounts.map(
+              (a) =>
+                `${a.name}|${a.mask ?? ""}|${a.type}|${a.subtype ?? ""}|${
+                  institutionId ?? institutionName ?? ""
+                }`
+            )
+          );
+
+          const duplicateItems = new Map<string, string>(); // plaidItemId -> accessToken
+          for (const existing of possibleDuplicates) {
+            if (existing.plaidItemId === itemId) continue;
+            if (!existing.accountMask || !masks.includes(existing.accountMask))
+              continue;
+
+            const key = `${existing.accountName ?? ""}|${
+              existing.accountMask
+            }|${existing.accountType ?? ""}|${existing.accountSubtype ?? ""}|${
+              institutionId ?? institutionName ?? ""
+            }`;
+
+            if (incomingKeySet.has(key)) {
+              duplicateItems.set(
+                existing.plaidItemId,
+                existing.plaidAccessToken
+              );
+            }
+          }
+
+          // Remove old Plaid Items and their linked accounts (best effort).
+          for (const [dupItemId, dupAccessToken] of duplicateItems) {
+            try {
+              await plaidClient.itemRemove({ access_token: dupAccessToken });
+            } catch (e) {
+              // Best effort: the item might already be removed/invalid.
+              console.warn("Failed to remove duplicate Plaid item:", e);
+            }
+
+            await db
+              .delete(linkedBankAccounts)
+              .where(
+                and(
+                  eq(linkedBankAccounts.userId, userId),
+                  eq(linkedBankAccounts.plaidItemId, dupItemId)
+                )
+              );
+          }
+        }
+      }
+    }
 
     // Save each linked account
     const savedAccounts = [];

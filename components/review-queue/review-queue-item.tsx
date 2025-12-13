@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -8,12 +8,12 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { TableCell, TableRow } from "@/components/ui/table";
 import {
-  EditableCategoryCell,
   EditableBusinessCell,
   TransactionAmount,
   RowActions,
 } from "@/components/ui/data-table";
-import { updateTransaction } from "@/lib/transactions/update";
+import { CategoryAssigner } from "@/components/categorization/category-assigner";
+import { useCategoryAssignment } from "@/lib/hooks/use-category-assignment";
 import { Check } from "lucide-react";
 import type { ReviewQueueItem as ReviewQueueItemType } from "@/app/actions/review-queue";
 import type {
@@ -57,11 +57,21 @@ export function ReviewQueueItem({
   onSaved,
 }: ReviewQueueItemProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const [categoryId, setCategoryId] = useState(item.categoryId || "");
-  const [businessId, setBusinessId] = useState<string | null>(
-    item.businessId || null
-  );
+  const {
+    categoryId,
+    setCategoryId,
+    businessId,
+    setBusinessId,
+    applyToFuture,
+    setApplyToFuture,
+    isPending,
+    assignCategory,
+  } = useCategoryAssignment({
+    initialCategoryId: item.categoryId || "",
+    initialBusinessId: item.businessId || null,
+    initialApplyToFuture: true,
+  });
+
   const [localCategoryName, setLocalCategoryName] = useState(
     item.categoryName || null
   );
@@ -75,7 +85,14 @@ export function ReviewQueueItem({
     setBusinessId(item.businessId || null);
     setLocalCategoryName(item.categoryName || null);
     setLocalBusinessName(item.businessName || null);
-  }, [item.categoryId, item.businessId, item.categoryName, item.businessName]);
+  }, [
+    item.businessId,
+    item.categoryId,
+    item.categoryName,
+    item.businessName,
+    setBusinessId,
+    setCategoryId,
+  ]);
 
   const amount = parseFloat(item.amount);
   const isIncome = item.type === "bank_transaction" ? amount >= 0 : false;
@@ -86,38 +103,31 @@ export function ReviewQueueItem({
   const displayCategoryName = selectedCategory?.name || localCategoryName;
 
   const handleSave = async () => {
-    if (!categoryId) {
-      toast.error("Please select a category");
+    const effectiveCategoryId = categoryId;
+    if (!effectiveCategoryId) {
+      toast.error("Please select a category.");
       return;
     }
 
-    startTransition(async () => {
-      const result = await updateTransaction({
-        id: item.id,
-        type: item.type === "receipt" ? "receipt" : "bank_transaction",
-        categoryId,
-        businessId,
-        merchantName: item.merchantName || undefined,
-      });
-
-      if (result.success) {
-        // Update local state immediately for instant UI feedback
-        const selectedCategory = categories.find(
-          (cat) => cat.id === categoryId
-        );
-        const selectedBusiness = businesses.find(
-          (biz) => biz.id === businessId
-        );
-        setLocalCategoryName(selectedCategory?.name || null);
-        setLocalBusinessName(selectedBusiness?.name || null);
-
-        toast.success("Updated");
-        setIsEditing(false);
-        onSaved();
-      } else {
-        toast.error(result.error || "Failed to update");
-      }
+    const result = await assignCategory({
+      id: item.id,
+      type: item.type === "receipt" ? "receipt" : "bank_transaction",
+      merchantName: item.merchantName,
     });
+
+    if (!result.success) return;
+
+    // Update local state immediately for instant UI feedback
+    const selectedCategory = categories.find(
+      (cat) => cat.id === effectiveCategoryId
+    );
+    const selectedBusiness = businesses.find((biz) => biz.id === businessId);
+    setLocalCategoryName(selectedCategory?.name || null);
+    setLocalBusinessName(selectedBusiness?.name || null);
+
+    toast.success("Updated");
+    setIsEditing(false);
+    onSaved();
   };
 
   const handleQuickApprove = () => {
@@ -170,13 +180,15 @@ export function ReviewQueueItem({
 
       <TableCell className="py-2 min-w-[180px]">
         {isEditing ? (
-          <EditableCategoryCell
-            isEditing={true}
+          <CategoryAssigner
             value={categoryId}
             onChange={setCategoryId}
             categories={categories}
             transactionType={transactionType}
             size="sm"
+            merchantName={item.merchantName}
+            applyToFuture={applyToFuture}
+            onApplyToFutureChange={setApplyToFuture}
           />
         ) : (
           <span
@@ -228,6 +240,7 @@ export function ReviewQueueItem({
               // Reset to original values on cancel
               setCategoryId(item.categoryId || "");
               setBusinessId(item.businessId || null);
+              setApplyToFuture(true);
             }}
             isPending={isPending}
             canSave={!!categoryId}
