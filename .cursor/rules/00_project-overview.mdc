@@ -1,0 +1,35 @@
+---
+alwaysApply: true
+---
+
+# Turbo Invoice: Global Rules
+
+## Product + goal
+
+- Fast receipt capture → AI extraction → CSV export.
+
+## Stack
+
+- Next.js App Router (RSC-first)
+- Server Actions for mutations
+- Drizzle ORM + Postgres
+- Clerk auth
+- UploadThing
+- Inngest (jobs/cron)
+- Gemini 2.0 Flash / OpenAI's GPT-4o-mini for extraction
+
+## Hard project constraints
+
+- Do not add new `app/api/*` routes except webhooks + required handlers (Clerk/UploadThing/Inngest/Stripe/Plaid).
+- Do not use `useEffect` for data fetching.
+- Use absolute imports (`@/...`).
+- No `any`. Use precise TypeScript types; use Drizzle inferred types.
+- Server Actions return `{ success: boolean, error?: string }` (and optional data).
+- Every DB query must be scoped to the authenticated user (`where(eq(table.userId, userId))`).
+
+## Repo conventions
+
+- Server Actions live under `lib/modules/<domain>/actions.ts`.
+- Keep module/domain logic in `lib/modules/*` and reusable helpers in `lib/*`.
+- Prefer minimal comments; only add comments for server actions/routes or non-obvious logic.
+- Do not create markdown docs unless explicitly asked.

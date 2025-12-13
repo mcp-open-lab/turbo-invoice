@@ -1,0 +1,23 @@
+---
+description: Testing conventions (Vitest, module-aligned tests, mocking patterns)
+globs:
+  - tests/**/*.ts
+  - tests/**/*.tsx
+  - **/*.test.ts
+  - **/*.test.tsx
+alwaysApply: false
+---
+
+# Testing Rules
+
+## Structure
+
+- Module-owned tests live in `tests/modules/<domain>/*`.
+- Cross-cutting tests live in `tests/lib/*`.
+- Shared helpers live in `tests/utils/*`.
+
+## Conventions
+
+- Prefer behavior-oriented tests over implementation details.
+- Mock DB by mocking `@/lib/db`.
+- For auth-dependent code, mock Clerk (`@clerk/nextjs/server`).

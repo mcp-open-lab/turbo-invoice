@@ -1,0 +1,34 @@
+---
+description: Next.js App Router conventions (RSC-first, routing, data fetching, API routes)
+globs:
+  - app/**/*.ts
+  - app/**/*.tsx
+  - components/**/*.ts
+  - components/**/*.tsx
+alwaysApply: false
+---
+
+# Next.js App Router Rules
+
+## Rendering model
+
+- Default to Server Components in `app/`.
+- Add `"use client"` only for interactive UI (hooks, event handlers, local state).
+
+## Data fetching
+
+- Fetch/read data in Server Components (or server helpers they call).
+- No client-side data fetching via `useEffect`.
+
+## Mutations
+
+- Prefer Server Actions (module actions) over new API routes.
+
+## Routing
+
+- Authenticated routes live under `app/(app)/app/*` (URLs remain `/app/...`).
+- Use `next/navigation` (`redirect`, `notFound`, `useRouter`, `usePathname`) not `next/router`.
+
+## API routes
+
+- Only create `app/api/*/route.ts` for webhooks/required handlers (e.g. Inngest/UploadThing/Stripe/Plaid).

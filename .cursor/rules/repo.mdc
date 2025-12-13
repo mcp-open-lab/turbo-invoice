@@ -1,73 +1,22 @@
 ---
+description: Turbo Invoice rule index (legacy entrypoint + pointers to scoped rules)
 alwaysApply: true
 ---
 
-# Project Context
+# Turbo Invoice (Cursor Rules Index)
 
-- **Goal:** Fast, simple receipt capture → AI extraction → CSV export.
-- **Stack:** Next.js 16 (App Router), Drizzle ORM, Clerk Auth, UploadThing, Google Gemini 2.0 Flash.
+This repo uses scoped Cursor rules under `.cursor/rules/*.mdc`.
 
-# Tech Stack & Best Practices
+## Key rules (high level)
+- Prefer **Server Components** for reads; no `useEffect` data fetching.
+- Prefer **Server Actions** for mutations (module-aligned in `lib/modules/*/actions.ts`).
+- Avoid new `app/api/*` routes except required handlers (webhooks, UploadThing, Inngest).
+- Use **Drizzle inferred types** and always **scope DB queries by userId**.
 
-## Next.js 16 (App Router)
+## Related scoped rules
+- `00_project-overview.mdc`: global constraints and conventions
+- `10_nextjs-app-router.mdc`: App Router + routing conventions
+- `20_server-actions-and-modules.mdc`: module/actions patterns + feature gating
+- `30_drizzle-auth-safety.mdc`: DB/auth scoping + type rules
+- `40_testing.mdc`: test structure + mocking conventions
 
-- **Data Fetching:** Server Components (RSC) with `await` DB calls.
-- **Mutations:** Server Actions (`'use server'`) for form submissions and data updates.
-- **State:** `useActionState` for server action feedback. `zustand` for global/persistent state. `useState` for local UI state.
-- **Routing:** `next/navigation` (`redirect`, `useRouter`, `usePathname`).
-- **Images:** `next/image` with `width`/`height` or `fill`.
-- **Forbidden:** No `useEffect` for data fetching. No `/app/api` routes except webhooks (Clerk/UploadThing).
-
-## Drizzle ORM (Database)
-
-- **Schema:** Single source of truth is `@/lib/db/schema.ts`.
-- **Import:** Always import `db` from `@/lib/db`.
-- **Query Style:** SQL-like syntax: `await db.select().from(receipts)...`.
-- **Mutations:** `await db.insert(receipts).values({...}).returning()`.
-- **Type Inference:** Always use Drizzle's inferred types (`$inferSelect`, `$inferInsert`). Never manually define types that duplicate schema fields. Use `typeof tableName.$inferSelect` for SELECT queries and `typeof tableName.$inferInsert` for INSERT queries. Only define computed/derived types (e.g., UI-specific transformations).
-- **Validation:** Zod schemas matching Drizzle schema constraints.
-- **Schema Changes:** Run `npm run db:push` after modifying `schema.ts`.
-- **Database Studio:** `npm run db:studio` for visual inspection.
-
-## AI Integration (Gemini)
-
-- **Model:** gemini-2.0-flash-exp.
-- **Pattern:** Direct-to-LLM with image URL.
-- **Prompting:** Always request JSON output. Prevent Markdown wrapping ("Return raw JSON only, no code blocks").
-- **Privacy:** Never log full base64 strings.
-
-## UI & Styling (shadcn/ui + Tailwind)
-
-- **Components:** `npx shadcn@latest add [name]`.
-- **Icons:** `lucide-react`.
-- **Responsiveness:** Mobile-first. `hidden md:block` for desktop-only.
-- **Feedback:** `sonner` for toasts (`toast.success`, `toast.error`).
-- **Forms:** `react-hook-form` + `zod` + `shadcn/ui` Form components.
-
-## Authentication (Clerk)
-
-- **Server Side:** `auth()` from `@clerk/nextjs/server` to protect actions.
-- **Client Side:** `useUser()` for UI logic.
-- **Security:** Every DB query MUST filter by `.where(eq(table.userId, userId))`.
-
-# File Structure
-
-- `app/actions/*`: Server Actions (mutations).
-- `components/ui/*`: Primitive shadcn components.
-- `components/[feature]/*`: Feature-specific components.
-- `lib/db/*`: Database configuration and schema.
-- `lib/ai/*`: AI utilities.
-- `lib/import/*`: Import/batch utilities and types.
-
-# Coding Behavior
-
-- **Concise:** Write code immediately. No explanations of basic concepts.
-- **Type-Safe:** No `any`. Use precise TypeScript types.
-- **Imports:** Absolute imports (`@/...`).
-- **Error Handling:** Server actions return `{ success: boolean, error?: string }`.
-
-# Hard Rules
-
-- **Docs:** Never create markdown docs unless asked.
-- **Code Comments:** Only at top of functions and to explain routes/server actions.
-- **Research:** Assume 2025 for web searches/research.

@@ -1,0 +1,27 @@
+---
+description: Module-based actions pattern (lib/modules/*), safe server actions, feature gating
+globs:
+  - lib/modules/**/*.ts
+  - lib/hooks/**/*.ts
+  - lib/hooks/**/*.tsx
+alwaysApply: false
+---
+
+# Server Actions + Modules Rules
+
+## Where actions live
+
+- Actions belong in `lib/modules/<domain>/actions.ts` (and related module files).
+- UI should import actions from `@/lib/modules/<domain>/actions`.
+
+## Action contract
+
+- Server Actions must enforce auth (`auth()`).
+- Validate inputs with Zod schemas aligned to DB constraints.
+- Return `{ success: boolean, error?: string }` (optionally include `data`).
+- Do not leak sensitive DB rows to the client; return only what UI needs.
+
+## Feature gating
+
+- Coarse route/auth gates: `proxy.ts`.
+- Fine per-module gates: module `layout.tsx` calling `hasModuleAccess()` from `lib/modules/feature-gate.ts`.

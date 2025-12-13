@@ -1,0 +1,27 @@
+---
+description: Drizzle + Clerk safety rules (user scoping, inferred types, DB access boundaries)
+globs:
+  - lib/db/**/*.ts
+  - lib/modules/**/*.ts
+  - app/**/*.ts
+  - app/**/*.tsx
+alwaysApply: false
+---
+
+# Drizzle + Auth Safety Rules
+
+## DB access
+
+- Import `db` from `@/lib/db`.
+- Only access DB on the server (Server Components, Server Actions, route handlers).
+
+## Multi-tenant safety
+
+- Every query must be scoped to the authenticated user:
+  - Always `.where(eq(table.userId, userId))` (or equivalent join constraint).
+
+## Types
+
+- Use Drizzle inferred types:
+  - `typeof table.$inferSelect`, `typeof table.$inferInsert`
+- Do not manually duplicate schema types.

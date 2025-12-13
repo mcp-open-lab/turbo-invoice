@@ -2,6 +2,14 @@
 
 AI-powered receipt scanning and management. Fast, simple receipt capture → AI extraction → CSV export.
 
+## Documentation
+
+- `ARCHITECTURE.md` - App structure, routing, server actions, and request flows
+- `MODULES.md` - Module architecture and where domain code/actions live
+- `DATABASE.md` - Drizzle schema + local DB workflow
+- `tests/README.md` - Testing setup (Vitest + Playwright)
+- `lib/ai/README.md` - AI module architecture
+
 ## Quick Start
 
 ```bash
