@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { PublicHeaderActions } from "@/components/public/public-header-actions";
 
 export default function PublicLayout({
   children,
@@ -18,15 +19,7 @@ export default function PublicLayout({
           </Link>
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/sign-in">Log in</Link>
-            </Button>
-            <Button asChild size="sm">
-              <Link href="/sign-up">Get Started</Link>
-            </Button>
-            <Button asChild size="sm" variant="outline">
-              <Link href="/app">Dashboard</Link>
-            </Button>
+            <PublicHeaderActions />
           </div>
         </div>
       </header>
