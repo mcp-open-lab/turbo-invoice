@@ -7,6 +7,7 @@ import {
   index,
   jsonb,
   boolean,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { createId } from "@paralleldrive/cuid2";
 
@@ -638,5 +639,100 @@ export const linkedBankAccounts = pgTable(
   (table) => [
     index("linked_bank_accounts_user_id_idx").on(table.userId),
     index("linked_bank_accounts_plaid_item_id_idx").on(table.plaidItemId),
+  ]
+);
+
+// ============================================
+// MODULES / ENTITLEMENTS / USAGE (Module-based pricing groundwork)
+// ============================================
+
+export const modules = pgTable(
+  "modules",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+    description: text("description"),
+    stripePriceId: text("stripe_price_id"),
+    monthlyPrice: integer("monthly_price"), // cents (display only)
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("modules_slug_unique").on(table.slug),
+    index("modules_is_active_idx").on(table.isActive),
+  ]
+);
+
+export const accountModules = pgTable(
+  "account_modules",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    userId: text("user_id").notNull(),
+    moduleId: text("module_id")
+      .notNull()
+      .references(() => modules.id, { onDelete: "cascade" }),
+    enabled: boolean("enabled").notNull().default(true),
+    source: text("source").notNull(), // 'free' | 'paid' | 'trial' | 'admin_grant'
+    effectiveUntil: timestamp("effective_until"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("account_modules_user_module_unique").on(
+      table.userId,
+      table.moduleId
+    ),
+    index("account_modules_user_id_idx").on(table.userId),
+    index("account_modules_module_id_idx").on(table.moduleId),
+    index("account_modules_user_module_enabled_idx").on(
+      table.userId,
+      table.moduleId,
+      table.enabled
+    ),
+  ]
+);
+
+export const usageCounters = pgTable(
+  "usage_counters",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    userId: text("user_id").notNull(),
+    metric: text("metric").notNull(), // 'transactions' | 'receipts' | 'ai_calls'
+    period: text("period").notNull(), // YYYY-MM
+    count: integer("count").notNull().default(0),
+    limit: integer("limit").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("usage_counters_user_metric_period_unique").on(
+      table.userId,
+      table.metric,
+      table.period
+    ),
+    index("usage_counters_user_period_idx").on(table.userId, table.period),
+  ]
+);
+
+export const stripeCustomers = pgTable(
+  "stripe_customers",
+  {
+    userId: text("user_id").primaryKey(),
+    stripeCustomerId: text("stripe_customer_id").notNull(),
+    stripeSubscriptionId: text("stripe_subscription_id"),
+    subscriptionStatus: text("subscription_status"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("stripe_customers_customer_id_idx").on(table.stripeCustomerId),
   ]
 );

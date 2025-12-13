@@ -14,6 +14,7 @@ import {
 import { CountryCode, Products } from "plaid";
 import { syncPlaidTransactions } from "@/lib/plaid/sync";
 import { inngest } from "@/lib/inngest/client";
+import { hasModuleAccess } from "@/lib/modules/feature-gate";
 
 /**
  * Get the webhook URL for Plaid
@@ -29,6 +30,17 @@ function getWebhookUrl(): string | undefined {
   return `${baseUrl}/api/plaid/webhook`;
 }
 
+async function ensurePlaidEnabled(userId: string) {
+  const allowed = await hasModuleAccess(userId, "plaid");
+  if (!allowed) {
+    return {
+      success: false as const,
+      error: "Plaid Connections is not enabled for your account",
+    };
+  }
+  return null;
+}
+
 /**
  * Create a Plaid Link token for initializing the Link modal
  */
@@ -37,6 +49,9 @@ export async function createLinkToken() {
   if (!userId) {
     return { success: false, error: "Unauthorized" };
   }
+
+  const gate = await ensurePlaidEnabled(userId);
+  if (gate) return gate;
 
   if (!isPlaidConfigured()) {
     return { success: false, error: "Plaid is not configured" };
@@ -81,6 +96,9 @@ export async function createUpdateLinkToken(accountId: string) {
   if (!userId) {
     return { success: false, error: "Unauthorized" };
   }
+
+  const gate = await ensurePlaidEnabled(userId);
+  if (gate) return gate;
 
   if (!isPlaidConfigured()) {
     return { success: false, error: "Plaid is not configured" };
@@ -141,6 +159,9 @@ export async function updateItemWebhook(accountId: string) {
     return { success: false, error: "Unauthorized" };
   }
 
+  const gate = await ensurePlaidEnabled(userId);
+  if (gate) return gate;
+
   if (!isPlaidConfigured()) {
     return { success: false, error: "Plaid is not configured" };
   }
@@ -191,6 +212,9 @@ export async function handleReconnectSuccess(accountId: string) {
     return { success: false, error: "Unauthorized" };
   }
 
+  const gate = await ensurePlaidEnabled(userId);
+  if (gate) return gate;
+
   try {
     await db
       .update(linkedBankAccounts)
@@ -236,6 +260,9 @@ export async function exchangePublicToken(
   if (!userId) {
     return { success: false, error: "Unauthorized" };
   }
+
+  const gate = await ensurePlaidEnabled(userId);
+  if (gate) return gate;
 
   if (!isPlaidConfigured()) {
     return { success: false, error: "Plaid is not configured" };
@@ -392,6 +419,9 @@ export async function getLinkedAccounts() {
     return { success: false, error: "Unauthorized", accounts: [] };
   }
 
+  const gate = await ensurePlaidEnabled(userId);
+  if (gate) return { ...gate, accounts: [] };
+
   try {
     const accounts = await db
       .select({
@@ -429,6 +459,9 @@ export async function unlinkAccount(accountId: string) {
   if (!userId) {
     return { success: false, error: "Unauthorized" };
   }
+
+  const gate = await ensurePlaidEnabled(userId);
+  if (gate) return gate;
 
   try {
     // Get the account to verify ownership and get access token
@@ -495,6 +528,9 @@ export async function syncAccount(accountId: string) {
     return { success: false, error: "Unauthorized" };
   }
 
+  const gate = await ensurePlaidEnabled(userId);
+  if (gate) return gate;
+
   try {
     // Get the account
     const [account] = await db
@@ -549,6 +585,9 @@ export async function getAccountBalances(): Promise<{
   if (!userId) {
     return { success: false, error: "Unauthorized" };
   }
+
+  const gate = await ensurePlaidEnabled(userId);
+  if (gate) return gate;
 
   if (!isPlaidConfigured()) {
     return { success: false, error: "Plaid is not configured" };

@@ -16,6 +16,11 @@ import { getUserSettings, getUserSettingsByUserId } from "@/app/actions/user-set
 import { logError, logInfo } from "@/lib/observability/log";
 import { DuplicateFileError } from "@/lib/errors";
 import { assertUserScope } from "@/lib/db/helpers";
+import {
+  checkUsageLimit,
+  hasModuleAccess,
+  incrementUsage,
+} from "@/lib/modules/feature-gate";
 
 export type ProcessReceiptResult = {
   documentId: string;
@@ -46,6 +51,19 @@ export async function processReceipt({
 }): Promise<ProcessReceiptResult> {
   const authResult = userId ? { userId } : await auth();
   const finalUserId = assertUserScope(userId ?? authResult?.userId ?? undefined);
+
+  const hasPaidAiImport = await hasModuleAccess(finalUserId, "ai_import");
+  if (!hasPaidAiImport) {
+    const usage = await checkUsageLimit({
+      userId: finalUserId,
+      metric: "receipts",
+    });
+    if (!usage.allowed) {
+      throw new Error(
+        `Free tier limit reached: ${usage.limit} receipts/month. Upgrade to scan more receipts.`
+      );
+    }
+  }
 
   const settings = userId
     ? await getUserSettingsByUserId(finalUserId)
@@ -203,6 +221,10 @@ export async function processReceipt({
       currency,
       status: "needs_review",
     });
+
+    if (!hasPaidAiImport) {
+      await incrementUsage({ userId: finalUserId, metric: "receipts" });
+    }
 
     if (batchId && batchItem) {
       const totalDuration = Date.now() - startTime;

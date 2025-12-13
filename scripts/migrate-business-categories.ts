@@ -18,10 +18,8 @@
 
 import { db } from "../lib/db";
 import {
-  categories,
   businesses,
   receipts,
-  bankStatementTransactions,
 } from "../lib/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";

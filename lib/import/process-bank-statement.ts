@@ -13,6 +13,7 @@ import { eq, and } from "drizzle-orm";
 import { importSpreadsheet, isSpreadsheetFile } from "./import-orchestrator";
 import { devLogger } from "@/lib/dev-logger";
 import { createId } from "@paralleldrive/cuid2";
+import { checkUsageLimit, hasModuleAccess, incrementUsage } from "@/lib/modules/feature-gate";
 import { BankAccountProcessor } from "./processors/bank-account-processor";
 import { CreditCardProcessor } from "./processors/credit-card-processor";
 import type { BaseStatementProcessor } from "./processors/base-statement-processor";
@@ -253,6 +254,20 @@ export async function processBankStatement(
     });
     }
 
+    const hasPaidAiImport = await hasModuleAccess(userId, "ai_import");
+    if (!hasPaidAiImport) {
+      const usage = await checkUsageLimit({
+        userId,
+        metric: "transactions",
+        incrementBy: transactions.length,
+      });
+      if (!usage.allowed) {
+        throw new Error(
+          `Free tier limit reached: ${usage.limit} transactions/month. Upgrade to import more transactions.`
+        );
+      }
+    }
+
     // Create bank statement record
     const bankStatementId = createId();
     const currency = detectedCurrency || defaultCurrency || "USD";
@@ -300,6 +315,14 @@ export async function processBankStatement(
     }));
 
     await db.insert(bankStatementTransactions).values(transactionRecords);
+
+    if (!hasPaidAiImport) {
+      await incrementUsage({
+        userId,
+        metric: "transactions",
+        incrementBy: transactionRecords.length,
+      });
+    }
 
     // Update document status
     await db
