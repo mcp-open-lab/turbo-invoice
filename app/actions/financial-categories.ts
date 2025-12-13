@@ -21,9 +21,45 @@ import {
   RULE_FIELDS,
 } from "@/lib/constants";
 
+const UNCATEGORIZED_SYSTEM_NAME = "Uncategorized";
+
+async function ensureUncategorizedSystemCategory() {
+  const existing = await db
+    .select()
+    .from(categories)
+    .where(
+      and(
+        eq(categories.type, "system"),
+        sql`LOWER(${categories.name}) = LOWER(${UNCATEGORIZED_SYSTEM_NAME})`,
+        sql`${categories.deletedAt} IS NULL`
+      )
+    )
+    .limit(1);
+
+  if (existing[0]) return existing[0];
+
+  const [created] = await db
+    .insert(categories)
+    .values({
+      id: createId(),
+      name: UNCATEGORIZED_SYSTEM_NAME,
+      type: "system",
+      userId: null,
+      transactionType: "expense",
+      usageScope: "both",
+      description: "System: Uncategorized",
+    })
+    .returning();
+
+  return created;
+}
+
 export const getUserCategories = createAuthenticatedAction(
   "getUserCategories",
   async (userId) => {
+    // Ensure baseline system category exists for safe defaults
+    await ensureUncategorizedSystemCategory();
+
     // Only return Plaid system categories (those with "Plaid:" in description) and user categories
     return db
       .select()
@@ -33,7 +69,10 @@ export const getUserCategories = createAuthenticatedAction(
           // Plaid system categories
           and(
             eq(categories.type, "system"),
-            sql`${categories.description} LIKE 'Plaid:%'`,
+            or(
+              sql`${categories.description} LIKE 'Plaid:%'`,
+              sql`LOWER(${categories.name}) = LOWER(${UNCATEGORIZED_SYSTEM_NAME})`
+            ),
             sql`${categories.deletedAt} IS NULL`
           ),
           // User-created categories
@@ -105,6 +144,8 @@ export const deleteUserCategory = createAuthenticatedAction(
   async (userId, data: z.infer<typeof DeleteCategorySchema>) => {
     const validated = DeleteCategorySchema.parse(data);
 
+    const uncategorized = await ensureUncategorizedSystemCategory();
+
     const category = await db
       .select()
       .from(categories)
@@ -127,7 +168,12 @@ export const deleteUserCategory = createAuthenticatedAction(
     const [receiptCountRow] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(receipts)
-      .where(and(eq(receipts.userId, userId), eq(receipts.categoryId, validated.categoryId)));
+      .where(
+        and(
+          eq(receipts.userId, userId),
+          eq(receipts.categoryId, validated.categoryId)
+        )
+      );
 
     // Bank tx ownership is enforced via documents elsewhere; for impact we only count by categoryId
     const [bankTxCountRow] = await db
@@ -152,20 +198,39 @@ export const deleteUserCategory = createAuthenticatedAction(
       // Detach receipts and flag for review
       await tx
         .update(receipts)
-        .set({ categoryId: null, category: null, status: "needs_review", updatedAt: now })
-        .where(and(eq(receipts.userId, userId), eq(receipts.categoryId, validated.categoryId)));
+        .set({
+          categoryId: uncategorized.id,
+          category: uncategorized.name,
+          status: "needs_review",
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(receipts.userId, userId),
+            eq(receipts.categoryId, validated.categoryId)
+          )
+        );
 
       // Detach bank transactions (ownership enforced by join via documents isn't available here)
       // We'll detach by categoryId; downstream UI is already scoped by userId via documents join.
       await tx
         .update(bankStatementTransactions)
-        .set({ categoryId: null, category: null, updatedAt: now })
+        .set({
+          categoryId: uncategorized.id,
+          category: uncategorized.name,
+          updatedAt: now,
+        })
         .where(eq(bankStatementTransactions.categoryId, validated.categoryId));
 
       await tx
         .update(categories)
         .set({ deletedAt: now, updatedAt: now })
-        .where(and(eq(categories.id, validated.categoryId), eq(categories.userId, userId)));
+        .where(
+          and(
+            eq(categories.id, validated.categoryId),
+            eq(categories.userId, userId)
+          )
+        );
     });
 
     revalidatePath("/app/settings/categories");

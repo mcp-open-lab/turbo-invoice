@@ -60,7 +60,7 @@ export const getReviewQueueItems = createAuthenticatedAction(
     LIMIT 100
   `;
 
-  // Query bank transactions that need review (only truly uncategorized)
+  // Query bank transactions that need review (uncategorized or default placeholder)
   const bankTxQuery = sql`
     SELECT 
       ${bankStatementTransactions.id} as id,
@@ -79,7 +79,10 @@ export const getReviewQueueItems = createAuthenticatedAction(
     INNER JOIN ${bankStatements} ON ${bankStatementTransactions.bankStatementId} = ${bankStatements.id}
     INNER JOIN ${documents} ON ${bankStatements.documentId} = ${documents.id}
     WHERE ${documents.userId} = ${userId}
-      AND ${bankStatementTransactions.categoryId} IS NULL
+      AND (
+        ${bankStatementTransactions.categoryId} IS NULL
+        OR ${bankStatementTransactions.category} = 'Uncategorized'
+      )
     ORDER BY ${bankStatementTransactions.transactionDate} DESC NULLS LAST
     LIMIT 100
   `;
