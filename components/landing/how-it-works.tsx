@@ -1,22 +1,24 @@
 import { FadeIn } from "@/components/motion/fade-in";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, Download, Sparkles, Upload } from "lucide-react";
+import { ArrowRight, Sparkles, Upload, Wallet } from "lucide-react";
 
 const steps = [
   {
-    title: "Drop receipts",
-    description: "Upload receipts and statements in seconds.",
+    title: "Import anything",
+    description:
+      "Receipts, bank statements, and CSVs—Zenny maps and normalizes it.",
     icon: Upload,
   },
   {
-    title: "Zenny categorizes",
-    description: "AI + smart rules label spending automatically.",
+    title: "Zenny builds your books",
+    description:
+      "Auto-categorize transactions and learn rules from your approvals.",
     icon: Sparkles,
   },
   {
-    title: "Export tax-ready",
-    description: "Clean CSV/Excel for your accountant and tools.",
-    icon: Download,
+    title: "Budgets stay on track",
+    description: "Track monthly budgets and see spend vs plan instantly.",
+    icon: Wallet,
   },
 ];
 
@@ -26,10 +28,11 @@ export function HowItWorks() {
       <div className="container px-4 md:px-6 mx-auto max-w-7xl">
         <FadeIn className="text-center space-y-3 mb-10">
           <h2 className="text-3xl font-bold tracking-tight sm:text-5xl">
-            How Zenny works
+            How the agent works
           </h2>
           <p className="text-muted-foreground md:text-xl max-w-3xl mx-auto">
-            A simple loop that gets better every time you use it.
+            Import → organize → stay on budget. Zenny does the busywork and gets
+            smarter as you approve.
           </p>
         </FadeIn>
 
@@ -62,7 +65,8 @@ export function HowItWorks() {
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-2">
-                          Done <span className="text-primary">tax-ready</span>
+                          Done{" "}
+                          <span className="text-primary">budget-ready</span>
                         </span>
                       )}
                     </div>
@@ -76,5 +80,3 @@ export function HowItWorks() {
     </section>
   );
 }
-
-

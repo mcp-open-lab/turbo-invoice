@@ -23,9 +23,8 @@ export function FinalCta() {
                   Ready to hand it to Zenny?
                 </h2>
                 <p className="text-muted-foreground md:text-lg max-w-2xl">
-                  Join the first 10,000 users and get Pro free. Start with a
-                  clean workflow today—then unlock the full advisor as it rolls
-                  out.
+                  First 10,000 users get Zenny AI free. Start with a clean
+                  workflow today and let the agent handle the busywork.
                 </p>
                 <div className="text-sm text-muted-foreground">
                   <span className="font-medium">Join 10,000+</span> freelancers

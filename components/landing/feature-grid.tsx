@@ -3,42 +3,61 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   ArrowUpToLine,
   Brain,
-  Database,
-  History,
+  FileText,
   ListTodo,
-  ShieldCheck,
+  Sparkles,
+  Wallet,
 } from "lucide-react";
 
-const features = [
+type Feature = {
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  status: "live" | "comingSoon";
+};
+
+const features: Feature[] = [
   {
-    title: "Instant capture",
-    description: "Snap receipts or upload statements. Zenny extracts the details.",
-    icon: Database,
+    title: "AI import tool",
+    description:
+      "Zenny maps messy statements into clean columns and structured transactions.",
+    icon: Sparkles,
+    status: "live",
   },
   {
     title: "Smart rules",
-    description: "Teach it once. Zenny applies your preferences automatically.",
+    description:
+      "Approve once and Zenny remembers. Rules power consistent categorization.",
     icon: Brain,
+    status: "live",
   },
   {
     title: "Review queue",
-    description: "Clear edge cases fast with bulk approvals and edits.",
+    description:
+      "Zenny flags low-confidence items so you can approve the rest in seconds.",
     icon: ListTodo,
+    status: "live",
   },
   {
-    title: "Merchant view",
-    description: "Audit spend by merchant and apply consistent changes in bulk.",
-    icon: History,
+    title: "Budget tracking",
+    description:
+      "Set monthly targets and see spend vs plan with category-level clarity.",
+    icon: Wallet,
+    status: "live",
   },
   {
     title: "Tax-ready exports",
-    description: "Export clean data to CSV/Excel for your accountant and tools.",
+    description:
+      "Export clean CSV/Excel summaries that your accountant actually wants.",
     icon: ArrowUpToLine,
+    status: "live",
   },
   {
-    title: "Confident & secure",
-    description: "Stay organized with a workflow designed for accuracy and clarity.",
-    icon: ShieldCheck,
+    title: "Invoicing",
+    description:
+      "Send invoices, track payments, and reconcile deposits automatically.",
+    icon: FileText,
+    status: "comingSoon",
   },
 ];
 
@@ -48,11 +67,11 @@ export function FeatureGrid() {
       <div className="container px-4 md:px-6 mx-auto max-w-7xl">
         <FadeIn className="text-center space-y-3 mb-12">
           <h2 className="text-3xl font-bold tracking-tight sm:text-5xl">
-            What Zenny does
+            Zenny is your personal bookkeeping agent
           </h2>
           <p className="text-muted-foreground md:text-xl max-w-3xl mx-auto">
-            A calm, repeatable system that keeps your books clean and your brain
-            quiet.
+            Import, categorize, budget, and export—Zenny runs the workflow and
+            pulls you in only when needed.
           </p>
         </FadeIn>
 
@@ -72,7 +91,7 @@ export function FeatureGrid() {
                       </div>
                       <div className="text-xs text-muted-foreground">
                         <span className="rounded-full border px-2 py-1">
-                          Live
+                          {f.status === "live" ? "Live" : "Coming soon"}
                         </span>
                       </div>
                     </div>
@@ -94,15 +113,15 @@ export function FeatureGrid() {
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div className="space-y-1">
                 <div className="text-sm font-medium text-primary">
-                  Advisor upgrades rolling out
+                  Advisor upgrades rolling out next
                 </div>
                 <div className="text-2xl font-bold tracking-tight">
                   Zenny becomes proactive
                 </div>
                 <div className="text-sm text-muted-foreground max-w-2xl">
-                  Budget coaching, planning, invoicing, and tax optimization
-                  suggestions—so the agent doesn&apos;t just organize your past,
-                  it helps you steer your future.
+                  Budget coaching, planning, and tax optimization suggestions—so
+                  the agent doesn&apos;t just organize your past, it helps you
+                  steer your future.
                 </div>
               </div>
               <div className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm text-muted-foreground">
