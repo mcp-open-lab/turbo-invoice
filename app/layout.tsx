@@ -8,18 +8,40 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Turbo Invoice - Accounting Made Easy",
-  description: "AI-powered receipt scanning and management",
+  metadataBase: new URL("https://zennybooks.com"),
+  title: {
+    default: "Zenny - AI Bookkeeper for Freelancers",
+    template: "%s | Zenny",
+  },
+  description:
+    "Bookkeeping on autopilot: AI receipt capture, smart categorization, review queue, and tax-ready exports for freelancers and small businesses.",
   manifest: "/manifest.json",
+  alternates: {
+    canonical: "https://zennybooks.com",
+  },
+  openGraph: {
+    title: "Zenny - Bookkeeping on Autopilot",
+    description:
+      "AI receipt capture, smart categorization, review queue, and tax-ready exports — built for freelancers and small businesses.",
+    url: "https://zennybooks.com",
+    siteName: "Zenny",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Zenny - Bookkeeping on Autopilot",
+    description:
+      "AI receipt capture, smart categorization, review queue, and tax-ready exports — built for freelancers and small businesses.",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Turbo Invoice",
+    title: "Zenny",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#000000",
+  themeColor: "#020617",
 };
 
 export default function RootLayout({

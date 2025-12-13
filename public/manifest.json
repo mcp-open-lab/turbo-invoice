@@ -1,11 +1,11 @@
 {
-  "name": "Turbo Invoice",
-  "short_name": "Turbo Invoice",
-  "description": "AI-powered receipt scanning and management",
+  "name": "Zenny",
+  "short_name": "Zenny",
+  "description": "Bookkeeping on autopilot: AI receipt capture, smart categorization, and tax-ready exports.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "theme_color": "#020617",
   "orientation": "portrait-primary",
   "icons": [
     {

@@ -3,37 +3,62 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const currentModules = [
+const nowCapabilities = [
   {
-    title: "Review Queue",
-    description: "Fix low-confidence items fast with bulk approval and edits.",
+    title: "Capture Anything",
+    bullets: [
+      "Snap receipts or upload documents",
+      "Import bank statements (CSV/PDF)",
+      "Extract vendors, dates, totals, and line items",
+    ],
   },
   {
-    title: "Smart Rules",
-    description: "Create repeatable rules so categorization gets better over time.",
+    title: "Categorize Automatically",
+    bullets: [
+      "AI categorization + confidence scoring",
+      "Smart Rules that learn your preferences",
+      "A Review Queue to approve the edge cases fast",
+    ],
   },
   {
-    title: "Merchant Insights",
-    description: "Audit spend by merchant and apply consistent changes in bulk.",
+    title: "Keep It Clean",
+    bullets: [
+      "Multi-business organization",
+      "Merchant insights and bulk fixes",
+      "Exports to CSV/Excel for your accountant",
+    ],
   },
   {
-    title: "Instant Capture",
-    description: "Upload receipts and statements; AI extracts structured data.",
-  },
-  {
-    title: "Bank Connections",
-    description: "Sync accounts with Plaid for a cleaner, continuous workflow.",
-  },
-  {
-    title: "Budget Tracking",
-    description: "Plan monthly budgets and compare against real spending.",
+    title: "Always Connected",
+    bullets: [
+      "Link accounts via Plaid",
+      "Sync transactions into one workflow",
+      "Stay up to date without manual downloads",
+    ],
   },
 ];
 
-const plannedModules = [
-  { title: "Invoicing", description: "Send invoices, track payments, and reconcile." },
-  { title: "Tax Reports", description: "Export tax-ready summaries and schedules." },
-  { title: "Team Collaboration", description: "Share workflows with roles and approvals." },
+const roadmap = [
+  {
+    title: "Zenny Advisor Mode",
+    description:
+      "Proactive budget coaching, weekly check-ins, and recommendations based on your real spend.",
+  },
+  {
+    title: "Invoicing + Reconciliation",
+    description:
+      "Create invoices, track payments, and reconcile deposits automatically.",
+  },
+  {
+    title: "Planning + Forecasting",
+    description:
+      "Cashflow projections, runway, and scenario planning you can act on.",
+  },
+  {
+    title: "Tax Optimization Suggestions",
+    description:
+      "Guidance to stay ahead of tax season with exportable summaries and smart prompts.",
+  },
 ];
 
 export default function FeaturesPage() {
@@ -42,14 +67,15 @@ export default function FeaturesPage() {
       <div className="flex items-center justify-between gap-4 mb-10">
         <div>
           <Badge variant="secondary" className="mb-3">
-            Modules
+            The agent, the workflow, the results
           </Badge>
           <h1 className="text-3xl md:text-5xl font-bold tracking-tight">
-            Current and planned features
+            Meet Zenny, your personal bookkeeping agent
           </h1>
           <p className="mt-3 text-muted-foreground max-w-2xl">
-            Turbo Invoice is built as a set of focused modules so you get a
-            clean workflow today, and more power over time.
+            Zenny isn&apos;t a pile of tools—it&apos;s a workflow that quietly
+            handles the boring bookkeeping tasks so you can run your business.
+            Capture, categorize, review, export. Repeat with almost no effort.
           </p>
         </div>
         <Button asChild variant="outline">
@@ -57,24 +83,41 @@ export default function FeaturesPage() {
         </Button>
       </div>
 
-      <h2 className="text-xl font-semibold mb-4">Available now</h2>
-      <div className="grid gap-6 md:grid-cols-3">
-        {currentModules.map((m) => (
-          <Card key={m.title} variant="kpi">
-            <CardHeader>
-              <CardTitle>{m.title}</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              {m.description}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <section className="mt-10">
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <h2 className="text-xl font-semibold">What Zenny does today</h2>
+          <Badge variant="success">Live</Badge>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          {nowCapabilities.map((c) => (
+            <Card key={c.title} variant="kpi">
+              <CardHeader>
+                <CardTitle>{c.title}</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                <ul className="list-disc pl-5 space-y-1">
+                  {c.bullets.map((b) => (
+                    <li key={b}>{b}</li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
 
-      <div className="mt-12">
-        <h2 className="text-xl font-semibold mb-4">Coming soon</h2>
-        <div className="grid gap-6 md:grid-cols-3">
-          {plannedModules.map((m) => (
+      <section className="mt-14">
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <h2 className="text-xl font-semibold">Advisor upgrades rolling out</h2>
+          <Badge variant="info">Roadmap</Badge>
+        </div>
+        <p className="text-sm text-muted-foreground max-w-3xl mb-6">
+          We&apos;re building Zenny into a full personal bookkeeper + advisor.
+          These upgrades will make Zenny proactive—spotting issues, suggesting
+          improvements, and helping you plan ahead.
+        </p>
+        <div className="grid gap-6 md:grid-cols-2">
+          {roadmap.map((m) => (
             <Card key={m.title} className="border-dashed">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>{m.title}</CardTitle>
@@ -86,7 +129,29 @@ export default function FeaturesPage() {
             </Card>
           ))}
         </div>
-      </div>
+      </section>
+
+      <section className="mt-14 border-t pt-10">
+        <div className="grid gap-6 md:grid-cols-2 md:items-center">
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold tracking-tight">
+              Start earning your Zenny
+            </h2>
+            <p className="text-muted-foreground">
+              Get a workflow that feels like an agent: it remembers what you
+              like, gets better over time, and keeps you tax-ready.
+            </p>
+          </div>
+          <div className="flex gap-3 md:justify-end">
+            <Button asChild>
+              <Link href="/">Start free</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/pricing">See pricing</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

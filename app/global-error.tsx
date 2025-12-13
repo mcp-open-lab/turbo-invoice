@@ -20,7 +20,7 @@ export default function GlobalError({
   return (
     <html lang="en">
       <head>
-        <title>Turbo Invoice - Error</title>
+        <title>Zenny - Error</title>
       </head>
       <body>
         <main

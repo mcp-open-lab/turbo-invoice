@@ -6,7 +6,6 @@ import {
   SignUpButton,
   UserButton,
 } from "@clerk/nextjs";
-import { Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -20,9 +19,8 @@ export default function PublicLayout({
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container px-4 md:px-6 flex h-14 items-center justify-between mx-auto max-w-7xl">
           <Link href="/" className="flex items-center gap-2">
-            <Receipt className="h-6 w-6" />
             <span className="font-bold text-xl tracking-tight">
-              Turbo Invoice
+              <span className="text-primary">Zenny</span>
             </span>
           </Link>
           <div className="flex items-center gap-4">
@@ -53,7 +51,7 @@ export default function PublicLayout({
 
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
         <p className="text-xs text-muted-foreground">
-          © 2024 Turbo Invoice. All rights reserved.
+          © 2024 Zenny. All rights reserved.
         </p>
         <nav className="sm:ml-auto flex gap-4 sm:gap-6">
           <Link className="text-xs hover:underline underline-offset-4" href="#">

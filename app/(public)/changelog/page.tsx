@@ -36,7 +36,7 @@ export default function ChangelogPage() {
             What&apos;s new
           </h1>
           <p className="mt-3 text-muted-foreground max-w-2xl">
-            Product improvements and new modules as Turbo Invoice evolves.
+            Product improvements and new modules as Zenny evolves.
           </p>
         </div>
         <Button asChild variant="outline">

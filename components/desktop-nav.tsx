@@ -23,7 +23,6 @@ import {
   Wallet,
   FileText,
   Settings,
-  Receipt,
   AlertCircle,
   Database,
   SlidersHorizontal,
@@ -98,8 +97,7 @@ export function DesktopNav() {
             href="/app"
             className="flex items-center space-x-2 flex-shrink-0"
           >
-            <Receipt className="h-6 w-6" />
-            <span className="font-bold text-lg">Turbo Invoice</span>
+            <span className="font-bold text-lg text-primary">Zenny</span>
           </Link>
           <div className="flex items-center gap-3 flex-shrink-0">
             <ThemeToggle />
@@ -115,8 +113,7 @@ export function DesktopNav() {
       <div className="w-full flex h-16 items-center justify-between px-6 max-w-[1800px] mx-auto">
         {/* Logo/Brand */}
         <Link href="/app" className="flex items-center space-x-2 flex-shrink-0">
-          <Receipt className="h-6 w-6" />
-          <span className="font-bold text-lg">Turbo Invoice</span>
+          <span className="font-bold text-lg text-primary">Zenny</span>
         </Link>
 
         {/* Navigation Menu - Centered */}

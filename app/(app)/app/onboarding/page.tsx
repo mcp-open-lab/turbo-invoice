@@ -72,7 +72,9 @@ export default function OnboardingPage() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-gray-50 to-white">
       <Card className="w-full max-w-md p-6 space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold">Welcome to Turbo Invoice</h1>
+          <h1 className="text-2xl font-bold">
+            Welcome to <span className="text-primary">Zenny</span>
+          </h1>
           <p className="text-muted-foreground">
             Let&apos;s personalize your experience
           </p>
@@ -85,7 +87,7 @@ export default function OnboardingPage() {
               name="usageType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>How do you use Turbo Invoice?</FormLabel>
+                  <FormLabel>How do you use Zenny?</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>

@@ -9,7 +9,7 @@ import { Inngest } from "inngest";
 // In local dev, uses Inngest Dev Server (no key needed)
 export const inngest = new Inngest({
   id: "turbo-invoice",
-  name: "Turbo Invoice",
+  name: "Zenny",
   eventKey: process.env.INNGEST_EVENT_KEY,
 });
 

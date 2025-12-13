@@ -32,7 +32,7 @@ export default function PricingPage() {
           <CardContent className="space-y-3">
             <div className="text-3xl font-bold">$0</div>
             <p className="text-sm text-muted-foreground">
-              For trying Turbo Invoice and light usage.
+              For trying Zenny and light usage.
             </p>
             <Button className="w-full">Get Started</Button>
           </CardContent>

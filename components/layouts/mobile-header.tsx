@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
-import { Receipt } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export function MobileHeader() {
@@ -11,8 +10,7 @@ export function MobileHeader() {
       <div className="flex items-center justify-between h-14 px-4">
         {/* Logo/Brand - Centered */}
         <Link href="/app" className="flex items-center gap-2 flex-1 justify-center">
-          <Receipt className="h-5 w-5" />
-          <span className="font-bold text-sm">Turbo Invoice</span>
+          <span className="font-bold text-sm text-primary">Zenny</span>
         </Link>
 
         {/* Theme Toggle and User Button - Right */}

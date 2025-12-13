@@ -62,7 +62,7 @@ export async function createLinkToken() {
 
     const response = await plaidClient.linkTokenCreate({
       user: { client_user_id: userId },
-      client_name: "Turbo Invoice",
+      client_name: "Zenny",
       products: PLAID_PRODUCTS as unknown as Products[],
       country_codes: PLAID_COUNTRY_CODES as unknown as CountryCode[],
       language: "en",
@@ -126,7 +126,7 @@ export async function createUpdateLinkToken(accountId: string) {
     // Create update mode link token
     const response = await plaidClient.linkTokenCreate({
       user: { client_user_id: userId },
-      client_name: "Turbo Invoice",
+      client_name: "Zenny",
       country_codes: PLAID_COUNTRY_CODES as unknown as CountryCode[],
       language: "en",
       webhook: webhookUrl,
