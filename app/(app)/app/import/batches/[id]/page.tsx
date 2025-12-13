@@ -61,7 +61,7 @@ export default async function BatchDetailPage(props: {
           </div>
         </div>
         <div className="p-8 text-center text-muted-foreground border rounded-lg">
-          Batch not found or you don't have permission to view it.
+          Batch not found or you don&apos;t have permission to view it.
         </div>
       </PageContainer>
     );

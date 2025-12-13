@@ -77,3 +77,4 @@ export function businessesToTOON(
   if (businesses.length === 0) return "";
   return toTOON(businesses, ["id", "name"]);
 }
+

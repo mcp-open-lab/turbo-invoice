@@ -27,21 +27,27 @@ export function AddToHomeScreenButton() {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [showDialog, setShowDialog] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
-  const [platform, setPlatform] = useState<"ios" | "android" | null>(null);
-
-  useEffect(() => {
+  const [isStandalone, setIsStandalone] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return (
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as any).standalone === true
+    );
+  });
+  const [platform] = useState<"ios" | "android" | null>(() => {
+    if (typeof window === "undefined") return null;
     const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
     const isAndroid = /android/i.test(window.navigator.userAgent);
-    setPlatform(isIos ? "ios" : isAndroid ? "android" : null);
+    return isIos ? "ios" : isAndroid ? "android" : null;
+  });
 
+  useEffect(() => {
     const checkStandalone = () => {
       const standalone =
         window.matchMedia("(display-mode: standalone)").matches ||
         (window.navigator as any).standalone === true;
       setIsStandalone(standalone);
     };
-    checkStandalone();
     window.addEventListener("resize", checkStandalone);
 
     const handler = (e: BeforeInstallPromptEvent) => {

@@ -18,7 +18,6 @@ export function ReceiptUploader() {
         // @ts-ignore
         config={{ mode: "auto" }}
         onClientUploadComplete={async (res) => {
-          console.log("[Client] Upload complete:", res);
           if (res && res[0]) {
             toast.info("Processing receipt with AI...");
             try {
@@ -32,10 +31,10 @@ export function ReceiptUploader() {
           }
         }}
         onUploadProgress={(progress) => {
-          console.log("[Client] Upload progress:", progress);
+          void progress;
         }}
         onUploadBegin={(name) => {
-          console.log("[Client] Upload begin:", name);
+          void name;
         }}
         onUploadError={(error: Error) => {
           console.error("[Client] Upload error:", error);

@@ -54,5 +54,12 @@ export default [
       "no-fallthrough": "warn",
     },
   },
+  // Logger implementations are allowed to use console internally.
+  {
+    files: ["lib/dev-logger.ts"],
+    rules: {
+      "no-console": "off",
+    },
+  },
 ];
 

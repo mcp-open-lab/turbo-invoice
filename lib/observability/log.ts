@@ -6,7 +6,7 @@ export function logInfo(message: string, context: LogContext = {}): void {
   if (devLogger?.info) {
     devLogger.info(message, context);
   } else {
-    console.info(message, context);
+    console.warn(message, context);
   }
 }
 

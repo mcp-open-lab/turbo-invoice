@@ -107,8 +107,8 @@ export function InstallDialog({ open, onOpenChange }: InstallDialogProps) {
         </DialogHeader>
         <ol className="list-decimal list-inside text-sm space-y-2">
           <li>Tap the Share icon in Safari (square with an upward arrow).</li>
-          <li>Scroll down and choose "Add to Home Screen".</li>
-          <li>Confirm the name and tap "Add".</li>
+          <li>Scroll down and choose &quot;Add to Home Screen&quot;.</li>
+          <li>Confirm the name and tap &quot;Add&quot;.</li>
         </ol>
       </DialogContent>
     </Dialog>

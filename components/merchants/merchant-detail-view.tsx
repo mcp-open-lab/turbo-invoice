@@ -199,7 +199,9 @@ export function MerchantDetailView({
                     Update All {totalCount} Transaction{totalCount !== 1 ? "s" : ""}
                   </h4>
                   <p className="text-xs text-muted-foreground">
-                    This will update the category for all transactions from "{merchantName}"
+                    This will update the category for all transactions from &quot;
+                    {merchantName}
+                    &quot;
                   </p>
                 </div>
 

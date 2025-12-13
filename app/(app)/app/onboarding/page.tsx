@@ -74,7 +74,7 @@ export default function OnboardingPage() {
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-bold">Welcome to Turbo Invoice</h1>
           <p className="text-muted-foreground">
-            Let's personalize your experience
+            Let&apos;s personalize your experience
           </p>
         </div>
 

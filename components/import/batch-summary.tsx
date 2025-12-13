@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   getBatchItems,
   getBatchProgressAction,
@@ -40,7 +40,7 @@ export function BatchSummary({ batchId, onClose }: BatchSummaryProps) {
     percentage: number;
   } | null>(null);
 
-  const loadBatchData = async () => {
+  const loadBatchData = useCallback(async () => {
     try {
       setLoading(true);
       const [itemsResult, progressResult] = await Promise.all([
@@ -66,14 +66,14 @@ export function BatchSummary({ batchId, onClose }: BatchSummaryProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [batchId]);
 
   useEffect(() => {
-    loadBatchData();
-    
-    let interval: NodeJS.Timeout | null = null;
-    
-    interval = setInterval(async () => {
+    const initialTimer = setTimeout(() => {
+      void loadBatchData();
+    }, 0);
+
+    const intervalId = setInterval(async () => {
       const [itemsResult, progressResult] = await Promise.all([
         getBatchItems({ batchId }),
         getBatchProgressAction({ batchId }),
@@ -92,19 +92,17 @@ export function BatchSummary({ batchId, onClose }: BatchSummaryProps) {
           percentage: progressResult.progress.percentage,
         });
 
-        if (progressResult.progress.isComplete && interval) {
-          clearInterval(interval);
-          interval = null;
+        if (progressResult.progress.isComplete) {
+          clearInterval(intervalId);
         }
       }
     }, 3000);
 
     return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
+      clearTimeout(initialTimer);
+      clearInterval(intervalId);
     };
-  }, [batchId]);
+  }, [batchId, loadBatchData]);
 
   const failedItems = items.filter((item) => item.status === "failed");
   const successfulItems = items.filter((item) => item.status === "completed");
