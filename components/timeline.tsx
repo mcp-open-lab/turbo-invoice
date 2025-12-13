@@ -69,6 +69,17 @@ export function Timeline({ initialItems, userSettings, categories, merchants, bu
   // Group items for display
   const filteredGroups = useMemo(() => groupItemsByMonth(items), [items]);
 
+  const handleItemUpdated = (
+    id: string,
+    patch: Partial<
+      Pick<TimelineItem, "categoryId" | "category" | "businessId" | "businessName">
+    >
+  ) => {
+    setItems((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, ...patch } : it))
+    );
+  };
+
   const buildFilters = (): TimelineFilters => ({
     search: search || undefined,
     category: categoryFilter !== "all" ? categoryFilter : undefined,
@@ -446,6 +457,7 @@ export function Timeline({ initialItems, userSettings, categories, merchants, bu
                 items={group.items}
                 categories={categories}
                 businesses={businesses}
+                onItemUpdated={handleItemUpdated}
               />
             </div>
           </div>

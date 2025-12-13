@@ -1,28 +1,41 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getSimilarTransactions, getSimilarTransactionStats, type SimilarTransaction } from "@/app/actions/transactions";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import {
+  createRuleFromTransaction,
+  getSimilarTransactions,
+  getSimilarTransactionStats,
+  type SimilarTransaction,
+} from "@/app/actions/transactions";
+import { bulkUpdateMerchantCategory } from "@/app/actions/financial-categories";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { ChevronDown, ChevronUp, Receipt, CreditCard, TrendingUp, Sparkles } from "lucide-react";
+import { CreditCard, Receipt, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { CategoryAssigner } from "@/components/categorization/category-assigner";
+
+type Category = {
+  id: string;
+  name: string;
+  transactionType: string;
+};
+
+type Business = {
+  id: string;
+  name: string;
+};
 
 interface SimilarTransactionsPanelProps {
   merchantName: string | null;
   transactionId?: string;
   entityType?: "receipt" | "bank_transaction";
   currency?: string;
-  onRuleSuggestion?: (categoryId: string, businessId: string | null) => void;
-  onCreateRuleForTransaction?: (
-    merchantName: string,
-    categoryId: string | null,
-    businessId: string | null
-  ) => void;
+  categories?: Category[];
+  transactionType?: "income" | "expense";
 }
 
 export function SimilarTransactionsPanel({
@@ -30,11 +43,11 @@ export function SimilarTransactionsPanel({
   transactionId,
   entityType,
   currency = "USD",
-  onRuleSuggestion,
-  onCreateRuleForTransaction,
+  categories = [],
+  transactionType,
 }: SimilarTransactionsPanelProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isApplying, startApplyTransition] = useTransition();
   const [transactions, setTransactions] = useState<SimilarTransaction[]>([]);
   const [stats, setStats] = useState<{
     totalCount: number;
@@ -42,9 +55,18 @@ export function SimilarTransactionsPanel({
     mostCommonCategory: { id: string; name: string; count: number } | null;
     mostCommonBusiness: { id: string; name: string; count: number } | null;
   } | null>(null);
+  const [bulkCategoryId, setBulkCategoryId] = useState<string>("");
+
+  const normalizedMerchantName = (merchantName || "").trim();
+  const hasMerchantName = normalizedMerchantName.length > 0;
+
+  const availableCategories = useMemo(() => {
+    if (!transactionType) return categories;
+    return categories.filter((c) => c.transactionType === transactionType);
+  }, [categories, transactionType]);
 
   useEffect(() => {
-    if (!merchantName || merchantName.trim().length === 0) {
+    if (!hasMerchantName) {
       setTransactions([]);
       setStats(null);
       return;
@@ -55,12 +77,12 @@ export function SimilarTransactionsPanel({
       try {
         const [txData, statsData] = await Promise.all([
           getSimilarTransactions({
-            merchantName,
+            merchantName: normalizedMerchantName,
             excludeTransactionId: transactionId,
             excludeEntityType: entityType,
           }),
           getSimilarTransactionStats({
-            merchantName,
+            merchantName: normalizedMerchantName,
             excludeTransactionId: transactionId,
             excludeEntityType: entityType,
           }),
@@ -75,11 +97,50 @@ export function SimilarTransactionsPanel({
     };
 
     fetchData();
-  }, [merchantName, transactionId, entityType]);
+  }, [entityType, hasMerchantName, normalizedMerchantName, transactionId]);
 
-  if (!merchantName || merchantName.trim().length === 0) {
-    return null;
-  }
+  useEffect(() => {
+    if (!bulkCategoryId && stats?.mostCommonCategory?.id) {
+      setBulkCategoryId(stats.mostCommonCategory.id);
+    }
+  }, [bulkCategoryId, stats?.mostCommonCategory?.id]);
+
+  const handleApplyToAll = () => {
+    if (!hasMerchantName) {
+      toast.error("Enter a merchant name to use similar transactions.");
+      return;
+    }
+    if (!bulkCategoryId) {
+      toast.error("Select a category first.");
+      return;
+    }
+
+    startApplyTransition(async () => {
+      try {
+        await bulkUpdateMerchantCategory({
+          merchantName: normalizedMerchantName,
+          categoryId: bulkCategoryId,
+          businessId: null,
+        });
+
+        await createRuleFromTransaction({
+          merchantName: normalizedMerchantName,
+          categoryId: bulkCategoryId,
+          businessId: null,
+          matchType: "contains",
+          displayName: normalizedMerchantName,
+        });
+
+        toast.success("Updated similar transactions", {
+          description: "Applied to existing transactions and future imports.",
+        });
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to update transactions"
+        );
+      }
+    });
+  };
 
   if (isLoading) {
     return (
@@ -95,111 +156,102 @@ export function SimilarTransactionsPanel({
     );
   }
 
-  if (!stats || stats.totalCount === 0) {
-    return null;
-  }
-
   return (
     <Card>
-      <CardHeader className="cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              Similar Transactions
-            </CardTitle>
-            <CardDescription className="mt-1">
-              {stats.totalCount} transaction{stats.totalCount === 1 ? "" : "s"} found for this merchant
-              {stats.categorizedCount > 0 && (
-                <>
-                  {" "}
-                  · {stats.categorizedCount} categorized
-                </>
-              )}
-            </CardDescription>
-          </div>
-          <Button variant="ghost" size="icon">
-            {isExpanded ? (
-              <ChevronUp className="h-4 w-4" />
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-primary" />
+          Similar Transactions
+        </CardTitle>
+        <CardDescription className="mt-1">
+          {hasMerchantName ? (
+            stats ? (
+              <>
+                {stats.totalCount} transaction{stats.totalCount === 1 ? "" : "s"} found
+                {stats.categorizedCount > 0 ? ` · ${stats.categorizedCount} categorized` : null}
+              </>
             ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
+              "Loading history…"
+            )
+          ) : (
+            "Enter a merchant name to see history and recategorize."
+          )}
+        </CardDescription>
       </CardHeader>
 
-      {isExpanded && (
-        <CardContent className="space-y-4">
-          {/* Summary Statistics */}
-          {(stats.mostCommonCategory || stats.mostCommonBusiness) && (
-            <div className="p-4 bg-muted rounded-lg space-y-2">
-              <p className="text-sm font-medium">Most Common</p>
-              {stats.mostCommonCategory && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Category:</span>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{stats.mostCommonCategory.name}</Badge>
-                    <span className="text-xs text-muted-foreground">
-                      ({stats.mostCommonCategory.count} time{stats.mostCommonCategory.count === 1 ? "" : "s"})
-                    </span>
-                  </div>
+      <CardContent className="space-y-4">
+        {/* Summary (read-only) */}
+        {hasMerchantName && stats && (stats.mostCommonCategory || stats.mostCommonBusiness) && (
+          <div className="p-4 bg-muted rounded-lg space-y-2">
+            <p className="text-sm font-medium">Most Common</p>
+            {stats.mostCommonCategory && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Category:</span>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">{stats.mostCommonCategory.name}</Badge>
+                  <span className="text-xs text-muted-foreground">
+                    ({stats.mostCommonCategory.count} time{stats.mostCommonCategory.count === 1 ? "" : "s"})
+                  </span>
                 </div>
-              )}
-              {stats.mostCommonBusiness && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Business:</span>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{stats.mostCommonBusiness.name}</Badge>
-                    <span className="text-xs text-muted-foreground">
-                      ({stats.mostCommonBusiness.count} time{stats.mostCommonBusiness.count === 1 ? "" : "s"})
-                    </span>
-                  </div>
-                </div>
-              )}
-              {onRuleSuggestion && stats.mostCommonCategory && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="w-full mt-2"
-                  onClick={() =>
-                    onRuleSuggestion(
-                      stats.mostCommonCategory!.id,
-                      stats.mostCommonBusiness?.id || null
-                    )
-                  }
-                >
-                  Use for Rule
-                </Button>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
+        )}
 
-          {/* Transaction List */}
+        {/* Only control: change all to a new category */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Change All For This Merchant</p>
+          <div className="grid gap-2 md:grid-cols-[1fr_auto] md:items-end">
+            <CategoryAssigner
+              value={bulkCategoryId}
+              onChange={setBulkCategoryId}
+              categories={availableCategories}
+              transactionType={transactionType}
+              merchantName={null}
+              showApplyToFuture={false}
+              disabled={!hasMerchantName || isApplying}
+            />
+            <Button
+              onClick={handleApplyToAll}
+              disabled={!hasMerchantName || !bulkCategoryId || isApplying}
+              className="md:h-9"
+            >
+              {isApplying
+                ? "Applying…"
+                : `Apply to all${stats?.totalCount ? ` (${stats.totalCount})` : ""}`}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            This updates existing transactions for this merchant and saves the choice for future imports.
+          </p>
+        </div>
+
+        {/* Recent History (read-only, no links/buttons) */}
+        {hasMerchantName && (
           <div className="space-y-2">
             <p className="text-sm font-medium">Recent History</p>
-            <div className="space-y-2 max-h-[300px] overflow-y-auto">
-              {transactions.slice(0, 10).map((tx) => {
-                const txUrl = tx.type === "receipt" 
-                  ? `/app/receipts/${tx.id}` 
-                  : `/app/transactions/${tx.id}`;
-
-                return (
+            {transactions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No similar transactions found yet.
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                {transactions.slice(0, 10).map((tx) => (
                   <div
                     key={`${tx.type}-${tx.id}`}
-                    className="group relative border rounded-lg hover:bg-muted/50 transition-colors"
+                    className="border rounded-lg p-2"
                   >
-                    <Link
-                      href={txUrl}
-                      className="flex items-center justify-between p-2"
-                    >
-                      <div className="flex items-center gap-3 flex-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         {tx.type === "receipt" ? (
                           <Receipt className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         ) : (
                           <CreditCard className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{tx.merchantName}</p>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {tx.merchantName}
+                          </p>
                           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                             <p className="text-xs text-muted-foreground">
                               {formatDistanceToNow(new Date(tx.date), { addSuffix: true })}
@@ -209,49 +261,20 @@ export function SimilarTransactionsPanel({
                                 {tx.categoryName}
                               </Badge>
                             )}
-                            {tx.businessName && (
-                              <Badge variant="outline" className="text-xs">
-                                {tx.businessName}
-                              </Badge>
-                            )}
                           </div>
                         </div>
                       </div>
-                      <p className="text-sm font-semibold ml-2 flex-shrink-0">
+                      <p className="text-sm font-semibold flex-shrink-0">
                         {formatCurrency(parseFloat(tx.amount), currency)}
                       </p>
-                    </Link>
-                    
-                    {/* Create Rule Button - Only show if transaction is categorized and handler is provided */}
-                    {tx.categoryId && onCreateRuleForTransaction && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn(
-                          "absolute right-1 top-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity",
-                          "hover:bg-primary/10"
-                        )}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          onCreateRuleForTransaction(
-                            tx.merchantName,
-                            tx.categoryId,
-                            tx.businessId
-                          );
-                        }}
-                        title="Create rule from this transaction"
-                      >
-                        <Sparkles className="h-3.5 w-3.5 text-primary" />
-                      </Button>
-                    )}
+                    </div>
                   </div>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
-        </CardContent>
-      )}
+        )}
+      </CardContent>
     </Card>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -27,8 +27,8 @@ import type { EditReceiptFormValues } from "@/lib/schemas";
 import type { createEditReceiptSchema } from "@/lib/schemas";
 import type { categories as categoriesSchema, businesses as businessesSchema } from "@/lib/db/schema";
 import { SimilarTransactionsPanel } from "@/components/transactions/similar-transactions-panel";
-import { CreateRuleDialog } from "@/components/transactions/create-rule-dialog";
-import { TransactionCategorization } from "@/components/transactions/transaction-categorization";
+import { CategoryAssigner } from "@/components/categorization/category-assigner";
+import { useCategoryAssignment } from "@/lib/hooks/use-category-assignment";
 
 type Category = typeof categoriesSchema.$inferSelect;
 type Business = typeof businessesSchema.$inferSelect;
@@ -59,47 +59,40 @@ export function ReceiptForm({
   isPage = false,
 }: ReceiptFormProps) {
   const [isPending, startTransition] = useTransition();
-  const [createRuleOpen, setCreateRuleOpen] = useState(false);
-  const [ruleSuggestedCategory, setRuleSuggestedCategory] = useState<string>("");
-  const [ruleSuggestedBusiness, setRuleSuggestedBusiness] = useState<string | null>(null);
 
   const form = useForm<EditReceiptFormValues>({
     resolver: zodResolver(schema),
     defaultValues,
   });
 
+  const categoryAssignment = useCategoryAssignment({
+    initialCategoryId: form.getValues("categoryId"),
+    initialBusinessId: form.getValues("businessId"),
+  });
+
   const onSubmit = (data: EditReceiptFormValues) => {
     startTransition(async () => {
       try {
-        await updateReceipt(data);
-        toast.success("Item updated");
-        if (onOpenChange) {
-          onOpenChange(false);
+        const merchantName = data.merchantName || undefined;
+        const result = await categoryAssignment.assignCategory({
+          id: defaultValues.id,
+          type: "receipt",
+          merchantName,
+          categoryId: data.categoryId || "",
+          businessId: data.businessId || null,
+          applyToFuture: categoryAssignment.applyToFuture,
+        });
+        if (result.success) {
+          toast.success("Item updated");
+          if (onOpenChange) {
+            onOpenChange(false);
+          }
         }
       } catch (error) {
         console.error("Update failed", error);
         toast.error("Failed to update item");
       }
     });
-  };
-
-  const handleRuleSuggestion = (categoryId: string, businessId: string | null) => {
-    setRuleSuggestedCategory(categoryId);
-    setRuleSuggestedBusiness(businessId);
-    form.setValue("categoryId", categoryId);
-    setCreateRuleOpen(true);
-  };
-
-  const handleOpenCreateRule = () => {
-    const currentMerchant = form.getValues("merchantName");
-    const currentCategory = form.getValues("categoryId");
-    if (!currentMerchant || !currentCategory) {
-      toast.error("Please enter a merchant name and select a category first");
-      return;
-    }
-    setRuleSuggestedCategory(currentCategory);
-    setRuleSuggestedBusiness(null);
-    setCreateRuleOpen(true);
   };
 
   return (
@@ -308,14 +301,76 @@ export function ReceiptForm({
           />
         )}
 
-        <TransactionCategorization
-          form={form}
-          categories={categories}
-          businesses={businesses}
-          transactionType="expense"
-          requiredFields={requiredFields}
-          onCreateRule={handleOpenCreateRule}
+        <FormField
+          control={form.control}
+          name="categoryId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                Category
+                {requiredFields.category && (
+                  <span className="text-destructive ml-1">*</span>
+                )}
+              </FormLabel>
+              <FormControl>
+                <CategoryAssigner
+                  value={field.value || ""}
+                  displayValue={
+                    categories.find((c) => c.id === field.value)?.name
+                  }
+                  onChange={(value) => {
+                    field.onChange(value);
+                    categoryAssignment.setCategoryId(value);
+                  }}
+                  categories={categories}
+                  transactionType="expense"
+                  merchantName={form.watch("merchantName")}
+                  applyToFuture={categoryAssignment.applyToFuture}
+                  onApplyToFutureChange={categoryAssignment.setApplyToFuture}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
+
+        {businesses.length > 0 && (
+          <FormField
+            control={form.control}
+            name="businessId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Business
+                  {requiredFields.businessId && (
+                    <span className="text-destructive ml-1">*</span>
+                  )}
+                </FormLabel>
+                <Select
+                  onValueChange={(v) =>
+                    field.onChange(v === "personal" ? null : v)
+                  }
+                  value={field.value || "personal"}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select business" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="personal">Personal</SelectItem>
+                    {businesses.map((business) => (
+                      <SelectItem key={business.id} value={business.id}>
+                        {business.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         {/* Similar Transactions Panel */}
         <SimilarTransactionsPanel
@@ -323,14 +378,8 @@ export function ReceiptForm({
           transactionId={defaultValues.id}
           entityType="receipt"
           currency={currency}
-          onRuleSuggestion={handleRuleSuggestion}
-          onCreateRuleForTransaction={(merchantName, categoryId, businessId) => {
-            if (categoryId) {
-              setRuleSuggestedCategory(categoryId);
-              setRuleSuggestedBusiness(businessId);
-              setCreateRuleOpen(true);
-            }
-          }}
+          categories={categories}
+          transactionType="expense"
         />
 
         <FormField
@@ -378,20 +427,6 @@ export function ReceiptForm({
           </Button>
         </div>
       </form>
-
-      {/* Create Rule Dialog */}
-      <CreateRuleDialog
-        open={createRuleOpen}
-        onOpenChange={setCreateRuleOpen}
-        merchantName={form.watch("merchantName") || ""}
-        categoryId={ruleSuggestedCategory || form.watch("categoryId") || ""}
-        businessId={ruleSuggestedBusiness}
-        categories={categories}
-        businesses={businesses}
-        onRuleCreated={() => {
-          toast.success("Rule created! Future transactions will be auto-categorized.");
-        }}
-      />
     </Form>
   );
 }
