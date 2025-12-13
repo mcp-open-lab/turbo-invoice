@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -72,35 +72,16 @@ export function ReviewQueueItem({
     initialApplyToFuture: true,
   });
 
-  const [localCategoryName, setLocalCategoryName] = useState(
-    item.categoryName || null
-  );
-  const [localBusinessName, setLocalBusinessName] = useState(
-    item.businessName || null
-  );
-
-  // Update local state when item prop changes
-  useEffect(() => {
-    setCategoryId(item.categoryId || "");
-    setBusinessId(item.businessId || null);
-    setLocalCategoryName(item.categoryName || null);
-    setLocalBusinessName(item.businessName || null);
-  }, [
-    item.businessId,
-    item.categoryId,
-    item.categoryName,
-    item.businessName,
-    setBusinessId,
-    setCategoryId,
-  ]);
-
   const amount = parseFloat(item.amount);
   const isIncome = item.type === "bank_transaction" ? amount >= 0 : false;
   const transactionType = isIncome ? "income" : "expense";
 
   // Find category name from selected categoryId
   const selectedCategory = categories.find((cat) => cat.id === categoryId);
-  const displayCategoryName = selectedCategory?.name || localCategoryName;
+  const displayCategoryName = selectedCategory?.name || item.categoryName;
+  const selectedBusiness = businesses.find((biz) => biz.id === businessId);
+  const displayBusinessName =
+    selectedBusiness?.name || item.businessName || "Personal";
 
   const handleSave = async () => {
     const effectiveCategoryId = categoryId;
@@ -116,14 +97,6 @@ export function ReviewQueueItem({
     });
 
     if (!result.success) return;
-
-    // Update local state immediately for instant UI feedback
-    const selectedCategory = categories.find(
-      (cat) => cat.id === effectiveCategoryId
-    );
-    const selectedBusiness = businesses.find((biz) => biz.id === businessId);
-    setLocalCategoryName(selectedCategory?.name || null);
-    setLocalBusinessName(selectedBusiness?.name || null);
 
     toast.success("Updated");
     setIsEditing(false);
@@ -155,9 +128,11 @@ export function ReviewQueueItem({
         >
           {item.merchantName || "Unknown"}
         </Link>
-        {item.description ? <p className="text-xs text-muted-foreground truncate">
+        {item.description ? (
+          <p className="text-xs text-muted-foreground truncate">
             {item.description}
-          </p> : null}
+          </p>
+        ) : null}
       </TableCell>
 
       <TableCell className="py-2 text-right">
@@ -210,14 +185,15 @@ export function ReviewQueueItem({
           />
         ) : (
           <span className="text-sm text-muted-foreground">
-            {localBusinessName || "Personal"}
+            {displayBusinessName}
           </span>
         )}
       </TableCell>
 
       <TableCell className="py-2 text-right">
         <div className="flex items-center justify-end gap-1">
-          {!isEditing && categoryId ? <Button
+          {!isEditing && categoryId ? (
+            <Button
               size="icon"
               variant="ghost"
               className="h-7 w-7"
@@ -226,7 +202,8 @@ export function ReviewQueueItem({
               title="Quick approve"
             >
               <Check className="h-4 w-4 text-green-600" />
-            </Button> : null}
+            </Button>
+          ) : null}
           <RowActions
             isEditing={isEditing}
             onEdit={() => setIsEditing(true)}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -125,10 +125,10 @@ export function CategoryBudgetRow({
         className="w-full flex items-center justify-between p-3 rounded-lg border border-dashed hover:border-solid hover:bg-muted/50 transition-colors text-left"
       >
         <div className="flex items-center gap-2">
-          {(() => {
-            const Icon = getCategoryIcon(categoryName);
-            return <Icon className="h-4 w-4 flex-shrink-0 text-muted-foreground" aria-hidden="true" />;
-          })()}
+          {React.createElement(getCategoryIcon(categoryName), {
+            className: "h-4 w-4 flex-shrink-0 text-muted-foreground",
+            "aria-hidden": true,
+          })}
           <span className="text-sm">{categoryName}</span>
         </div>
         {isEditing ? (
@@ -148,7 +148,13 @@ export function CategoryBudgetRow({
   }
 
   return (
-    <div className={cn("rounded-lg border p-3 transition-colors", config.border, config.bg)}>
+    <div
+      className={cn(
+        "rounded-lg border p-3 transition-colors",
+        config.border,
+        config.bg
+      )}
+    >
       {/* Mobile Layout */}
       <div className="md:hidden space-y-2">
         <div className="flex items-center justify-between">
@@ -159,12 +165,21 @@ export function CategoryBudgetRow({
             isExpanded={isExpanded}
             onToggle={toggleExpand}
           />
-          <div className={cn("text-sm font-medium flex-shrink-0 ml-2", config.text)}>
+          <div
+            className={cn(
+              "text-sm font-medium flex-shrink-0 ml-2",
+              config.text
+            )}
+          >
             {format(spent)}
           </div>
         </div>
-        
-        <ProgressBar show={budgeted > 0} percent={percentUsed} barClass={config.bar} />
+
+        <ProgressBar
+          show={budgeted > 0}
+          percent={percentUsed}
+          barClass={config.bar}
+        />
 
         <div className="flex justify-between items-center text-xs">
           <button
@@ -186,12 +201,15 @@ export function CategoryBudgetRow({
               <span className="underline decoration-dashed">+ Set budget</span>
             )}
           </button>
-          {budgeted > 0 && <span className={config.text}>Left: {format(available)}</span>}
+          {budgeted > 0 && (
+            <span className={config.text}>Left: {format(available)}</span>
+          )}
         </div>
       </div>
 
       {/* Mobile Transactions */}
-      {isExpanded && transactionCount > 0 ? <div className="md:hidden mt-3 pt-3 border-t">
+      {isExpanded && transactionCount > 0 ? (
+        <div className="md:hidden mt-3 pt-3 border-t">
           <TransactionList
             transactions={transactions}
             isLoading={isLoadingTransactions}
@@ -202,7 +220,8 @@ export function CategoryBudgetRow({
             businesses={businesses}
             onTransactionUpdated={() => router.refresh()}
           />
-        </div> : null}
+        </div>
+      ) : null}
 
       {/* Desktop Layout */}
       <div className="hidden md:grid md:grid-cols-[1fr,100px,100px,100px] gap-2 items-center">
@@ -229,8 +248,8 @@ export function CategoryBudgetRow({
               onClick={() => setIsEditing(true)}
               className={cn(
                 "text-sm rounded px-2 py-0.5 -mx-2 transition-colors",
-                budgeted > 0 
-                  ? "hover:bg-muted" 
+                budgeted > 0
+                  ? "hover:bg-muted"
                   : "text-muted-foreground hover:text-foreground underline decoration-dashed"
               )}
             >
@@ -239,12 +258,16 @@ export function CategoryBudgetRow({
           )}
         </div>
 
-        <div className="text-right text-sm text-muted-foreground">{format(spent)}</div>
+        <div className="text-right text-sm text-muted-foreground">
+          {format(spent)}
+        </div>
 
         <div
           className={cn(
-          "text-right text-sm",
-          budgeted > 0 ? cn("font-medium", config.text) : "text-muted-foreground"
+            "text-right text-sm",
+            budgeted > 0
+              ? cn("font-medium", config.text)
+              : "text-muted-foreground"
           )}
         >
           {budgeted > 0 ? format(available) : "—"}
@@ -262,7 +285,8 @@ export function CategoryBudgetRow({
       )}
 
       {/* Desktop Transactions */}
-      {isExpanded && transactionCount > 0 ? <div className="hidden md:block mt-3 pt-3 border-t">
+      {isExpanded && transactionCount > 0 ? (
+        <div className="hidden md:block mt-3 pt-3 border-t">
           <div className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
             Transactions
           </div>
@@ -276,7 +300,8 @@ export function CategoryBudgetRow({
             businesses={businesses}
             onTransactionUpdated={() => router.refresh()}
           />
-        </div> : null}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -300,9 +325,15 @@ interface CategoryLabelProps {
   onToggle: () => void;
 }
 
-function CategoryLabel({ name, color, count, isExpanded, onToggle }: CategoryLabelProps) {
+function CategoryLabel({
+  name,
+  color,
+  count,
+  isExpanded,
+  onToggle,
+}: CategoryLabelProps) {
   const hasTransactions = count > 0;
-  const Icon = getCategoryIcon(name);
+  const icon = getCategoryIcon(name);
 
   return (
     <button
@@ -312,16 +343,23 @@ function CategoryLabel({ name, color, count, isExpanded, onToggle }: CategoryLab
         hasTransactions && "cursor-pointer hover:opacity-80"
       )}
     >
-      <Icon className="h-4 w-4 flex-shrink-0 text-muted-foreground" aria-hidden="true" />
+      {React.createElement(icon, {
+        className: "h-4 w-4 flex-shrink-0 text-muted-foreground",
+        "aria-hidden": true,
+      })}
       <span className="text-sm truncate">{name}</span>
-      {hasTransactions ? <>
-          <span className="text-xs text-muted-foreground flex-shrink-0">({count})</span>
+      {hasTransactions ? (
+        <>
+          <span className="text-xs text-muted-foreground flex-shrink-0">
+            ({count})
+          </span>
           {isExpanded ? (
             <ChevronUp className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
           ) : (
             <ChevronDown className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
           )}
-        </> : null}
+        </>
+      ) : null}
     </button>
   );
 }
@@ -376,14 +414,20 @@ function ProgressBar({ show, percent, barClass, className }: ProgressBarProps) {
           className={cn("h-full transition-all duration-300", barClass)}
           style={{ width: `${displayPercent}%` }}
         />
-        {isOverBudget ? <div
-            className={cn("h-full absolute top-0 right-0 bg-red-500/20 transition-all duration-300")}
+        {isOverBudget ? (
+          <div
+            className={cn(
+              "h-full absolute top-0 right-0 bg-red-500/20 transition-all duration-300"
+            )}
             style={{ width: `${Math.min(percent - 100, 100)}%` }}
-          /> : null}
+          />
+        ) : null}
       </div>
-      {isOverBudget ? <div className="text-xs text-red-600 dark:text-red-400 font-medium">
+      {isOverBudget ? (
+        <div className="text-xs text-red-600 dark:text-red-400 font-medium">
           {percent.toFixed(0)}% of budget
-        </div> : null}
+        </div>
+      ) : null}
     </div>
   );
 }

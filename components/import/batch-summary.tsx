@@ -42,7 +42,6 @@ export function BatchSummary({ batchId, onClose }: BatchSummaryProps) {
 
   const loadBatchData = useCallback(async () => {
     try {
-      setLoading(true);
       const [itemsResult, progressResult] = await Promise.all([
         getBatchItems({ batchId }),
         getBatchProgressAction({ batchId }),
@@ -69,9 +68,7 @@ export function BatchSummary({ batchId, onClose }: BatchSummaryProps) {
   }, [batchId]);
 
   useEffect(() => {
-    const initialTimer = setTimeout(() => {
-      void loadBatchData();
-    }, 0);
+    void loadBatchData();
 
     const intervalId = setInterval(async () => {
       const [itemsResult, progressResult] = await Promise.all([
@@ -99,7 +96,6 @@ export function BatchSummary({ batchId, onClose }: BatchSummaryProps) {
     }, 3000);
 
     return () => {
-      clearTimeout(initialTimer);
       clearInterval(intervalId);
     };
   }, [batchId, loadBatchData]);
@@ -115,6 +111,7 @@ export function BatchSummary({ batchId, onClose }: BatchSummaryProps) {
 
       if (result.success) {
         toast.success("Item queued for retry");
+        setLoading(true);
         await loadBatchData();
       } else {
         toast.error("Failed to retry item");
@@ -135,6 +132,7 @@ export function BatchSummary({ batchId, onClose }: BatchSummaryProps) {
 
       if (result.success) {
         toast.success(`Queued ${result.retriedCount} items for retry`);
+        setLoading(true);
         await loadBatchData();
       } else {
         const errorMsg = result.errors && result.errors.length > 0

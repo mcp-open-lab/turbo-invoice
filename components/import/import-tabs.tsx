@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ImportUploadZone } from "@/components/import/import-upload-zone";
@@ -24,17 +24,12 @@ export function ImportTabs({
 }: ImportTabsProps & { defaultCurrency?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // Use initialTab for first render to match server, then sync with URL
-  const [activeTab, setActiveTab] = useState(initialTab);
-
-  useEffect(() => {
-    // Sync with URL after hydration
-    const urlTab = searchParams.get("tab") || "import";
-    setActiveTab(urlTab);
-  }, [searchParams]);
+  const activeTab = useMemo(() => {
+    const urlTab = searchParams.get("tab");
+    return urlTab || initialTab;
+  }, [initialTab, searchParams]);
 
   const handleTabChange = (value: string) => {
-    setActiveTab(value);
     const params = new URLSearchParams(searchParams.toString());
     if (value === "import") {
       params.delete("tab");

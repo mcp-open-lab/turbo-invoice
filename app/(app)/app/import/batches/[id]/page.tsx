@@ -22,32 +22,35 @@ export default async function BatchDetailPage(props: {
   const params = await props.params;
   const batchId = params.id;
 
+  let batch:
+    | Awaited<ReturnType<typeof getBatchStatusSummary>>
+    | null = null;
+  let items: Awaited<ReturnType<typeof getBatchItemsStatus>> = [];
+  let activityLogs: Awaited<ReturnType<typeof getBatchActivityLogs>> = [];
+  let notFoundOrUnauthorized = false;
+
   try {
-    const [batch, items, activityLogs] = await Promise.all([
+    const [batchResult, itemsResult, activityLogsResult] = await Promise.all([
       getBatchStatusSummary(batchId, userId),
       getBatchItemsStatus(batchId, userId),
       getBatchActivityLogs(batchId).catch(() => []), // Gracefully handle if no logs yet
     ]);
 
-    return (
-      <PageContainer size="tight">
-        <div className="flex items-center gap-4 mb-6">
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/app/import?tab=jobs">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
-            <h1 className="text-2xl font-bold">Batch Details</h1>
-        </div>
-
-        <BatchDetailContainer 
-          initialBatch={batch} 
-          initialItems={items}
-          initialActivityLogs={activityLogs}
-        />
-      </PageContainer>
-    );
+    batch = batchResult;
+    items = itemsResult;
+    activityLogs = activityLogsResult;
   } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "Batch not found or unauthorized"
+    ) {
+      notFoundOrUnauthorized = true;
+    } else {
+      throw error;
+    }
+  }
+
+  if (notFoundOrUnauthorized || !batch) {
     return (
       <PageContainer size="tight">
         <div className="flex justify-between items-center mb-6">
@@ -66,4 +69,23 @@ export default async function BatchDetailPage(props: {
       </PageContainer>
     );
   }
+
+  return (
+    <PageContainer size="tight">
+      <div className="flex items-center gap-4 mb-6">
+        <Button variant="ghost" size="icon" asChild>
+          <Link href="/app/import?tab=jobs">
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+        </Button>
+        <h1 className="text-2xl font-bold">Batch Details</h1>
+      </div>
+
+      <BatchDetailContainer
+        initialBatch={batch}
+        initialItems={items}
+        initialActivityLogs={activityLogs}
+      />
+    </PageContainer>
+  );
 }

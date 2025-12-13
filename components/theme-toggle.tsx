@@ -2,7 +2,6 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -10,6 +9,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useHydrated } from "@/lib/hooks/use-hydrated";
 
 /**
  * ThemeToggle - Dark mode toggle button
@@ -22,17 +22,9 @@ import {
  */
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const hydrated = useHydrated();
 
-  // Prevent hydration mismatch
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setMounted(true);
-    }, 0);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!mounted) {
+  if (!hydrated) {
     return (
       <Button
         variant="ghost"

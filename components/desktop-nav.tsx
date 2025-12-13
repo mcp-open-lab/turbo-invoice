@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useHydrated } from "@/lib/hooks/use-hydrated";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -78,11 +79,7 @@ const dataItems = [
 
 export function DesktopNav() {
   const pathname = usePathname();
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const hydrated = useHydrated();
 
   const isActiveGroup = (items: typeof mainItems) => {
     return items.some(
@@ -93,7 +90,7 @@ export function DesktopNav() {
   };
 
   // Prevent hydration mismatch by only rendering NavigationMenu on client
-  if (!isMounted) {
+  if (!hydrated) {
     return (
       <nav className="hidden md:flex fixed top-0 left-0 right-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center justify-between px-4 mx-auto">
