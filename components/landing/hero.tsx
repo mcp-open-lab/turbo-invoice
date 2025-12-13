@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { SignedIn, SignedOut } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -49,20 +50,24 @@ export function LandingHero() {
               variants={{ hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } }}
               className="mt-8 flex flex-col sm:flex-row gap-4 justify-center"
             >
-              <Button
-                asChild
-                size="lg"
-                className="h-12 px-8 text-base zenny-pulse-glow"
-              >
-                <Link href="/sign-up">
-                  Start for Free <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild size="lg" className="h-12 px-8 text-base">
-                <Link href="/app">
-                  Go to App <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
+              <SignedOut>
+                <Button
+                  asChild
+                  size="lg"
+                  className="h-12 px-8 text-base zenny-pulse-glow"
+                >
+                  <Link href="/sign-up">
+                    Start for Free <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </SignedOut>
+              <SignedIn>
+                <Button asChild size="lg" className="h-12 px-8 text-base">
+                  <Link href="/app">
+                    Go to App <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </SignedIn>
               <Button
                 asChild
                 size="lg"

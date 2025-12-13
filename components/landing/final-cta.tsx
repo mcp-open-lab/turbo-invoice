@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { SignedIn, SignedOut } from "@clerk/nextjs";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/motion/fade-in";
@@ -31,16 +34,20 @@ export function FinalCta() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3">
-                <Button asChild size="lg" className="h-12 px-8 zenny-pulse-glow">
-                  <Link href="/sign-up">
-                    Start free <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button asChild size="lg" className="h-12 px-8">
-                  <Link href="/app">
-                    Go to app <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
+                <SignedOut>
+                  <Button asChild size="lg" className="h-12 px-8 zenny-pulse-glow">
+                    <Link href="/sign-up">
+                      Start free <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </SignedOut>
+                <SignedIn>
+                  <Button asChild size="lg" className="h-12 px-8">
+                    <Link href="/app">
+                      Go to app <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </SignedIn>
                 <Button asChild size="lg" variant="outline" className="h-12 px-8">
                   <Link href="/pricing">See pricing</Link>
                 </Button>
