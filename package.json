@@ -33,7 +33,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@ai-sdk/google": "^2.0.51",
+    "@ai-sdk/google": "^3.0.1",
     "@ai-sdk/openai": "^2.0.88",
     "@clerk/nextjs": "^6.35.2",
     "@hookform/resolvers": "^3.10.0",
