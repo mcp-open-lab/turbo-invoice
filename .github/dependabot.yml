@@ -7,13 +7,14 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    # Group security updates together to reduce PR noise
+    # Group patch and minor updates together to reduce PR noise
     groups:
-      security-updates:
+      patch-minor-updates:
         patterns:
           - "*"
         update-types:
-          - "security"
+          - "patch"
+          - "minor"
     # Open pull requests for version updates
     open-pull-requests-limit: 10
     # Commit message preferences
